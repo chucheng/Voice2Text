@@ -1,0 +1,23 @@
+name: Voice2Text
+options:
+  bundleIdPrefix: com.voice2text
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "15.0"
+
+targets:
+  Voice2Text:
+    type: application
+    platform: macOS
+    sources:
+      - Voice2Text
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: Voice2Text/Voice2Text.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.voice2text.Voice2Text
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        ENABLE_HARDENED_RUNTIME: true
+    info:
+      path: Voice2Text/Info.plist
+      properties:
+        NSMicrophoneUsageDescription: "Voice2Text needs microphone access to record audio for transcription."
