@@ -58,11 +58,14 @@ project.yml                 # xcodegen spec → generates .xcodeproj
 - Menu bar icon and dropdown menu
 - Start/Stop recording toggle with "Starting..." intermediate state
 - Main window with status indicator (gray/orange/red) and transcription placeholder
-- Dock icon support with window reopen on click
 - Audio engine input tap installed, but no transcription logic yet
+
+### Known Issues
+- **Dock icon click does not reopen main window** — `applicationShouldHandleReopen` fires but SwiftUI `Window` destroys the NSWindow on close, and `openWindow(id:)` cannot be called from AppDelegate. Workaround: use "Open Window" from the menu bar dropdown.
 
 ## TODO
 
+- [ ] **Fix Dock icon reopen window** (highest priority)
 - [ ] Integrate Whisper (or other STT engine) for transcription
 - [ ] Export audio buffer to WAV for batch processing
 - [ ] Implement "Output Script" to copy/paste transcription results

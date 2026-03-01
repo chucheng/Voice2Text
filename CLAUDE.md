@@ -11,9 +11,16 @@ Shows in both the menu bar (MenuBarExtra) and the Dock.
 - **Requirements**: macOS 14+, Xcode 15+
 - **Sandbox**: App Sandbox enabled with audio-input entitlement
 
-## Current Status: Scaffold Complete
+## Current Status: Scaffold Complete (with known bug)
 All Swift source files, config files, and xcodegen project are in place.
 Run `xcodegen generate` to regenerate `.xcodeproj`, then `Cmd+R` in Xcode.
+
+### Known Bugs
+- **Dock icon click does not reopen main window**: `applicationShouldHandleReopen` IS called (confirmed via os_log), but the SwiftUI `Window` scene destroys the NSWindow on close. `canBecomeMain` finds no windows. `openWindow(id:)` is only available inside SwiftUI views, not from AppDelegate. Attempted solutions that did NOT work:
+  1. Iterating `sender.windows` with `canBecomeMain` — no windows found after close
+  2. Storing `openWindow` callback via `onAppear` — never fires if window not shown
+  3. Notification from AppDelegate to MenuBarView `onReceive` — MenuBarExtra menu content is only instantiated when menu is open, so no active subscriber
+  - **Next approach to try**: Use a `@Published` flag on `AppState` set by AppDelegate, observed by a background/invisible SwiftUI view that calls `openWindow(id:)`, OR use `NSWindow` hiding instead of SwiftUI Window close (override `windowShouldClose` to hide instead of destroy).
 
 ### Completed Files
 | File | Purpose |
@@ -37,10 +44,11 @@ Run `xcodegen generate` to regenerate `.xcodeproj`, then `Cmd+R` in Xcode.
 - Recording installs an input tap but buffer is not processed yet
 
 ## TODO (Next Steps)
-1. **Integrate Whisper** — implement speech-to-text (whisper.cpp or Apple Speech framework)
-2. **WAV Export** — write audio buffer to file for batch processing
-3. **Output Script** — copy/paste transcription results
-4. **Global Hotkey** — add global keyboard shortcut for start/stop recording
+1. **FIX: Dock icon reopen window** — see Known Bugs above; highest priority
+2. **Integrate Whisper** — implement speech-to-text (whisper.cpp or Apple Speech framework)
+3. **WAV Export** — write audio buffer to file for batch processing
+4. **Output Script** — copy/paste transcription results
+5. **Global Hotkey** — add global keyboard shortcut for start/stop recording
 
 ## Workflow Rules
 - **Clarify before implementing**: when user input is ambiguous or unclear, do NOT guess — ask for clarification first and offer concrete options for the user to choose from.
