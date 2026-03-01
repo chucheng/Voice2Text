@@ -2,13 +2,20 @@ import SwiftUI
 
 struct MenuBarView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var audioRecorder = AudioRecorder()
     @Environment(\.openWindow) private var openWindow
 
-    var body: some View {
-        Button(appState.isRecording ? "Stop Recording" : "Start Recording") {
-            toggleRecording()
+    private var recordingLabel: String {
+        if appState.isStarting {
+            return "Starting..."
         }
+        return appState.isRecording ? "Stop Recording" : "Start Recording"
+    }
+
+    var body: some View {
+        Button(recordingLabel) {
+            appState.toggleRecording()
+        }
+        .disabled(!appState.canToggle)
         .keyboardShortcut("r")
 
         Divider()
@@ -31,15 +38,5 @@ struct MenuBarView: View {
             NSApplication.shared.terminate(nil)
         }
         .keyboardShortcut("q")
-    }
-
-    private func toggleRecording() {
-        if appState.isRecording {
-            audioRecorder.stopRecording()
-            appState.isRecording = false
-        } else {
-            audioRecorder.startRecording()
-            appState.isRecording = true
-        }
     }
 }

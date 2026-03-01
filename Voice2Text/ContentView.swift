@@ -2,16 +2,36 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var audioRecorder = AudioRecorder()
+
+    private var statusColor: Color {
+        if appState.isStarting { return .orange }
+        if appState.isRecording { return .red }
+        return .gray
+    }
+
+    private var statusText: String {
+        if appState.isStarting { return "Starting..." }
+        if appState.isRecording { return "Recording..." }
+        return "Idle"
+    }
+
+    private var buttonLabel: String {
+        if appState.isStarting { return "Starting..." }
+        return appState.isRecording ? "Stop Recording" : "Start Recording"
+    }
+
+    private var buttonIcon: String {
+        appState.isRecording ? "stop.circle.fill" : "mic.circle.fill"
+    }
 
     var body: some View {
         VStack(spacing: 20) {
             // Status indicator
             HStack {
                 Circle()
-                    .fill(appState.isRecording ? Color.red : Color.gray)
+                    .fill(statusColor)
                     .frame(width: 12, height: 12)
-                Text(appState.isRecording ? "Recording..." : "Idle")
+                Text(statusText)
                     .font(.headline)
             }
 
@@ -29,26 +49,14 @@ struct ContentView: View {
             .frame(maxHeight: .infinity)
 
             // Start/Stop button
-            Button(action: toggleRecording) {
-                Label(
-                    appState.isRecording ? "Stop Recording" : "Start Recording",
-                    systemImage: appState.isRecording ? "stop.circle.fill" : "mic.circle.fill"
-                )
-                .font(.title3)
+            Button(action: { appState.toggleRecording() }) {
+                Label(buttonLabel, systemImage: buttonIcon)
+                    .font(.title3)
             }
+            .disabled(!appState.canToggle)
             .controlSize(.large)
             .padding(.bottom)
         }
         .padding()
-    }
-
-    private func toggleRecording() {
-        if appState.isRecording {
-            audioRecorder.stopRecording()
-            appState.isRecording = false
-        } else {
-            audioRecorder.startRecording()
-            appState.isRecording = true
-        }
     }
 }

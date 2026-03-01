@@ -1,8 +1,9 @@
 import AVFoundation
 
-class AudioRecorder: ObservableObject {
+class AudioRecorder {
     private let audioEngine = AVAudioEngine()
-    @Published var isRecording = false
+    private(set) var isRecording = false
+    private var isStarting = false
 
     /// Requests microphone permission and calls the completion handler with the result.
     func requestMicPermission(completion: @escaping (Bool) -> Void) {
@@ -14,10 +15,21 @@ class AudioRecorder: ObservableObject {
     }
 
     /// Starts recording audio from the default input device.
-    /// Installs a tap on the audio engine's input node. No WAV export yet.
-    func startRecording() {
+    /// Calls completion on main thread with true if recording started successfully.
+    func startRecording(completion: @escaping (Bool) -> Void) {
+        guard !isRecording, !isStarting else {
+            completion(false)
+            return
+        }
+
+        isStarting = true
+
         requestMicPermission { [weak self] granted in
-            guard let self, granted else { return }
+            guard let self, granted else {
+                self?.isStarting = false
+                completion(false)
+                return
+            }
 
             let inputNode = self.audioEngine.inputNode
             let format = inputNode.outputFormat(forBus: 0)
@@ -31,14 +43,20 @@ class AudioRecorder: ObservableObject {
             do {
                 try self.audioEngine.start()
                 self.isRecording = true
+                self.isStarting = false
+                completion(true)
             } catch {
                 print("AudioEngine failed to start: \(error.localizedDescription)")
+                inputNode.removeTap(onBus: 0)
+                self.isStarting = false
+                completion(false)
             }
         }
     }
 
     /// Stops recording and removes the tap from the input node.
     func stopRecording() {
+        guard isRecording else { return }
         audioEngine.inputNode.removeTap(onBus: 0)
         audioEngine.stop()
         isRecording = false

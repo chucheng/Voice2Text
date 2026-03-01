@@ -2,12 +2,15 @@ import SwiftUI
 
 @main
 struct Voice2TextApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var appState = AppState()
 
     var body: some Scene {
-        MenuBarExtra("Voice2Text", systemImage: "waveform.circle") {
+        MenuBarExtra {
             MenuBarView()
                 .environmentObject(appState)
+        } label: {
+            Label("V2T", systemImage: "waveform.circle")
         }
 
         Window("Voice2Text", id: "main") {
