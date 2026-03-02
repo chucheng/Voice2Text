@@ -32,3 +32,4 @@ Pods/
 *.dSYM.zip
 *.dSYM
 xcuserdata/
+Whisper/

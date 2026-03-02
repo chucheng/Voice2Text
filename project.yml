@@ -17,6 +17,23 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.voice2text.Voice2Text
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         ENABLE_HARDENED_RUNTIME: true
+        SWIFT_OBJC_BRIDGING_HEADER: Voice2Text/Voice2Text-Bridging-Header.h
+        HEADER_SEARCH_PATHS:
+          - "$(PROJECT_DIR)/Whisper/include"
+        LIBRARY_SEARCH_PATHS:
+          - "$(PROJECT_DIR)/Whisper/lib"
+        OTHER_LDFLAGS:
+          - "-lwhisper"
+          - "-lggml"
+          - "-lggml-base"
+          - "-lggml-cpu"
+          - "-lggml-metal"
+          - "-lggml-blas"
+          - "-lc++"
+    dependencies:
+      - sdk: Accelerate.framework
+      - sdk: Metal.framework
+      - sdk: MetalKit.framework
     info:
       path: Voice2Text/Info.plist
       properties:
