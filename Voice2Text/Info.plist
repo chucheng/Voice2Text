@@ -20,5 +20,7 @@
 	<string>1</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Voice2Text needs microphone access to record audio for transcription.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Voice2Text uses speech recognition to transcribe your voice.</string>
 </dict>
 </plist>

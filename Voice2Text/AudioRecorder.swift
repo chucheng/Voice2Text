@@ -24,9 +24,15 @@ class AudioRecorder {
         }
     }
 
-    /// Starts recording audio from the default input device.
-    /// Calls completion on main thread with true if recording started successfully.
+    /// Starts recording for whisper (resamples to 16kHz Float32).
     func startRecording(completion: @escaping (Bool) -> Void) {
+        startRecording(tapHandler: nil, completion: completion)
+    }
+
+    /// Starts recording with an optional raw buffer tap (for Apple Speech).
+    /// If tapHandler is provided, raw AVAudioPCMBuffers are forwarded to it.
+    /// Resampled samples are always accumulated for whisper.
+    func startRecording(tapHandler: ((AVAudioPCMBuffer) -> Void)?, completion: @escaping (Bool) -> Void) {
         guard !isRecording, !isStarting else {
             completion(false)
             return
@@ -55,6 +61,10 @@ class AudioRecorder {
             inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
                 guard let self else { return }
 
+                // Forward raw buffer to tap handler (Apple Speech)
+                tapHandler?(buffer)
+
+                // Resample for whisper
                 let frameCount = AVAudioFrameCount(
                     Double(buffer.frameLength) * 16000.0 / inputFormat.sampleRate
                 )
@@ -94,7 +104,6 @@ class AudioRecorder {
     }
 
     /// Stops recording and removes the tap from the input node.
-    /// Returns the accumulated 16kHz Float32 samples.
     @discardableResult
     func stopRecording() -> [Float] {
         guard isRecording else { return [] }

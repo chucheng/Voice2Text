@@ -72,6 +72,10 @@ struct MenuBarView: View {
 
         Divider()
 
+        Toggle("Dev Mode", isOn: $appState.devMode)
+
+        Divider()
+
         Button("Quit") {
             NSApplication.shared.terminate(nil)
         }

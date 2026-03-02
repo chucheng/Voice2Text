@@ -9,7 +9,7 @@ struct Voice2TextApp: App {
         WindowGroup("Voice2Text", id: "main") {
             ContentView()
                 .environmentObject(appState)
-                .frame(minWidth: 400, minHeight: 300)
+                .frame(minWidth: 480, minHeight: 300)
                 .background(WindowAccessor())
         }
         .defaultSize(width: 500, height: 400)
