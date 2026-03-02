@@ -9,6 +9,12 @@ final class AnthropicClient {
               let base = ProcessInfo.processInfo.environment["ANTHROPIC_BASE_URL"],
               !token.isEmpty, !base.isEmpty
         else { return nil }
+
+        // Security: warn if base URL is not HTTPS (credentials sent in cleartext)
+        if !base.hasPrefix("https://") {
+            print("[AnthropicClient] WARNING: ANTHROPIC_BASE_URL uses plaintext HTTP — API key may be intercepted")
+        }
+
         return AnthropicClient(baseURL: base, authToken: token)
     }
 
