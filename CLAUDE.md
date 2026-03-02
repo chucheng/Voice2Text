@@ -80,12 +80,21 @@ Models downloaded on-demand from HuggingFace to `~/Library/Application Support/V
 - Punctuation restore enabled by default when server is available; greyed out when unavailable
 - App icon: blue gradient with microphone, sound waves, text lines, "V2T" label
 
+## Security
+- Punctuation server: body size limit (1MB), text length limit (50K chars), ThreadingHTTPServer
+- AnthropicClient: warns at runtime if ANTHROPIC_BASE_URL uses plaintext HTTP
+- Debug logs redacted: only char counts logged, no transcription content
+- Hardened Runtime enabled; entitlements minimal (sandbox + audio-input + network-client)
+- No hardcoded secrets in source code
+- Remaining accepted risks: localhost HTTP for punctuation IPC, no model checksum verification
+
 ## TODO (Next Steps)
 1. **FIX: Dock icon reopen window** — see Known Bugs above; highest priority
 2. **WAV Export** — write audio buffer to file for batch processing
 3. **Global Hotkey** — add global keyboard shortcut for start/stop recording
 4. **UI Redesign** — separate model management into Settings page, keep main view focused on record+transcribe+copy
 5. **LLM Reformat** — re-enable when API access is available (currently blocked by company proxy)
+6. **Model checksum** — add SHA-256 verification for downloaded whisper models
 
 ## Workflow Rules
 - **Clarify before implementing**: when user input is ambiguous or unclear, do NOT guess — ask for clarification first and offer concrete options for the user to choose from.
