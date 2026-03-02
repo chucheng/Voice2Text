@@ -306,17 +306,6 @@ project.yml                      # XcodeGen spec
 - Menu bar + Dock presence
 - First-launch setup wizard
 
-## Known Issues
-
-- **Dock icon click does not reopen main window** — use "Open Window" from menu bar dropdown as workaround
-
-## TODO
-
-- [ ] WAV export for batch processing
-- [ ] UI redesign: separate settings from main workflow
-- [ ] LLM text reformatting (blocked by company proxy)
-- [ ] Model checksum (SHA-256) verification
-
 ## License
 
 This project is licensed under the **GNU General Public License v3.0** — see the [LICENSE](LICENSE) file for details.
