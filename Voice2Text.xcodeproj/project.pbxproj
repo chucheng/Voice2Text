@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0B3E55E8EE1F4BA4F89039B8 /* Voice2TextApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257E4F6E36A9D0538A8C8460 /* Voice2TextApp.swift */; };
 		1CE6204696086B1559DF273D /* AppleSpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFCE46EBEF6F1D9D4AC98D4 /* AppleSpeechRecognizer.swift */; };
+		7048256EC1394D1C7C2BF3BE /* PunctuationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF2095430F612A32FA9C745 /* PunctuationClient.swift */; };
 		71BC54E749431CB1926B64D6 /* WhisperBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B743E6EBCCD2CEB90AF1569 /* WhisperBridge.swift */; };
 		745FB61AFC0BB0F202444E49 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9BD370F623D776BACF7302B /* AppDelegate.swift */; };
 		7518410A6E394FE6372B62FD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA3E3EC17A7601EFDA66D88 /* ContentView.swift */; };
@@ -37,6 +38,7 @@
 		7F2F9A3A2011A25FB2CA9E16 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		8021D279BE4A8D57CAC845F5 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		8BA3E3EC17A7601EFDA66D88 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		8EF2095430F612A32FA9C745 /* PunctuationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PunctuationClient.swift; sourceTree = "<group>"; };
 		AD9EC33F2FDD613C1DB59147 /* Voice2Text.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Voice2Text.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BBA1436CBCDFBCD2045F2216 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		C0A29669E65D4DB980F6DA71 /* AnthropicClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicClient.swift; sourceTree = "<group>"; };
@@ -70,6 +72,7 @@
 				8BA3E3EC17A7601EFDA66D88 /* ContentView.swift */,
 				1CA2D5D489F1259F37D5C860 /* Info.plist */,
 				BBA1436CBCDFBCD2045F2216 /* MenuBarView.swift */,
+				8EF2095430F612A32FA9C745 /* PunctuationClient.swift */,
 				F7524ADDFF9C1223A3FCAFAF /* Voice2Text-Bridging-Header.h */,
 				750BA70A1ADF91C2FFD1516E /* Voice2Text.entitlements */,
 				257E4F6E36A9D0538A8C8460 /* Voice2TextApp.swift */,
@@ -179,6 +182,7 @@
 				E6213B1B124C726FA0331476 /* AudioRecorder.swift in Sources */,
 				7518410A6E394FE6372B62FD /* ContentView.swift in Sources */,
 				82176D08A5BBCAD70BB88481 /* MenuBarView.swift in Sources */,
+				7048256EC1394D1C7C2BF3BE /* PunctuationClient.swift in Sources */,
 				0B3E55E8EE1F4BA4F89039B8 /* Voice2TextApp.swift in Sources */,
 				71BC54E749431CB1926B64D6 /* WhisperBridge.swift in Sources */,
 				ADE30F5B7B29DB40447CB373 /* WindowAccessor.swift in Sources */,

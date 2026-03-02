@@ -54,7 +54,7 @@ final class AppleSpeechRecognizer {
     func stopRecognition() {
         recognitionRequest?.endAudio()
         recognitionRequest = nil
-        recognitionTask?.cancel()
+        recognitionTask?.finish()
         recognitionTask = nil
     }
 }

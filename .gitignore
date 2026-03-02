@@ -26,6 +26,14 @@ Package.resolved
 # CocoaPods (if ever used)
 Pods/
 
+# Python
+.venv/
+__pycache__/
+*.pyc
+scripts/.venv/
+scripts/build/
+scripts/dist/
+
 # Misc
 *.hmap
 *.ipa
