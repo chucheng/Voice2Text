@@ -4,8 +4,6 @@ final class WhisperBridge {
     private var ctx: OpaquePointer?
     private let inferenceQueue = DispatchQueue(label: "com.voice2text.whisper", qos: .userInitiated)
 
-    var isLoaded: Bool { ctx != nil }
-
     /// Load a whisper model from file path. Call from background thread for large models.
     func loadModel(path: String) -> Bool {
         if ctx != nil {

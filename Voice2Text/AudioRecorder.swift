@@ -19,7 +19,7 @@ class AudioRecorder {
     )!
 
     /// Requests microphone permission and calls the completion handler with the result.
-    func requestMicPermission(completion: @escaping (Bool) -> Void) {
+    private func requestMicPermission(completion: @escaping (Bool) -> Void) {
         AVCaptureDevice.requestAccess(for: .audio) { granted in
             DispatchQueue.main.async {
                 completion(granted)

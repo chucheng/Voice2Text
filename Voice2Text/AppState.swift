@@ -539,10 +539,6 @@ class AppState: ObservableObject {
         }
     }
 
-    func downloadModel() {
-        downloadModel(selectedModel)
-    }
-
     func downloadModel(_ model: WhisperModel) {
         guard !isDownloadingModel else { return }
         isDownloadingModel = true

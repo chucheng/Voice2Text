@@ -1,7 +1,6 @@
 import Foundation
 import Carbon
 import AppKit
-import ApplicationServices
 
 // MARK: - HotkeyCombo
 

@@ -177,20 +177,24 @@ Voice2Text auto-launches the server app if found in `/Applications/`, `~/Applica
 ```
 Voice2Text/
 ├── Voice2TextApp.swift          # @main entry point, MenuBarExtra + Window scene
-├── AppState.swift               # Shared state, transcription pipeline, model management
+├── AppState.swift               # Shared state, transcription pipeline, model management, global hotkey
 ├── MenuBarView.swift            # Menu bar dropdown UI
-├── ContentView.swift            # Main window: record button, transcription editor, controls
+├── ContentView.swift            # Main window: record button, transcription editor, permission alerts
 ├── OnboardingView.swift         # First-launch setup wizard (model selection + permissions)
 ├── SettingsView.swift           # Settings: General, Models, Shortcuts, Advanced
 ├── GlobalHotkeyManager.swift    # Carbon hotkey registration, accessibility, auto-paste
 ├── FloatingRecordingPanel.swift # Non-activating floating panel for global hotkey feedback
 ├── HotkeyRecorderView.swift     # Custom shortcut recorder UI component
+├── RecordButton.swift           # Animated record button with pulse/spin states
+├── WaveformView.swift           # Canvas-based animated audio waveform
+├── TranscriptionView.swift      # Editable transcription text area
+├── CopyButton.swift             # Copy-to-clipboard button with animation
 ├── AudioRecorder.swift          # AVAudioEngine + AVAudioConverter (16kHz mono Float32)
 ├── WhisperBridge.swift          # Swift wrapper around whisper.cpp C API
 ├── AppleSpeechRecognizer.swift  # Apple SFSpeechRecognizer wrapper
 ├── PunctuationClient.swift      # HTTP client + auto-launcher for punctuation server
 ├── AnthropicClient.swift        # Claude API client (feature greyed out)
-├── AppDelegate.swift            # Dock icon handler
+├── AppDelegate.swift            # Dock icon handler + graceful shutdown
 ├── WindowAccessor.swift         # NSWindow reference capture + hide-on-close
 ├── Voice2Text-Bridging-Header.h # C interop header for whisper.cpp
 ├── Voice2Text.entitlements      # App Sandbox: audio-input + network-client
@@ -204,12 +208,20 @@ scripts/
 ├── PunctuationServer.spec       # PyInstaller spec for building .app
 ├── build_app.sh                 # Build script for PunctuationServer.app
 ├── build_dmg.sh                 # Build Voice2Text.dmg for distribution
-├── ExportOptions.plist          # Xcode export options for ad-hoc signing
 └── requirements.txt             # Python dependencies
 project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v1.1.1 — Bug Fixes & Polish
+- **Launch permission checks** — proactively prompts for Microphone and Accessibility on startup
+- **"Disable Global Hotkey" option** — users who don't want auto-paste can disable to suppress Accessibility prompts
+- **Fix quit crash** — thread-safe whisper model cleanup (`freeModelSync` on inference queue)
+- **Fix terminate race** — stop audio engine directly on quit instead of triggering async transcription
+- **Fix accessibility polling** — stops when permission is granted instead of running indefinitely
+- **Fix hotkey recorder leak** — event monitor cleaned up on view disappear
+- **Code cleanup** — removed dead code, unused imports, duplicate WindowAccessor
 
 ### v1.1.0 — Global Push-to-Talk Hotkey
 - **Global hotkey (⌘;)** — hold from any app to record, release to transcribe and auto-paste at cursor
