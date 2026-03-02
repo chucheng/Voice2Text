@@ -80,7 +80,7 @@ final class PunctuationClient {
     }()
 
     /// Find PunctuationServer.app in known locations.
-    static func findServerApp() -> URL? {
+    private static func findServerApp() -> URL? {
         for path in searchPaths {
             if FileManager.default.fileExists(atPath: path.path) {
                 return path

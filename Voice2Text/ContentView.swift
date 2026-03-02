@@ -67,7 +67,6 @@ struct ContentView: View {
                 .padding(.vertical, 10)
         }
         .background(.regularMaterial)
-        .background(WindowAccessor())
         .alert("Microphone Access Required", isPresented: $appState.showMicrophoneAlert) {
             Button("Open System Settings") {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {

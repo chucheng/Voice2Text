@@ -1,5 +1,4 @@
 import AppKit
-import Carbon
 
 class AppDelegate: NSObject, NSApplicationDelegate {
 
