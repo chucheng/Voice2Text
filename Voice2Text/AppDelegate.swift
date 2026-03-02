@@ -1,6 +1,29 @@
 import AppKit
+import Carbon
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Clean up global hotkey before exit to avoid Carbon handler crash
+        GlobalHotkeyManager.shared.unregister()
+
+        // Stop recording directly without triggering async transcription
+        let appState = AppState.shared
+        if appState.isRecording {
+            appState.audioRecorder.stopRecording()
+            appState.appleSpeech.stopRecognition()
+            appState.isRecording = false
+        }
+
+        // Hide floating panel
+        FloatingRecordingPanel.shared.hide()
+
+        // Free whisper model synchronously on inference queue
+        // to avoid race with in-flight transcription
+        appState.whisperBridge.freeModelSync()
+
+        return .terminateNow
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSLog("[Voice2Text] applicationDidFinishLaunching")

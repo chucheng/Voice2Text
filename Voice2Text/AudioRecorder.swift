@@ -8,6 +8,9 @@ class AudioRecorder {
     /// Accumulated 16kHz mono Float32 samples for whisper inference.
     private(set) var accumulatedSamples: [Float] = []
 
+    /// Called with RMS audio level (0.0–1.0) from the tap buffer.
+    var onAudioLevel: ((Float) -> Void)?
+
     private let whisperFormat = AVAudioFormat(
         commonFormat: .pcmFormatFloat32,
         sampleRate: 16000,
@@ -60,6 +63,23 @@ class AudioRecorder {
 
             inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
                 guard let self else { return }
+
+                // Calculate RMS audio level
+                if let channelData = buffer.floatChannelData {
+                    let frames = Int(buffer.frameLength)
+                    let ptr = channelData[0]
+                    var sumSquares: Float = 0
+                    for i in 0..<frames {
+                        let sample = ptr[i]
+                        sumSquares += sample * sample
+                    }
+                    let rms = sqrtf(sumSquares / Float(max(frames, 1)))
+                    // Normalize: typical speech RMS ~0.01–0.1, clamp to 0–1
+                    let level = min(rms * 10, 1.0)
+                    DispatchQueue.main.async {
+                        self.onAudioLevel?(level)
+                    }
+                }
 
                 // Forward raw buffer to tap handler (Apple Speech)
                 tapHandler?(buffer)

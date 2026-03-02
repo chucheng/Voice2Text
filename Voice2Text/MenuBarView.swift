@@ -3,6 +3,7 @@ import SwiftUI
 struct MenuBarView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     private var recordingLabel: String {
         if appState.isTranscribing { return "Transcribing..." }
@@ -55,7 +56,7 @@ struct MenuBarView: View {
 
         Divider()
 
-        Button("Output Script") {
+        Button("Copy Transcription") {
             if !appState.transcriptionText.isEmpty {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(appState.transcriptionText, forType: .string)
@@ -70,12 +71,15 @@ struct MenuBarView: View {
         }
         .keyboardShortcut("o")
 
+        Button("Settings...") {
+            openSettings()
+        }
+        .keyboardShortcut(",")
+
         Divider()
 
         Toggle("Punctuation Restore", isOn: $appState.usePunctuationRestore)
             .disabled(!appState.isPunctuationServerAvailable)
-
-        Toggle("Dev Mode", isOn: $appState.devMode)
 
         Divider()
 
