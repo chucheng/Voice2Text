@@ -293,7 +293,7 @@ class AppState: ObservableObject {
         log("Whisper inference started (language=\(language))")
         whisperBridge.transcribe(samples: samples, language: language) { [weak self] text in
             guard let self else { return }
-            self.log("Whisper result (\(text.count) chars): \(String(text.prefix(80)))...")
+            self.log("Whisper result: \(text.count) chars")
 
             // If auto-detected and result contains non-Chinese/English text, retry with "zh"
             if language == "auto" && self.containsUnexpectedLanguage(text) {

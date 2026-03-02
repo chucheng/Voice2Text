@@ -11,7 +11,7 @@ import json
 import os
 import sys
 import time
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer, ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
 import torch
@@ -29,6 +29,8 @@ ALLOWED_PUNCTUATION = {"，", "。", "？", "！", "；", "：", "、"}
 # Model labels have "S-" prefix, e.g. "S-，" → "，"
 LABEL_PREFIX = "S-"
 MAX_LENGTH = 510
+MAX_BODY_BYTES = 1_048_576  # 1 MB
+MAX_TEXT_CHARS = 50_000
 
 
 def default_cache_dir():
@@ -193,6 +195,9 @@ class PunctuationHandler(BaseHTTPRequestHandler):
 
         try:
             length = int(self.headers.get("Content-Length", 0))
+            if length > MAX_BODY_BYTES:
+                self._send_json(413, {"error": f"body too large (max {MAX_BODY_BYTES} bytes)"})
+                return
             body = json.loads(self.rfile.read(length)) if length > 0 else {}
         except (json.JSONDecodeError, ValueError):
             self._send_json(400, {"error": "invalid JSON"})
@@ -201,6 +206,9 @@ class PunctuationHandler(BaseHTTPRequestHandler):
         text = body.get("text", "")
         if not text:
             self._send_json(400, {"error": "missing 'text' field"})
+            return
+        if len(text) > MAX_TEXT_CHARS:
+            self._send_json(400, {"error": f"text too long (max {MAX_TEXT_CHARS} chars)"})
             return
 
         t0 = time.time()
@@ -258,7 +266,7 @@ def main():
     load_model(args.model, cache_dir=args.cache_dir)
     self_test()
 
-    server = HTTPServer(("127.0.0.1", args.port), PunctuationHandler)
+    server = ThreadingHTTPServer(("127.0.0.1", args.port), PunctuationHandler)
     print(f"\n[startup] Punctuation server listening on http://127.0.0.1:{args.port}")
     print(f"[startup]   POST /restore  {{\"text\": \"...\"}}")
     print(f"[startup]   GET  /health")
