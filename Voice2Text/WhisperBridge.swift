@@ -62,9 +62,22 @@ final class WhisperBridge {
         }
     }
 
+    /// Explicitly free the model before app termination.
+    /// Dispatches synchronously on inferenceQueue to avoid
+    /// racing with in-flight transcription.
+    func freeModelSync() {
+        inferenceQueue.sync {
+            if ctx != nil {
+                whisper_free(ctx)
+                ctx = nil
+            }
+        }
+    }
+
     deinit {
         if ctx != nil {
             whisper_free(ctx)
+            ctx = nil
         }
     }
 }

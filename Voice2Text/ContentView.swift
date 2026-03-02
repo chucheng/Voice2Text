@@ -2,14 +2,14 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
-    @State private var copied = false
+    @Environment(\.openSettings) private var openSettings
 
-    private var statusColor: Color {
-        if appState.isReformatting { return .purple }
-        if appState.isTranscribing { return .blue }
-        if appState.isStarting { return .orange }
-        if appState.isRecording { return .red }
-        return .gray
+    private var recordButtonState: RecordButtonState {
+        if appState.isReformatting { return .reformatting }
+        if appState.isTranscribing { return .transcribing }
+        if appState.isStarting { return .starting }
+        if appState.isRecording { return .recording }
+        return .idle
     }
 
     private var statusText: String {
@@ -17,231 +17,150 @@ struct ContentView: View {
         if appState.isTranscribing { return "Transcribing..." }
         if appState.isStarting { return "Starting..." }
         if appState.isRecording { return "Recording..." }
-        return "Idle"
-    }
-
-    private var buttonLabel: String {
-        if appState.isTranscribing { return "Transcribing..." }
-        if appState.isStarting { return "Starting..." }
-        return appState.isRecording ? "Stop Recording" : "Start Recording"
-    }
-
-    private var buttonIcon: String {
-        appState.isRecording ? "stop.circle.fill" : "mic.circle.fill"
+        return "Hold Space to record"
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            // Model selection & status
-            modelStatusView
+        VStack(spacing: 0) {
+            // Top bar: engine badge + warnings
+            topBar
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
 
-            // Status indicator
-            HStack {
-                Circle()
-                    .fill(statusColor)
-                    .frame(width: 12, height: 12)
+            Spacer()
+
+            // Center: record button + waveform + status
+            VStack(spacing: 12) {
+                RecordButton(
+                    state: recordButtonState,
+                    action: { appState.toggleRecording() },
+                    disabled: !appState.canToggle
+                )
+
+                // Waveform (only when recording)
+                if appState.isRecording {
+                    WaveformView(audioLevel: appState.audioLevel)
+                        .frame(width: 200)
+                        .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                }
+
                 Text(statusText)
-                    .font(.headline)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
             }
+            .animation(.spring(response: 0.4), value: appState.isRecording)
 
-            // STT engine + script picker
-            HStack(spacing: 12) {
-                Picker("", selection: $appState.sttEngine) {
-                    ForEach(STTEngine.allCases) { engine in
-                        Text(engine.rawValue).tag(engine)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .fixedSize()
-                .disabled(appState.isRecording)
+            Spacer()
 
-                if appState.sttEngine == .apple && !appState.isNetworkAvailable {
-                    Label("No network", systemImage: "wifi.slash")
-                        .font(.caption)
-                        .foregroundColor(.red)
-                }
+            // Transcription area
+            TranscriptionView(
+                text: $appState.transcriptionText,
+                isProcessing: appState.isTranscribing || appState.isReformatting
+            )
+            .frame(minHeight: 80, maxHeight: 160)
+            .padding(.horizontal, 16)
 
-                Spacer()
-
-                Picker("", selection: $appState.outputScript) {
-                    ForEach(OutputScript.allCases) { script in
-                        Text(script.rawValue).tag(script)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .fixedSize()
-                .onChange(of: appState.outputScript) {
-                    appState.updateDisplayScript()
-                }
-            }
-
-            // Punctuation restore toggle
-            HStack(spacing: 8) {
-                Toggle("Punctuation", isOn: $appState.usePunctuationRestore)
-                    .disabled(!appState.isPunctuationServerAvailable)
-                    .toggleStyle(.checkbox)
-
-                if !appState.isPunctuationServerAvailable {
-                    Button("Check Server") {
-                        appState.checkPunctuationServer()
-                    }
-                    .controlSize(.small)
-                    .buttonStyle(.borderless)
-                    .foregroundColor(.secondary)
-                }
-            }
-
-            Divider()
-
-            // Transcription result (editable)
-            ZStack {
-                if appState.isTranscribing || appState.isReformatting {
-                    VStack {
-                        ProgressView(appState.isReformatting ? "Reformatting..." : "Transcribing...")
-                            .padding()
-                        Spacer()
-                    }
-                }
-
-                if appState.transcriptionText.isEmpty && !appState.isTranscribing && !appState.isReformatting {
-                    Text("Transcription will appear here...")
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    TextEditor(text: $appState.transcriptionText)
-                        .font(.body)
-                        .opacity(appState.isTranscribing || appState.isReformatting ? 0.3 : 1)
-                }
-            }
-            .frame(maxHeight: .infinity)
-
-            // Action buttons
-            HStack(spacing: 12) {
-                Button(action: { appState.toggleRecording() }) {
-                    Label(buttonLabel, systemImage: buttonIcon)
-                        .font(.title3)
-                }
-                .disabled(!appState.canToggle)
-                .controlSize(.large)
-
-                Button(action: {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(appState.transcriptionText, forType: .string)
-                    copied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
-                }) {
-                    Label(copied ? "Copied!" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc")
-                }
-                .disabled(appState.transcriptionText.isEmpty)
-                .controlSize(.large)
-            }
-
-            Text("Hold Space to record")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.bottom)
-
-            // Debug log (dev mode)
-            if appState.devMode {
-                Divider()
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text("Debug Log")
-                            .font(.caption.bold())
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Button("Clear") {
-                            appState.debugLog.removeAll()
-                        }
-                        .font(.caption)
-                        .buttonStyle(.borderless)
-                    }
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            LazyVStack(alignment: .leading, spacing: 2) {
-                                ForEach(Array(appState.debugLog.enumerated()), id: \.offset) { idx, line in
-                                    Text(line)
-                                        .font(.system(size: 10, design: .monospaced))
-                                        .foregroundColor(.secondary)
-                                        .textSelection(.enabled)
-                                        .id(idx)
-                                }
-                            }
-                        }
-                        .frame(height: 100)
-                        .onChange(of: appState.debugLog.count) {
-                            if let last = appState.debugLog.indices.last {
-                                proxy.scrollTo(last, anchor: .bottom)
-                            }
-                        }
-                    }
-                }
-            }
+            // Bottom toolbar
+            bottomToolbar
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
         }
-        .padding()
+        .background(.regularMaterial)
+        .background(WindowAccessor())
+        .alert("Microphone Access Required", isPresented: $appState.showMicrophoneAlert) {
+            Button("Open System Settings") {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            Button("Later", role: .cancel) {}
+        } message: {
+            Text("Voice2Text needs microphone access to record audio. Please enable it in System Settings > Privacy & Security > Microphone.")
+        }
+        .alert("Enable Auto-Paste?", isPresented: $appState.showAccessibilityAlert) {
+            Button("Open System Settings") {
+                GlobalHotkeyManager.requestAccessibility()
+            }
+            Button("Disable Global Hotkey") {
+                appState.globalHotkeyEnabled = false
+                GlobalHotkeyManager.shared.unregister()
+            }
+            Button("Later", role: .cancel) {}
+        } message: {
+            Text("Grant Accessibility permission to let the global hotkey (⌘;) auto-paste transcriptions at your cursor. Without it, text will only be copied to clipboard.")
+        }
     }
 
+    // MARK: - Top Bar
+
     @ViewBuilder
-    private var modelStatusView: some View {
-        VStack(spacing: 8) {
-            // Model picker
-            HStack {
-                Text("Model:")
-                    .font(.callout)
-                Picker("", selection: $appState.selectedModel) {
-                    ForEach(WhisperModel.allCases) { model in
-                        HStack {
-                            Text(model.displayName)
-                            if appState.isModelDownloaded(model) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
-                                    .font(.caption)
+    private var topBar: some View {
+        HStack(spacing: 8) {
+            // Engine badge
+            HStack(spacing: 4) {
+                Image(systemName: appState.sttEngine == .whisper ? "cpu" : "applelogo")
+                    .font(.caption2)
+                Text(appState.sttEngine.rawValue)
+                    .font(.caption)
+                    .fontWeight(.medium)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(.quaternary))
+
+            // Warnings
+            if appState.sttEngine == .whisper && !appState.isModelLoaded {
+                Label("No model loaded", systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+            }
+            if appState.sttEngine == .apple && !appState.isNetworkAvailable {
+                Label("No network", systemImage: "wifi.slash")
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Bottom Toolbar
+
+    @ViewBuilder
+    private var bottomToolbar: some View {
+        HStack {
+            // Settings button
+            Button(action: {
+                openSettings()
+            }) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Settings (⌘,)")
+
+            Spacer()
+
+            // First-use tooltip
+            if appState.showFirstUseTooltip {
+                Text("Hold Space to record, ⌘C to copy")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 8) {
+                            withAnimation {
+                                appState.showFirstUseTooltip = false
                             }
                         }
-                        .tag(model)
                     }
-                }
-                .frame(maxWidth: 220)
-                .onChange(of: appState.selectedModel) { _, newModel in
-                    appState.switchModel(to: newModel)
-                }
-
-                if appState.isModelDownloaded(appState.selectedModel) && !appState.isDownloadingModel {
-                    Button(role: .destructive, action: {
-                        appState.deleteModel(appState.selectedModel)
-                    }) {
-                        Image(systemName: "trash")
-                            .font(.callout)
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Delete \(appState.selectedModel.displayName)")
-                }
             }
 
-            if appState.isDownloadingModel {
-                ProgressView(value: appState.downloadProgress) {
-                    Text("Downloading \(appState.selectedModel.fileName)...")
-                }
-                Text("\(Int(appState.downloadProgress * 100))%")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            } else if !appState.isModelDownloaded(appState.selectedModel) {
-                Button("Download \(appState.selectedModel.displayName)") {
-                    appState.downloadModel()
-                }
-                .controlSize(.small)
-            } else if !appState.isModelLoaded {
-                ProgressView("Loading model...")
-                    .font(.caption)
-            }
+            Spacer()
 
-            if appState.isModelLoaded {
-                Text("Loaded: \(appState.loadedModelName)")
-                    .font(.caption)
-                    .foregroundColor(.green)
-            }
+            // Copy button
+            CopyButton(text: appState.transcriptionText)
         }
-        .padding(8)
-        .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
     }
 }

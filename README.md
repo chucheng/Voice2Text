@@ -10,6 +10,8 @@ A macOS menu bar app for voice-to-text transcription using whisper.cpp and Apple
 - **Multiple whisper models** — tiny, base, small, medium, large-v3-turbo (downloaded on-demand)
 - **Auto language retry** — detects wrong language output and retries with Chinese
 - **Push-to-talk** — hold Spacebar to record, release to transcribe
+- **Global hotkey (⌘;)** — hold from any app to record, release to auto-paste transcription at cursor
+- **Floating indicator** — compact pill-shaped panel shows recording/transcribing/done status
 - **Punctuation restoration** — BERT-based server adds punctuation automatically (enabled by default when server available)
 - **Editable transcription** — edit text inline after transcription
 - **Cmd+C smart copy** — copies full transcription when nothing selected, or copies selection
@@ -17,13 +19,29 @@ A macOS menu bar app for voice-to-text transcription using whisper.cpp and Apple
 - Custom app icon
 - Menu bar + Dock presence
 
-## Prerequisites
+## Installation (Non-Developer)
+
+1. Download `Voice2Text.dmg` from the [Releases](../../releases) page
+2. Open the DMG and drag **Voice2Text** to the **Applications** folder
+3. Eject the DMG
+4. Open **Voice2Text** from Applications — on first launch, macOS may block it:
+   - Right-click (or Control-click) the app → **Open** → click **Open** in the dialog
+   - This is only needed once; subsequent launches work normally
+5. The **Setup Wizard** will guide you:
+   - **Choose a model** — select a Whisper model to download for offline transcription, then click **Download & Continue**
+   - **Or skip** — click **Skip — Use Apple Speech** to use Apple's built-in speech recognition (requires internet)
+   - **Permissions** — grant Accessibility permission to enable global hotkey auto-paste (optional, can be done later in Settings)
+6. After setup:
+   - In-app: hold **Space** to record and release to transcribe
+   - From any app: hold **⌘;** to record, release to transcribe and auto-paste at cursor
+
+## Prerequisites (Developer)
 
 - macOS 14+ (Sonoma)
 - Xcode 15+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) — `brew install xcodegen`
 
-## Getting Started
+## Getting Started (Developer)
 
 ```bash
 # Generate the Xcode project
@@ -36,6 +54,17 @@ open Voice2Text.xcodeproj
 ```
 
 On first launch, select a whisper model and click "Download". Models are saved to `~/Library/Application Support/Voice2Text/`.
+
+## Building a DMG
+
+To build a distributable DMG (no Apple Developer account needed):
+
+```bash
+bash scripts/build_dmg.sh
+# Output: build/Voice2Text.dmg
+```
+
+This will regenerate the Xcode project, build a Release archive, ad-hoc sign it, and package it into a DMG with an Applications symlink.
 
 ## Architecture
 
@@ -150,7 +179,12 @@ Voice2Text/
 ├── Voice2TextApp.swift          # @main entry point, MenuBarExtra + Window scene
 ├── AppState.swift               # Shared state, transcription pipeline, model management
 ├── MenuBarView.swift            # Menu bar dropdown UI
-├── ContentView.swift            # Main window: model picker, transcription editor, controls
+├── ContentView.swift            # Main window: record button, transcription editor, controls
+├── OnboardingView.swift         # First-launch setup wizard (model selection + permissions)
+├── SettingsView.swift           # Settings: General, Models, Shortcuts, Advanced
+├── GlobalHotkeyManager.swift    # Carbon hotkey registration, accessibility, auto-paste
+├── FloatingRecordingPanel.swift # Non-activating floating panel for global hotkey feedback
+├── HotkeyRecorderView.swift     # Custom shortcut recorder UI component
 ├── AudioRecorder.swift          # AVAudioEngine + AVAudioConverter (16kHz mono Float32)
 ├── WhisperBridge.swift          # Swift wrapper around whisper.cpp C API
 ├── AppleSpeechRecognizer.swift  # Apple SFSpeechRecognizer wrapper
@@ -169,9 +203,33 @@ scripts/
 ├── punctuation_server.py        # Chinese punctuation restoration server
 ├── PunctuationServer.spec       # PyInstaller spec for building .app
 ├── build_app.sh                 # Build script for PunctuationServer.app
+├── build_dmg.sh                 # Build Voice2Text.dmg for distribution
+├── ExportOptions.plist          # Xcode export options for ad-hoc signing
 └── requirements.txt             # Python dependencies
 project.yml                      # XcodeGen spec
 ```
+
+## Release Notes
+
+### v1.1.0 — Global Push-to-Talk Hotkey
+- **Global hotkey (⌘;)** — hold from any app to record, release to transcribe and auto-paste at cursor
+- **Floating recording panel** — non-intrusive indicator shows recording/transcribing/done status
+- **Auto-paste** — transcription is copied to clipboard and pasted via simulated ⌘V (requires Accessibility permission)
+- **Customizable shortcut** — change the hotkey in Settings > Shortcuts
+- **Onboarding: permissions step** — guides new users through Accessibility setup with clear explanation
+- **Onboarding: upgrade detection** — detects existing downloaded models, shows "Downloaded" badge, no re-download needed
+- **Settings: Shortcuts tab** — enable/disable global hotkey, record custom shortcut, Accessibility status
+- **Graceful quit** — fixed SIGABRT crash on quit by properly cleaning up Carbon hotkey and whisper model before exit
+
+### v1.0.0 — Initial Release
+- Dual STT engines (whisper.cpp offline + Apple Speech online)
+- Mixed Chinese + English recognition
+- Simplified/Traditional Chinese output toggle
+- Push-to-talk (Spacebar) in-app recording
+- Punctuation restoration (BERT server)
+- Multiple whisper models (tiny → large-v3-turbo)
+- Menu bar + Dock presence
+- First-launch setup wizard
 
 ## Known Issues
 
@@ -179,11 +237,10 @@ project.yml                      # XcodeGen spec
 
 ## TODO
 
-- [ ] Fix Dock icon reopen window
 - [ ] WAV export for batch processing
-- [ ] Global keyboard shortcut for start/stop
 - [ ] UI redesign: separate settings from main workflow
 - [ ] LLM text reformatting (blocked by company proxy)
+- [ ] Model checksum (SHA-256) verification
 
 ## License
 

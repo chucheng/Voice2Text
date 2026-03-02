@@ -1,5 +1,6 @@
 import Foundation
-import AppKit
+import SwiftUI
+import AVFoundation
 import Network
 import Speech
 
@@ -69,8 +70,17 @@ class AppState: ObservableObject {
     @Published var isNetworkAvailable = false
     @Published var usePunctuationRestore = false
     @Published var isPunctuationServerAvailable = false
+    @Published var audioLevel: Float = 0
     @Published var devMode = false
     @Published var debugLog: [String] = []
+    @AppStorage("showFirstUseTooltip") var showFirstUseTooltip = true
+    @AppStorage("onboardingCompleted") var onboardingCompleted = false
+    @AppStorage("globalHotkeyEnabled") var globalHotkeyEnabled = true
+    @Published var isAccessibilityGranted = false
+    @Published var isGlobalHotkeyActive = false
+    @Published var showMicrophoneAlert = false
+    @Published var showAccessibilityAlert = false
+    @Published var isMicrophoneGranted = false
 
     private let networkMonitor = NWPathMonitor()
     private var keyDownMonitor: Any?
@@ -110,6 +120,14 @@ class AppState: ObservableObject {
         useLLMReformat = false
         log("LLM reformat: disabled (feature greyed out)")
 
+        // Wire audio level callback
+        audioRecorder.onAudioLevel = { [weak self] level in
+            self?.audioLevel = level
+            if self?.isGlobalHotkeyActive == true {
+                FloatingRecordingPanel.shared.updateAudioLevel(level)
+            }
+        }
+
         // Monitor network for Apple Speech
         networkMonitor.pathUpdateHandler = { [weak self] path in
             DispatchQueue.main.async {
@@ -121,6 +139,9 @@ class AppState: ObservableObject {
         loadModelIfAvailable()
         setupKeyboardShortcuts()
         checkPunctuationServer()
+        setupGlobalHotkey()
+        refreshAccessibilityStatus()
+        checkPermissionsOnLaunch()
     }
 
     // MARK: - Push-to-Talk (Spacebar)
@@ -228,10 +249,19 @@ class AppState: ObservableObject {
     private func stopAndTranscribe() {
         let samples = audioRecorder.stopRecording()
         isRecording = false
+        audioLevel = 0
 
         guard !samples.isEmpty else {
             transcriptionText = ""
+            if isGlobalHotkeyActive {
+                isGlobalHotkeyActive = false
+                FloatingRecordingPanel.shared.hide()
+            }
             return
+        }
+
+        if isGlobalHotkeyActive {
+            FloatingRecordingPanel.shared.show(state: .transcribing)
         }
 
         log("Recorded \(samples.count) samples (\(String(format: "%.1f", Double(samples.count) / 16000))s)")
@@ -285,8 +315,10 @@ class AppState: ObservableObject {
         appleSpeech.stopRecognition()
         appleSpeechRequest = nil
         isRecording = false
+        audioLevel = 0
         rawTranscription = transcriptionText
         log("Apple Speech: stopped")
+        performAutoPaste(transcriptionText)
     }
 
     private func transcribe(samples: [Float], language: String) {
@@ -426,11 +458,13 @@ class AppState: ObservableObject {
                         self.transcriptionText = self.convertScript(text)
                     }
                     self.isReformatting = false
+                    self.performAutoPaste(self.transcriptionText)
                 }
             }
         } else {
             transcriptionText = convertScript(text)
             isReformatting = false
+            performAutoPaste(transcriptionText)
         }
     }
 
@@ -553,5 +587,100 @@ class AppState: ObservableObject {
         objc_setAssociatedObject(task, "progressObservation", observation, .OBJC_ASSOCIATION_RETAIN)
 
         task.resume()
+    }
+
+    // MARK: - Global Hotkey
+
+    func setupGlobalHotkey() {
+        let manager = GlobalHotkeyManager.shared
+
+        manager.onHotkeyDown = { [weak self] in
+            self?.globalHotkeyDown()
+        }
+        manager.onHotkeyUp = { [weak self] in
+            self?.globalHotkeyUp()
+        }
+
+        if globalHotkeyEnabled {
+            manager.register()
+            log("Global hotkey registered: \(manager.combo.displayString)")
+        }
+    }
+
+    func globalHotkeyDown() {
+        guard globalHotkeyEnabled, canToggle, !isRecording else { return }
+        isGlobalHotkeyActive = true
+        FloatingRecordingPanel.shared.show(state: .recording)
+        toggleRecording()
+        log("Global hotkey: started recording")
+    }
+
+    func globalHotkeyUp() {
+        guard isGlobalHotkeyActive, isRecording else { return }
+        FloatingRecordingPanel.shared.show(state: .transcribing)
+        toggleRecording()
+        log("Global hotkey: stopped recording, transcribing...")
+    }
+
+    func performAutoPaste(_ text: String) {
+        guard isGlobalHotkeyActive else { return }
+        isGlobalHotkeyActive = false
+
+        guard !text.isEmpty else {
+            FloatingRecordingPanel.shared.hide()
+            return
+        }
+
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        log("Global hotkey: copied to clipboard (\(text.count) chars)")
+
+        if GlobalHotkeyManager.isAccessibilityGranted {
+            // Small delay to ensure clipboard is ready
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                GlobalHotkeyManager.pasteFromClipboard()
+                FloatingRecordingPanel.shared.showDoneAndHide()
+                self.log("Global hotkey: auto-pasted")
+            }
+        } else {
+            FloatingRecordingPanel.shared.showDoneAndHide()
+            log("Global hotkey: accessibility not granted, skipping auto-paste")
+        }
+    }
+
+    func refreshAccessibilityStatus() {
+        isAccessibilityGranted = GlobalHotkeyManager.isAccessibilityGranted
+    }
+
+    // MARK: - Permission Checks on Launch
+
+    private func checkPermissionsOnLaunch() {
+        guard onboardingCompleted else { return }
+
+        // Check microphone permission
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
+            isMicrophoneGranted = true
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
+                DispatchQueue.main.async {
+                    self?.isMicrophoneGranted = granted
+                    if !granted {
+                        self?.showMicrophoneAlert = true
+                    }
+                }
+            }
+        case .denied, .restricted:
+            isMicrophoneGranted = false
+            showMicrophoneAlert = true
+        @unknown default:
+            break
+        }
+
+        // Check accessibility (only if global hotkey is enabled)
+        refreshAccessibilityStatus()
+        if globalHotkeyEnabled && !isAccessibilityGranted {
+            showAccessibilityAlert = true
+        }
     }
 }
