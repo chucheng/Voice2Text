@@ -38,3 +38,4 @@ targets:
       path: Voice2Text/Info.plist
       properties:
         NSMicrophoneUsageDescription: "Voice2Text needs microphone access to record audio for transcription."
+        NSSpeechRecognitionUsageDescription: "Voice2Text uses speech recognition to transcribe your voice."

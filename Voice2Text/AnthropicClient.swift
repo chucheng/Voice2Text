@@ -18,10 +18,11 @@ final class AnthropicClient {
     }
 
     /// Ask Claude to reformat whisper output with proper punctuation and sentence breaks.
-    func reformatText(_ text: String, completion: @escaping (String?) -> Void) {
+    /// Completion: (reformatted text or nil, error description or nil)
+    func reformatText(_ text: String, completion: @escaping (String?, String?) -> Void) {
         let endpoint = "\(baseURL)/v1/messages"
         guard let url = URL(string: endpoint) else {
-            completion(nil)
+            completion(nil, "Invalid URL: \(endpoint)")
             return
         }
 
@@ -33,7 +34,7 @@ final class AnthropicClient {
         request.timeoutInterval = 30
 
         let body: [String: Any] = [
-            "model": "claude-haiku-4-5-20251001",
+            "model": "claude-opus-4-6",
             "max_tokens": 4096,
             "messages": [
                 [
@@ -57,16 +58,41 @@ final class AnthropicClient {
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data, error == nil,
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let content = json["content"] as? [[String: Any]],
+            if let error {
+                completion(nil, "Network error: \(error.localizedDescription)")
+                return
+            }
+
+            let httpResponse = response as? HTTPURLResponse
+            let statusCode = httpResponse?.statusCode ?? 0
+
+            guard let data else {
+                completion(nil, "No data received (HTTP \(statusCode))")
+                return
+            }
+
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                let raw = String(data: data, encoding: .utf8) ?? "<binary>"
+                completion(nil, "Invalid JSON (HTTP \(statusCode)): \(String(raw.prefix(200)))")
+                return
+            }
+
+            // Check for API error response
+            if let errorObj = json["error"] as? [String: Any],
+               let message = errorObj["message"] as? String {
+                completion(nil, "API error (HTTP \(statusCode)): \(message)")
+                return
+            }
+
+            guard let content = json["content"] as? [[String: Any]],
                   let firstBlock = content.first,
                   let text = firstBlock["text"] as? String
             else {
-                completion(nil)
+                completion(nil, "Unexpected response format (HTTP \(statusCode)): \(String(String(describing: json).prefix(200)))")
                 return
             }
-            completion(text.trimmingCharacters(in: .whitespacesAndNewlines))
+
+            completion(text.trimmingCharacters(in: .whitespacesAndNewlines), nil)
         }.resume()
     }
 }

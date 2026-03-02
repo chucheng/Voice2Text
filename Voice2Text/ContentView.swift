@@ -44,25 +44,35 @@ struct ContentView: View {
                     .font(.headline)
             }
 
-            // Script picker + LLM toggle
-            HStack(spacing: 16) {
-                Picker("Output", selection: $appState.outputScript) {
+            // STT engine + script picker
+            HStack(spacing: 12) {
+                Picker("", selection: $appState.sttEngine) {
+                    ForEach(STTEngine.allCases) { engine in
+                        Text(engine.rawValue).tag(engine)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
+                .disabled(appState.isRecording)
+
+                if appState.sttEngine == .apple && !appState.isNetworkAvailable {
+                    Label("No network", systemImage: "wifi.slash")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+
+                Spacer()
+
+                Picker("", selection: $appState.outputScript) {
                     ForEach(OutputScript.allCases) { script in
                         Text(script.rawValue).tag(script)
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 160)
+                .fixedSize()
                 .onChange(of: appState.outputScript) { _ in
                     appState.updateDisplayScript()
                 }
-
-                Toggle("LLM Reformat", isOn: $appState.useLLMReformat)
-                    .toggleStyle(.checkbox)
-                    .disabled(!appState.isLLMAvailable)
-                    .help(appState.isLLMAvailable
-                          ? "Use Claude to improve punctuation and sentence breaks"
-                          : "Set ANTHROPIC_AUTH_TOKEN and ANTHROPIC_BASE_URL to enable")
             }
 
             Divider()
@@ -110,6 +120,43 @@ struct ContentView: View {
                 .controlSize(.large)
             }
             .padding(.bottom)
+
+            // Debug log (dev mode)
+            if appState.devMode {
+                Divider()
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Debug Log")
+                            .font(.caption.bold())
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Button("Clear") {
+                            appState.debugLog.removeAll()
+                        }
+                        .font(.caption)
+                        .buttonStyle(.borderless)
+                    }
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            LazyVStack(alignment: .leading, spacing: 2) {
+                                ForEach(Array(appState.debugLog.enumerated()), id: \.offset) { idx, line in
+                                    Text(line)
+                                        .font(.system(size: 10, design: .monospaced))
+                                        .foregroundColor(.secondary)
+                                        .textSelection(.enabled)
+                                        .id(idx)
+                                }
+                            }
+                        }
+                        .frame(height: 100)
+                        .onChange(of: appState.debugLog.count) { _ in
+                            if let last = appState.debugLog.indices.last {
+                                proxy.scrollTo(last, anchor: .bottom)
+                            }
+                        }
+                    }
+                }
+            }
         }
         .padding()
     }

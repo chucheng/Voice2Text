@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
-import NaturalLanguage
+import Network
+import Speech
 
 enum WhisperModel: String, CaseIterable, Identifiable {
     case tiny = "tiny"
@@ -35,6 +36,13 @@ enum OutputScript: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum STTEngine: String, CaseIterable, Identifiable {
+    case whisper = "Whisper"
+    case apple = "Apple Speech"
+
+    var id: String { rawValue }
+}
+
 class AppState: ObservableObject {
     static let shared = AppState()
 
@@ -57,6 +65,12 @@ class AppState: ObservableObject {
     @Published var loadedModelName: String = ""
     @Published var useLLMReformat = false
     @Published var isLLMAvailable = false
+    @Published var sttEngine: STTEngine = .whisper
+    @Published var isNetworkAvailable = false
+    @Published var devMode = false
+    @Published var debugLog: [String] = []
+
+    private let networkMonitor = NWPathMonitor()
 
     /// Weak reference to the main window, captured by WindowAccessor.
     /// Used by AppDelegate to reopen the window on Dock icon click.
@@ -64,37 +78,74 @@ class AppState: ObservableObject {
 
     let audioRecorder = AudioRecorder()
     let whisperBridge = WhisperBridge()
+    let appleSpeech = AppleSpeechRecognizer()
     private(set) var anthropicClient: AnthropicClient?
+    private var appleSpeechRequest: SFSpeechAudioBufferRecognitionRequest?
 
     /// Raw transcription text from whisper (before language conversion).
     private var rawTranscription = ""
 
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm:ss"
+        return f
+    }()
+
+    func log(_ message: String) {
+        guard devMode else { return }
+        let ts = Self.dateFormatter.string(from: Date())
+        debugLog.append("[\(ts)] \(message)")
+        // Keep last 200 lines
+        if debugLog.count > 200 { debugLog.removeFirst(debugLog.count - 200) }
+    }
+
     private init() {
         anthropicClient = AnthropicClient.fromEnvironment()
         isLLMAvailable = anthropicClient != nil
-        if isLLMAvailable {
-            useLLMReformat = true
+        useLLMReformat = false
+        log("LLM reformat: disabled (feature greyed out)")
+
+        // Monitor network for Apple Speech
+        networkMonitor.pathUpdateHandler = { [weak self] path in
+            DispatchQueue.main.async {
+                self?.isNetworkAvailable = path.status == .satisfied
+            }
         }
+        networkMonitor.start(queue: DispatchQueue(label: "com.voice2text.network"))
+
         loadModelIfAvailable()
     }
 
     var canToggle: Bool {
-        !isStarting && !isTranscribing && isModelLoaded
+        if sttEngine == .apple {
+            return !isStarting && !isTranscribing && isNetworkAvailable
+        }
+        return !isStarting && !isTranscribing && isModelLoaded
     }
 
     func toggleRecording() {
         guard canToggle else { return }
 
         if isRecording {
-            stopAndTranscribe()
+            if sttEngine == .apple {
+                stopAppleSpeech()
+            } else {
+                stopAndTranscribe()
+            }
         } else {
-            isStarting = true
-            audioRecorder.startRecording { [weak self] success in
-                self?.isStarting = false
-                self?.isRecording = success
+            if sttEngine == .apple {
+                startAppleSpeech()
+            } else {
+                isStarting = true
+                audioRecorder.startRecording { [weak self] success in
+                    self?.isStarting = false
+                    self?.isRecording = success
+                }
             }
         }
     }
+
+    // MARK: - Whisper
 
     private func stopAndTranscribe() {
         let samples = audioRecorder.stopRecording()
@@ -105,16 +156,70 @@ class AppState: ObservableObject {
             return
         }
 
+        log("Recorded \(samples.count) samples (\(String(format: "%.1f", Double(samples.count) / 16000))s)")
         isTranscribing = true
         transcribe(samples: samples, language: "auto")
     }
 
+    // MARK: - Apple Speech
+
+    private func startAppleSpeech() {
+        isStarting = true
+        appleSpeech.requestPermission { [weak self] granted in
+            guard let self, granted else {
+                self?.isStarting = false
+                self?.log("Apple Speech: permission denied")
+                return
+            }
+            self.transcriptionText = ""
+            self.appleSpeechRequest = self.appleSpeech.startRecognition(
+                onResult: { [weak self] text, isFinal in
+                    self?.transcriptionText = self?.convertScript(text) ?? text
+                    if isFinal {
+                        self?.rawTranscription = text
+                        self?.log("Apple Speech: final result (\(text.count) chars)")
+                    }
+                },
+                onError: { [weak self] error in
+                    self?.log("Apple Speech error: \(error)")
+                }
+            )
+
+            guard self.appleSpeechRequest != nil else {
+                self.isStarting = false
+                self.log("Apple Speech: failed to start")
+                return
+            }
+
+            // Start audio engine and feed buffers to Apple Speech
+            self.audioRecorder.startRecording(tapHandler: { [weak self] buffer in
+                self?.appleSpeechRequest?.append(buffer)
+            }) { [weak self] success in
+                self?.isStarting = false
+                self?.isRecording = success
+                self?.log("Apple Speech: recording started = \(success)")
+            }
+        }
+    }
+
+    private func stopAppleSpeech() {
+        audioRecorder.stopRecording()
+        appleSpeech.stopRecognition()
+        appleSpeechRequest = nil
+        isRecording = false
+        rawTranscription = transcriptionText
+        log("Apple Speech: stopped")
+    }
+
     private func transcribe(samples: [Float], language: String) {
+        log("Whisper inference started (language=\(language))")
         whisperBridge.transcribe(samples: samples, language: language) { [weak self] text in
             guard let self else { return }
+            self.log("Whisper result (\(text.count) chars): \(String(text.prefix(80)))...")
 
             // If auto-detected and result contains non-Chinese/English text, retry with "zh"
             if language == "auto" && self.containsUnexpectedLanguage(text) {
+                self.log("Unexpected language detected, retrying with language=zh")
                 self.transcribe(samples: samples, language: "zh")
                 return
             }
@@ -157,30 +262,31 @@ class AppState: ObservableObject {
         isReformatting = true
 
         if useLLMReformat, let client = anthropicClient {
-            client.reformatText(text) { [weak self] result in
+            log("LLM reformat: sending to Claude...")
+            client.reformatText(text) { [weak self] result, error in
                 DispatchQueue.main.async {
                     guard let self else { return }
                     if let result {
+                        self.log("LLM reformat: success (\(result.count) chars)")
                         self.transcriptionText = self.convertScript(result)
                     } else {
-                        // LLM failed, mark unavailable and fall back
+                        self.log("LLM reformat failed: \(error ?? "unknown error"). Falling back to NLTokenizer.")
                         self.isLLMAvailable = false
                         self.useLLMReformat = false
-                        self.transcriptionText = self.convertScript(self.reformatSentences(text))
+                        self.transcriptionText = self.convertScript(text)
                     }
                     self.isReformatting = false
                 }
             }
         } else {
-            transcriptionText = convertScript(reformatSentences(text))
+            transcriptionText = convertScript(text)
             isReformatting = false
         }
     }
 
-    /// Re-apply reformatting when user changes the output script toggle.
     func updateDisplayScript() {
         guard !rawTranscription.isEmpty else { return }
-        postProcess(rawTranscription)
+        transcriptionText = convertScript(rawTranscription)
     }
 
     private func convertScript(_ text: String) -> String {
@@ -190,44 +296,6 @@ class AppState: ObservableObject {
         case .simplified:
             return text.applyingTransform(StringTransform("Hant-Hans"), reverse: false) ?? text
         }
-    }
-
-    /// Use NLTokenizer to re-segment text into proper sentences.
-    private func reformatSentences(_ text: String) -> String {
-        let tokenizer = NLTokenizer(unit: .sentence)
-        tokenizer.string = text
-
-        var sentences: [String] = []
-        tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
-            let sentence = String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)
-            if !sentence.isEmpty {
-                sentences.append(ensureTrailingPunctuation(sentence))
-            }
-            return true
-        }
-
-        return sentences.joined(separator: "\n")
-    }
-
-    /// Add a period/full stop if the sentence doesn't end with punctuation.
-    private func ensureTrailingPunctuation(_ sentence: String) -> String {
-        guard let last = sentence.unicodeScalars.last else { return sentence }
-        let v = last.value
-        // Common sentence-ending punctuation (ASCII + CJK)
-        let endings: [UInt32] = [
-            0x2E,   // .
-            0x21,   // !
-            0x3F,   // ?
-            0x3002, // 。
-            0xFF01, // ！
-            0xFF1F, // ？
-            0x2026, // …
-        ]
-        if endings.contains(v) { return sentence }
-
-        // Detect if sentence is mostly Chinese or English to pick the right period
-        let isChinese = sentence.unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) }
-        return sentence + (isChinese ? "。" : ".")
     }
 
     // MARK: - Model Management
@@ -259,16 +327,19 @@ class AppState: ObservableObject {
         guard FileManager.default.fileExists(atPath: path.path) else {
             isModelLoaded = false
             loadedModelName = ""
+            log("Model \(selectedModel.rawValue) not found at \(path.path)")
             return
         }
         isModelLoaded = false
         loadedModelName = ""
+        log("Loading model \(selectedModel.rawValue)...")
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
             let success = self.whisperBridge.loadModel(path: path.path)
             DispatchQueue.main.async {
                 self.isModelLoaded = success
                 self.loadedModelName = success ? self.selectedModel.displayName : ""
+                self.log(success ? "Model \(self.selectedModel.rawValue) loaded" : "Model \(self.selectedModel.rawValue) failed to load")
             }
         }
     }

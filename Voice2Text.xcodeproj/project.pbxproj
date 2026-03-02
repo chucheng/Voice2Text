@@ -8,40 +8,73 @@
 
 /* Begin PBXBuildFile section */
 		0B3E55E8EE1F4BA4F89039B8 /* Voice2TextApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257E4F6E36A9D0538A8C8460 /* Voice2TextApp.swift */; };
+		1CE6204696086B1559DF273D /* AppleSpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFCE46EBEF6F1D9D4AC98D4 /* AppleSpeechRecognizer.swift */; };
+		71BC54E749431CB1926B64D6 /* WhisperBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B743E6EBCCD2CEB90AF1569 /* WhisperBridge.swift */; };
 		745FB61AFC0BB0F202444E49 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9BD370F623D776BACF7302B /* AppDelegate.swift */; };
 		7518410A6E394FE6372B62FD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA3E3EC17A7601EFDA66D88 /* ContentView.swift */; };
 		82176D08A5BBCAD70BB88481 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA1436CBCDFBCD2045F2216 /* MenuBarView.swift */; };
+		ADE30F5B7B29DB40447CB373 /* WindowAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB59BC277616C02BAF0E751 /* WindowAccessor.swift */; };
 		AE65E69C48C7E7375C25B8CA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 686877A91928AF6DCF34133C /* Assets.xcassets */; };
 		E6213B1B124C726FA0331476 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D96081A4CA4C39943765931 /* AudioRecorder.swift */; };
 		EDB1AC2244343EDFE284226F /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8021D279BE4A8D57CAC845F5 /* AppState.swift */; };
+		F15CB9D664C05110F6A249C7 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2B8EDDD62BF49D3DAF3113F2 /* MetalKit.framework */; };
+		F2E4CBC7D009DD7FF7ED75A1 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7F2F9A3A2011A25FB2CA9E16 /* Accelerate.framework */; };
+		F59BB482B16AF3533D94B6A2 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B3A6C140990D4FC86814099 /* Metal.framework */; };
+		FFEA99508FFB6F6F49CD555B /* AnthropicClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A29669E65D4DB980F6DA71 /* AnthropicClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0B3A6C140990D4FC86814099 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		1AB59BC277616C02BAF0E751 /* WindowAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAccessor.swift; sourceTree = "<group>"; };
 		1CA2D5D489F1259F37D5C860 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		257E4F6E36A9D0538A8C8460 /* Voice2TextApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Voice2TextApp.swift; sourceTree = "<group>"; };
+		2B8EDDD62BF49D3DAF3113F2 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		4D96081A4CA4C39943765931 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
 		686877A91928AF6DCF34133C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6B743E6EBCCD2CEB90AF1569 /* WhisperBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperBridge.swift; sourceTree = "<group>"; };
+		6BFCE46EBEF6F1D9D4AC98D4 /* AppleSpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechRecognizer.swift; sourceTree = "<group>"; };
 		750BA70A1ADF91C2FFD1516E /* Voice2Text.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Voice2Text.entitlements; sourceTree = "<group>"; };
+		7F2F9A3A2011A25FB2CA9E16 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		8021D279BE4A8D57CAC845F5 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		8BA3E3EC17A7601EFDA66D88 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AD9EC33F2FDD613C1DB59147 /* Voice2Text.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Voice2Text.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BBA1436CBCDFBCD2045F2216 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		C0A29669E65D4DB980F6DA71 /* AnthropicClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicClient.swift; sourceTree = "<group>"; };
 		C9BD370F623D776BACF7302B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		F7524ADDFF9C1223A3FCAFAF /* Voice2Text-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Voice2Text-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		869E63D5B71A5A51BEA42E7F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F2E4CBC7D009DD7FF7ED75A1 /* Accelerate.framework in Frameworks */,
+				F59BB482B16AF3533D94B6A2 /* Metal.framework in Frameworks */,
+				F15CB9D664C05110F6A249C7 /* MetalKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		1B0AA5E7AC98F9FAE9933E14 /* Voice2Text */ = {
 			isa = PBXGroup;
 			children = (
+				C0A29669E65D4DB980F6DA71 /* AnthropicClient.swift */,
 				C9BD370F623D776BACF7302B /* AppDelegate.swift */,
+				6BFCE46EBEF6F1D9D4AC98D4 /* AppleSpeechRecognizer.swift */,
 				8021D279BE4A8D57CAC845F5 /* AppState.swift */,
 				686877A91928AF6DCF34133C /* Assets.xcassets */,
 				4D96081A4CA4C39943765931 /* AudioRecorder.swift */,
 				8BA3E3EC17A7601EFDA66D88 /* ContentView.swift */,
 				1CA2D5D489F1259F37D5C860 /* Info.plist */,
 				BBA1436CBCDFBCD2045F2216 /* MenuBarView.swift */,
+				F7524ADDFF9C1223A3FCAFAF /* Voice2Text-Bridging-Header.h */,
 				750BA70A1ADF91C2FFD1516E /* Voice2Text.entitlements */,
 				257E4F6E36A9D0538A8C8460 /* Voice2TextApp.swift */,
+				6B743E6EBCCD2CEB90AF1569 /* WhisperBridge.swift */,
+				1AB59BC277616C02BAF0E751 /* WindowAccessor.swift */,
 			);
 			path = Voice2Text;
 			sourceTree = "<group>";
@@ -54,10 +87,21 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		4B59874FA92801321C68E829 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7F2F9A3A2011A25FB2CA9E16 /* Accelerate.framework */,
+				0B3A6C140990D4FC86814099 /* Metal.framework */,
+				2B8EDDD62BF49D3DAF3113F2 /* MetalKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		A8E1A52009EC7464A2F52C90 = {
 			isa = PBXGroup;
 			children = (
 				1B0AA5E7AC98F9FAE9933E14 /* Voice2Text */,
+				4B59874FA92801321C68E829 /* Frameworks */,
 				31CD02CB5E148120493D5735 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -71,6 +115,7 @@
 			buildPhases = (
 				3DDA6C4CDA47CA2C03FC9568 /* Sources */,
 				F28CE1D41DD3B1130FC9E03D /* Resources */,
+				869E63D5B71A5A51BEA42E7F /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -127,12 +172,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FFEA99508FFB6F6F49CD555B /* AnthropicClient.swift in Sources */,
 				745FB61AFC0BB0F202444E49 /* AppDelegate.swift in Sources */,
 				EDB1AC2244343EDFE284226F /* AppState.swift in Sources */,
+				1CE6204696086B1559DF273D /* AppleSpeechRecognizer.swift in Sources */,
 				E6213B1B124C726FA0331476 /* AudioRecorder.swift in Sources */,
 				7518410A6E394FE6372B62FD /* ContentView.swift in Sources */,
 				82176D08A5BBCAD70BB88481 /* MenuBarView.swift in Sources */,
 				0B3E55E8EE1F4BA4F89039B8 /* Voice2TextApp.swift in Sources */,
+				71BC54E749431CB1926B64D6 /* WhisperBridge.swift in Sources */,
+				ADE30F5B7B29DB40447CB373 /* WindowAccessor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -202,14 +251,30 @@
 				CODE_SIGN_ENTITLEMENTS = Voice2Text/Voice2Text.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Whisper/include",
+				);
 				INFOPLIST_FILE = Voice2Text/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Whisper/lib",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = (
+					"-lwhisper",
+					"-lggml",
+					"-lggml-base",
+					"-lggml-cpu",
+					"-lggml-metal",
+					"-lggml-blas",
+					"-lc++",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.voice2text.Voice2Text;
 				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "Voice2Text/Voice2Text-Bridging-Header.h";
 			};
 			name = Debug;
 		};
@@ -220,14 +285,30 @@
 				CODE_SIGN_ENTITLEMENTS = Voice2Text/Voice2Text.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Whisper/include",
+				);
 				INFOPLIST_FILE = Voice2Text/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Whisper/lib",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = (
+					"-lwhisper",
+					"-lggml",
+					"-lggml-base",
+					"-lggml-cpu",
+					"-lggml-metal",
+					"-lggml-blas",
+					"-lc++",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.voice2text.Voice2Text;
 				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "Voice2Text/Voice2Text-Bridging-Header.h";
 			};
 			name = Release;
 		};
