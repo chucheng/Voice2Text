@@ -25,7 +25,7 @@ struct MenuBarView: View {
                 Text(script.rawValue).tag(script)
             }
         }
-        .onChange(of: appState.outputScript) { _ in
+        .onChange(of: appState.outputScript) {
             appState.updateDisplayScript()
         }
 
@@ -71,6 +71,9 @@ struct MenuBarView: View {
         .keyboardShortcut("o")
 
         Divider()
+
+        Toggle("Punctuation Restore", isOn: $appState.usePunctuationRestore)
+            .disabled(!appState.isPunctuationServerAvailable)
 
         Toggle("Dev Mode", isOn: $appState.devMode)
 

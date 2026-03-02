@@ -70,8 +70,24 @@ struct ContentView: View {
                 }
                 .pickerStyle(.segmented)
                 .fixedSize()
-                .onChange(of: appState.outputScript) { _ in
+                .onChange(of: appState.outputScript) {
                     appState.updateDisplayScript()
+                }
+            }
+
+            // Punctuation restore toggle
+            HStack(spacing: 8) {
+                Toggle("Punctuation", isOn: $appState.usePunctuationRestore)
+                    .disabled(!appState.isPunctuationServerAvailable)
+                    .toggleStyle(.checkbox)
+
+                if !appState.isPunctuationServerAvailable {
+                    Button("Check Server") {
+                        appState.checkPunctuationServer()
+                    }
+                    .controlSize(.small)
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.secondary)
                 }
             }
 
@@ -119,7 +135,11 @@ struct ContentView: View {
                 .disabled(appState.transcriptionText.isEmpty)
                 .controlSize(.large)
             }
-            .padding(.bottom)
+
+            Text("Hold Space to record")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.bottom)
 
             // Debug log (dev mode)
             if appState.devMode {
@@ -149,7 +169,7 @@ struct ContentView: View {
                             }
                         }
                         .frame(height: 100)
-                        .onChange(of: appState.debugLog.count) { _ in
+                        .onChange(of: appState.debugLog.count) {
                             if let last = appState.debugLog.indices.last {
                                 proxy.scrollTo(last, anchor: .bottom)
                             }
@@ -182,7 +202,7 @@ struct ContentView: View {
                     }
                 }
                 .frame(maxWidth: 220)
-                .onChange(of: appState.selectedModel) { newModel in
+                .onChange(of: appState.selectedModel) { _, newModel in
                     appState.switchModel(to: newModel)
                 }
 

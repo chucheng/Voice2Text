@@ -31,7 +31,7 @@ enum WhisperModel: String, CaseIterable, Identifiable {
 
 enum OutputScript: String, CaseIterable, Identifiable {
     case traditional = "繁體"
-    case simplified = "簡體"
+    case simplified = "简体"
 
     var id: String { rawValue }
 }
@@ -67,10 +67,15 @@ class AppState: ObservableObject {
     @Published var isLLMAvailable = false
     @Published var sttEngine: STTEngine = .whisper
     @Published var isNetworkAvailable = false
+    @Published var usePunctuationRestore = false
+    @Published var isPunctuationServerAvailable = false
     @Published var devMode = false
     @Published var debugLog: [String] = []
 
     private let networkMonitor = NWPathMonitor()
+    private var keyDownMonitor: Any?
+    private var keyUpMonitor: Any?
+    private var spaceHeld = false
 
     /// Weak reference to the main window, captured by WindowAccessor.
     /// Used by AppDelegate to reopen the window on Dock icon click.
@@ -114,6 +119,79 @@ class AppState: ObservableObject {
         networkMonitor.start(queue: DispatchQueue(label: "com.voice2text.network"))
 
         loadModelIfAvailable()
+        setupKeyboardShortcuts()
+        checkPunctuationServer()
+    }
+
+    // MARK: - Push-to-Talk (Spacebar)
+
+    private func isTextFieldFocused() -> Bool {
+        guard let responder = NSApp.keyWindow?.firstResponder else { return false }
+        return responder is NSTextView || responder is NSTextField
+    }
+
+    /// Returns the selected text in the currently focused NSTextView, if any.
+    private func selectedTextInFocusedView() -> String? {
+        guard let textView = NSApp.keyWindow?.firstResponder as? NSTextView else { return nil }
+        let range = textView.selectedRange()
+        guard range.length > 0, let str = textView.string as NSString? else { return nil }
+        return str.substring(with: range)
+    }
+
+    private func setupKeyboardShortcuts() {
+        keyDownMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self else { return event }
+
+            // Cmd+C: copy full transcription when nothing is selected
+            if event.modifierFlags.contains(.command),
+               event.charactersIgnoringModifiers == "c",
+               !self.transcriptionText.isEmpty {
+                // If text is selected in a text view, let native copy handle it
+                if let selected = self.selectedTextInFocusedView(), !selected.isEmpty {
+                    return event
+                }
+                // Otherwise copy entire transcription
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(self.transcriptionText, forType: .string)
+                self.log("Cmd+C: copied full transcription (\(self.transcriptionText.count) chars)")
+                return nil
+            }
+
+            // Spacebar push-to-talk
+            guard event.keyCode == 49,       // spacebar
+                  !self.isTextFieldFocused() // don't capture when editing text
+            else { return event }
+
+            // If already holding space, consume repeats silently (prevent system beep)
+            if self.spaceHeld {
+                return nil
+            }
+
+            guard !event.isARepeat else { return nil } // consume repeats even before hold starts
+
+            if !self.isRecording && self.canToggle {
+                self.spaceHeld = true
+                self.toggleRecording()
+                self.log("Push-to-talk: started (spacebar down)")
+            }
+            return nil // consume the event
+        }
+
+        keyUpMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyUp) { [weak self] event in
+            guard let self,
+                  event.keyCode == 49   // spacebar
+            else { return event }
+
+            if self.spaceHeld {
+                self.spaceHeld = false
+                if self.isRecording {
+                    self.toggleRecording()
+                    self.log("Push-to-talk: stopped (spacebar up)")
+                }
+                return nil // consume only when push-to-talk was active
+            }
+            return event // pass through normal space key ups
+        }
     }
 
     var canToggle: Bool {
@@ -257,10 +335,82 @@ class AppState: ObservableObject {
         return false
     }
 
-    /// Post-process whisper output: LLM reformat (if available) → script conversion.
+    // MARK: - Punctuation Restore
+
+    func checkPunctuationServer() {
+        PunctuationClient.shared.checkHealth { [weak self] ok in
+            guard let self else { return }
+            if ok {
+                self.isPunctuationServerAvailable = true
+                self.usePunctuationRestore = true
+                self.log("Punctuation server: available, enabled by default")
+            } else {
+                self.log("Punctuation server: unavailable, attempting auto-launch...")
+                self.autoLaunchPunctuationServer()
+            }
+        }
+    }
+
+    /// Try to launch PunctuationServer.app, then poll health until ready.
+    private func autoLaunchPunctuationServer() {
+        guard PunctuationClient.launchServer() else {
+            log("Punctuation server: .app not found in known locations")
+            isPunctuationServerAvailable = false
+            usePunctuationRestore = false
+            return
+        }
+        log("Punctuation server: launch attempted, waiting for startup...")
+
+        // Poll health every 2s, up to 60s (model download on first run can be slow)
+        let maxAttempts = 30
+        var attempt = 0
+        func poll() {
+            attempt += 1
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                guard let self else { return }
+                PunctuationClient.shared.checkHealth { [weak self] ok in
+                    guard let self else { return }
+                    if ok {
+                        self.isPunctuationServerAvailable = true
+                        self.usePunctuationRestore = true
+                        self.log("Punctuation server: ready after \(attempt * 2)s")
+                    } else if attempt < maxAttempts {
+                        poll()
+                    } else {
+                        self.isPunctuationServerAvailable = false
+                        self.usePunctuationRestore = false
+                        self.log("Punctuation server: failed to start after \(maxAttempts * 2)s")
+                    }
+                }
+            }
+        }
+        poll()
+    }
+
+    /// Post-process whisper output: punctuation restore → LLM reformat → script conversion.
     private func postProcess(_ text: String) {
         isReformatting = true
 
+        if usePunctuationRestore && isPunctuationServerAvailable {
+            log("Punctuation restore: sending \(text.count) chars...")
+            PunctuationClient.shared.restore(text) { [weak self] restored, error in
+                guard let self else { return }
+                if let restored {
+                    self.log("Punctuation restore: success (\(restored.count) chars)")
+                    self.rawTranscription = restored
+                    self.applyLLMAndConvert(restored)
+                } else {
+                    self.log("Punctuation restore failed: \(error ?? "unknown"). Passing through.")
+                    self.applyLLMAndConvert(text)
+                }
+            }
+        } else {
+            applyLLMAndConvert(text)
+        }
+    }
+
+    /// Apply LLM reformat (if enabled) then script conversion.
+    private func applyLLMAndConvert(_ text: String) {
         if useLLMReformat, let client = anthropicClient {
             log("LLM reformat: sending to Claude...")
             client.reformatText(text) { [weak self] result, error in
@@ -270,7 +420,7 @@ class AppState: ObservableObject {
                         self.log("LLM reformat: success (\(result.count) chars)")
                         self.transcriptionText = self.convertScript(result)
                     } else {
-                        self.log("LLM reformat failed: \(error ?? "unknown error"). Falling back to NLTokenizer.")
+                        self.log("LLM reformat failed: \(error ?? "unknown error"). Falling back.")
                         self.isLLMAvailable = false
                         self.useLLMReformat = false
                         self.transcriptionText = self.convertScript(text)
@@ -371,6 +521,7 @@ class AppState: ObservableObject {
 
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: nil)
         let task = session.downloadTask(with: model.downloadURL) { [weak self] tmpURL, _, error in
+            session.finishTasksAndInvalidate()
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.isDownloadingModel = false

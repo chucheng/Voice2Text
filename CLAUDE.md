@@ -12,12 +12,20 @@ Shows in both the menu bar (MenuBarExtra) and the Dock.
 - **Requirements**: macOS 14+, Xcode 15+
 - **Sandbox**: App Sandbox enabled with audio-input + network-client entitlements
 
-## Current Status: Dual STT Engine Support
+## Current Status: Dual STT Engine + Punctuation Restore
 Full voice-to-text pipeline working with two engines:
-- **Whisper**: record → resample → whisper inference → script conversion → display
+- **Whisper**: record → resample → whisper inference → punctuation restore → script conversion → display
 - **Apple Speech**: record → stream buffers → real-time recognition → script conversion → display
 
 Models downloaded on-demand from HuggingFace to `~/Library/Application Support/Voice2Text/`.
+
+### Punctuation Server
+- Standalone BERT-based server for Chinese punctuation restoration
+- Can run from source (`python scripts/punctuation_server.py`) or as packaged `.app`
+- PyInstaller spec + build script in `scripts/` for packaging as `PunctuationServer.app`
+- Models cached to `~/Library/Application Support/PunctuationServer/models/`
+- Voice2Text auto-launches the server app if found in known locations
+- `PunctuationClient.swift` handles health checks, restoration requests, and auto-launch
 
 ### Known Bugs
 - **Dock icon click does not reopen main window**: `applicationShouldHandleReopen` IS called (confirmed via os_log), but the SwiftUI `Window` scene destroys the NSWindow on close. `canBecomeMain` finds no windows. `openWindow(id:)` is only available inside SwiftUI views, not from AppDelegate.
@@ -27,22 +35,27 @@ Models downloaded on-demand from HuggingFace to `~/Library/Application Support/V
 | File | Purpose |
 |------|---------|
 | `Voice2Text/Voice2TextApp.swift` | @main entry point, MenuBarExtra + Window scene |
-| `Voice2Text/AppState.swift` | Shared ObservableObject: recording, transcription, model management, dual STT engines, script conversion, debug logging |
+| `Voice2Text/AppState.swift` | Shared ObservableObject: recording, transcription, model management, dual STT engines, script conversion, keyboard shortcuts, debug logging |
 | `Voice2Text/MenuBarView.swift` | Menu bar dropdown: Start/Stop, model picker, script toggle, Dev Mode, Output Script, Open Window, Quit |
 | `Voice2Text/ContentView.swift` | Main window: model picker, STT engine picker, script picker, status indicator, editable transcription, Copy button, debug log |
 | `Voice2Text/AudioRecorder.swift` | AVAudioEngine + AVAudioConverter (16kHz mono Float32), dual-purpose tap for whisper + Apple Speech |
 | `Voice2Text/WhisperBridge.swift` | Swift wrapper around whisper.cpp C API: load model, run inference on background queue |
 | `Voice2Text/AppleSpeechRecognizer.swift` | Apple SFSpeechRecognizer wrapper: streaming recognition with partial results |
+| `Voice2Text/PunctuationClient.swift` | HTTP client + auto-launcher for punctuation server |
 | `Voice2Text/AnthropicClient.swift` | Claude API client for text reformatting (feature currently greyed out) |
 | `Voice2Text/Voice2Text-Bridging-Header.h` | `#include "whisper.h"` for Swift-C interop |
 | `Voice2Text/AppDelegate.swift` | Handles Dock icon click to reopen main window |
 | `Voice2Text/WindowAccessor.swift` | Captures NSWindow reference for AppDelegate |
 | `Voice2Text/Info.plist` | NSMicrophoneUsageDescription, NSSpeechRecognitionUsageDescription |
 | `Voice2Text/Voice2Text.entitlements` | App Sandbox + audio-input + network-client |
-| `Voice2Text/Assets.xcassets/Contents.json` | Asset catalog stub |
+| `Voice2Text/Assets.xcassets/` | Asset catalog with app icon (all macOS sizes) |
 | `Whisper/lib/` | Pre-built static libraries (libwhisper, libggml, libggml-base, libggml-cpu, libggml-metal, libggml-blas) |
 | `Whisper/include/` | Header files (whisper.h, ggml*.h) |
 | `project.yml` | xcodegen spec with bridging header, library paths, SDK dependencies |
+| `scripts/punctuation_server.py` | Chinese punctuation restoration server (Python) |
+| `scripts/PunctuationServer.spec` | PyInstaller spec for building .app |
+| `scripts/build_app.sh` | Build script for PunctuationServer.app |
+| `scripts/requirements.txt` | Python dependencies (torch, transformers, pyinstaller) |
 
 ## Architecture Notes
 - `AppState` is the single source of truth, shared via `@EnvironmentObject`
@@ -54,7 +67,8 @@ Models downloaded on-demand from HuggingFace to `~/Library/Application Support/V
 - If whisper outputs non-Chinese/English text (wrong language detection), auto-retries with `language="zh"`
 - Apple Speech uses `zh-Hant` locale which handles mixed Chinese+English natively
 - Apple Speech requires network — NWPathMonitor detects connectivity in real-time
-- Post-processing pipeline: STT output → Simplified/Traditional Chinese conversion
+- Post-processing pipeline: STT output → punctuation restore (optional) → Simplified/Traditional Chinese conversion
+- Punctuation server auto-launched from `/Applications/`, `~/Applications/`, or bundle-adjacent location
 - Script conversion uses Foundation `StringTransform` (`Hans-Hant` / `Hant-Hans`) — zero dependencies
 - Model selection persisted via `UserDefaults`
 - Models stored in `~/Library/Application Support/Voice2Text/`
@@ -62,6 +76,9 @@ Models downloaded on-demand from HuggingFace to `~/Library/Application Support/V
 - Transcription text is editable by the user after transcription
 - Dev mode (off by default) shows debug log panel with timestamped entries
 - LLM reformat feature exists in code but is greyed out (company proxy limitation)
+- Keyboard shortcuts: Spacebar push-to-talk, Cmd+C copies full transcription (or selection if any)
+- Punctuation restore enabled by default when server is available; greyed out when unavailable
+- App icon: blue gradient with microphone, sound waves, text lines, "V2T" label
 
 ## TODO (Next Steps)
 1. **FIX: Dock icon reopen window** — see Known Bugs above; highest priority
