@@ -1,22 +1,41 @@
-# Voice2Text
+# Voice2Text — Open-Source Whisper Voice Input for macOS
 
-A macOS menu bar app for voice-to-text transcription using whisper.cpp and Apple Speech Recognition, built with SwiftUI and AVAudioEngine.
+**Free, open-source, offline voice-to-text for macOS.** Hold a hotkey, speak, and your words appear at the cursor — in any app.
+
+**免費、開源、離線語音輸入工具。** 按住快捷鍵說話，文字自動出現在游標位置 — 在任何應用程式中都能使用。
+
+---
+
+> **Currently supports Chinese + English mixed input.**
+> Other languages are not yet supported out of the box, but Whisper itself supports 99 languages — adding a new language is straightforward. See [Adding Other Languages](#adding-other-languages) below.
+>
+> **目前支援中文與英文混合輸入。**
+> 尚未內建其他語言支援，但 Whisper 本身支援 99 種語言 — 新增語言非常簡單，請參考下方說明。
+
+---
+
+## How It Works
+
+1. **Hold ⌘;** from any app (browser, terminal, chat, editor...)
+2. **Speak** in Chinese, English, or both
+3. **Release** — text is transcribed and pasted at your cursor
+
+That's it. No window switching, no copy-paste. Powered by [whisper.cpp](https://github.com/ggerganov/whisper.cpp) running entirely on your Mac — no cloud, no API keys, no subscription.
 
 ## Features
 
+- **Global hotkey (⌘;)** — hold from any app to record, release to auto-paste at cursor
 - **Dual STT engines** — whisper.cpp (offline) and Apple Speech Recognition (online, streaming)
 - **Mixed Chinese + English** speech recognition
-- **Simplified/Traditional Chinese** output toggle via Foundation StringTransform
+- **Simplified/Traditional Chinese** output toggle
 - **Multiple whisper models** — tiny, base, small, medium, large-v3-turbo (downloaded on-demand)
-- **Auto language retry** — detects wrong language output and retries with Chinese
-- **Push-to-talk** — hold Spacebar to record, release to transcribe
-- **Global hotkey (⌘;)** — hold from any app to record, release to auto-paste transcription at cursor
-- **Floating indicator** — compact pill-shaped panel shows recording/transcribing/done status
-- **Punctuation restoration** — BERT-based server adds punctuation automatically (enabled by default when server available)
+- **Push-to-talk** — hold Spacebar to record in-app, release to transcribe
+- **Floating indicator** — compact pill shows recording/transcribing/done status
+- **Punctuation restoration** — optional BERT server adds punctuation automatically
+- **Customizable shortcut** — change the global hotkey in Settings
 - **Editable transcription** — edit text inline after transcription
-- **Cmd+C smart copy** — copies full transcription when nothing selected, or copies selection
+- **Cmd+C smart copy** — copies full transcription when nothing selected
 - **Dev mode** — debug log panel for troubleshooting
-- Custom app icon
 - Menu bar + Dock presence
 
 ## Installation (Non-Developer)
@@ -132,7 +151,51 @@ Mic → AVAudioEngine → AVAudioConverter (16kHz mono) ─┬─→ Whisper inf
 | Whisper | Downloaded model | Batch (record then transcribe) | Offline use, accuracy |
 | Apple Speech | Network connection | Streaming (real-time) | Quick dictation, live preview |
 
-Both engines support mixed Chinese + English speech.
+Both engines currently support mixed Chinese + English speech.
+
+## Adding Other Languages
+
+Whisper supports [99 languages](https://github.com/openai/whisper#available-models-and-languages). Voice2Text is currently tuned for Chinese + English, but adding another language requires only a few changes:
+
+### Step 1: Change the Whisper language parameter
+
+In `AppState.swift`, find the `transcribe()` method:
+
+```swift
+transcribe(samples: samples, language: "auto")
+```
+
+Change `"auto"` to your target language code (e.g., `"ja"` for Japanese, `"ko"` for Korean, `"es"` for Spanish). Or keep `"auto"` and remove the Chinese-specific retry logic.
+
+### Step 2: Remove or adapt the language retry logic
+
+The `containsUnexpectedLanguage()` method in `AppState.swift` checks for non-Chinese/English characters and retries with `language="zh"`. For other languages, either:
+- **Remove it** — delete the retry check in `transcribe()` and just use the first result
+- **Adapt it** — modify `containsUnexpectedLanguage()` to check for your target language's Unicode ranges instead
+
+### Step 3: Change Apple Speech locale (optional)
+
+In `AppleSpeechRecognizer.swift`, the recognizer is initialized with `zh-Hant` (Traditional Chinese):
+
+```swift
+private let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-Hant"))
+```
+
+Change this to your target locale (e.g., `"ja-JP"`, `"ko-KR"`, `"es-ES"`). You can also make this configurable via the UI.
+
+### Step 4: Remove or adapt script conversion (optional)
+
+The `convertScript()` method in `AppState.swift` converts between Simplified and Traditional Chinese. For non-Chinese languages, you can simply remove this step or replace it with your own post-processing.
+
+### Step 5: Punctuation server (optional)
+
+The bundled punctuation server uses a Chinese-specific BERT model. For other languages, either:
+- Disable punctuation restore (it's optional)
+- Replace the model in `scripts/punctuation_server.py` with one that supports your language
+
+### That's it!
+
+With these changes, Voice2Text will work with any language that Whisper supports. Pull requests for multi-language support are welcome.
 
 ## Available Whisper Models
 
