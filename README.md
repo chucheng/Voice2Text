@@ -256,16 +256,19 @@ project.yml                      # XcodeGen spec
 
 ## License
 
-This project is available under the **MIT License**.
+This project is licensed under the **GNU General Public License v3.0** — see the [LICENSE](LICENSE) file for details.
 
 ### Third-Party Licenses
 
-| Dependency | License |
-|-----------|---------|
-| [whisper.cpp](https://github.com/ggerganov/whisper.cpp) | MIT |
-| [XcodeGen](https://github.com/yonaskolb/XcodeGen) | MIT |
-| [PyTorch](https://github.com/pytorch/pytorch) | BSD |
-| [Hugging Face Transformers](https://github.com/huggingface/transformers) | Apache 2.0 |
-| [PyInstaller](https://github.com/pyinstaller/pyinstaller) | GPL 2.0 (with bootloader exception) |
-| [zh-wiki-punctuation-restore](https://huggingface.co/p208p2002/zh-wiki-punctuation-restore) | Unspecified |
-| Apple Frameworks (SwiftUI, AVFoundation, Speech) | Proprietary (Apple SDK) |
+Full license texts are available in [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES).
+
+| Dependency | License | Bundled? |
+|-----------|---------|----------|
+| [whisper.cpp](https://github.com/ggerganov/whisper.cpp) | MIT | Yes (static lib) |
+| [OpenAI Whisper models](https://github.com/openai/whisper) | MIT | Downloaded at runtime |
+| [PyTorch](https://github.com/pytorch/pytorch) | BSD 3-Clause | In PunctuationServer.app |
+| [Hugging Face Transformers](https://github.com/huggingface/transformers) | Apache 2.0 | In PunctuationServer.app |
+| [PyInstaller](https://github.com/pyinstaller/pyinstaller) | GPL 2.0 (bootloader exception) | Bootloader only |
+| [zh-wiki-punctuation-restore](https://huggingface.co/p208p2002/zh-wiki-punctuation-restore) | Not specified | Downloaded at runtime |
+| [XcodeGen](https://github.com/yonaskolb/XcodeGen) | MIT | Build tool only |
+| Apple Frameworks (SwiftUI, AVFoundation, Speech, Carbon) | Apple SDK | OS-provided |
