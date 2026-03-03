@@ -10,9 +10,15 @@ final class AnthropicClient {
               !token.isEmpty, !base.isEmpty
         else { return nil }
 
-        // Security: warn if base URL is not HTTPS (credentials sent in cleartext)
+        // Security: reject if base URL is not HTTPS (credentials would be sent in cleartext)
+        // Exception: allow localhost HTTP for local proxy/dev setups
+        let isLocalhost = base.hasPrefix("http://127.0.0.1") || base.hasPrefix("http://localhost")
+        if !base.hasPrefix("https://") && !isLocalhost {
+            print("[AnthropicClient] REJECTED: ANTHROPIC_BASE_URL uses plaintext HTTP to a non-localhost host — refusing to send API key in cleartext")
+            return nil
+        }
         if !base.hasPrefix("https://") {
-            print("[AnthropicClient] WARNING: ANTHROPIC_BASE_URL uses plaintext HTTP — API key may be intercepted")
+            print("[AnthropicClient] WARNING: ANTHROPIC_BASE_URL uses plaintext HTTP (localhost exempted)")
         }
 
         return AnthropicClient(baseURL: base, authToken: token)

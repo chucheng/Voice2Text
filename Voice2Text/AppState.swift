@@ -675,11 +675,29 @@ class AppState: ObservableObject {
                 GlobalHotkeyManager.pasteFromClipboard()
                 FloatingRecordingPanel.shared.showDoneAndHide()
                 self.log("Global hotkey: auto-pasted")
+                // Security: clear clipboard after paste to reduce exposure window
+                self.scheduleClipboardClear()
             }
         } else {
             FloatingRecordingPanel.shared.showDoneAndHide()
             log("Global hotkey: accessibility not granted, skipping auto-paste")
         }
+    }
+
+    /// Clear clipboard after a short delay post-paste to reduce exposure window.
+    private var clipboardClearTimer: DispatchWorkItem?
+    private func scheduleClipboardClear() {
+        clipboardClearTimer?.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            // Only clear if clipboard still contains our text
+            if let current = NSPasteboard.general.string(forType: .string),
+               current == self?.transcriptionText {
+                NSPasteboard.general.clearContents()
+                self?.log("Clipboard cleared (security)")
+            }
+        }
+        clipboardClearTimer = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 30, execute: item)
     }
 
     func refreshAccessibilityStatus() {

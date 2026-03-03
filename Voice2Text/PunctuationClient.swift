@@ -89,10 +89,27 @@ final class PunctuationClient {
         return nil
     }
 
+    /// Verify that the app bundle at the given URL has a valid code signature.
+    /// Returns true if signed (ad-hoc or with identity), false if unsigned or tampered.
+    private static func isCodeSignatureValid(at url: URL) -> Bool {
+        var staticCode: SecStaticCode?
+        let createStatus = SecStaticCodeCreateWithPath(url as CFURL, [], &staticCode)
+        guard createStatus == errSecSuccess, let code = staticCode else { return false }
+        // kSecCSBasicValidateOnly checks that the signature is intact (not tampered)
+        let validateStatus = SecStaticCodeCheckValidity(code, SecCSFlags(rawValue: 0), nil)
+        return validateStatus == errSecSuccess
+    }
+
     /// Launch PunctuationServer.app if found. Returns true if launch was attempted.
     @discardableResult
     static func launchServer() -> Bool {
         guard let appURL = findServerApp() else { return false }
+
+        // Security: verify code signature before launching external app
+        guard isCodeSignatureValid(at: appURL) else {
+            print("[PunctuationClient] REJECTED: PunctuationServer.app at \(appURL.path) has invalid or missing code signature")
+            return false
+        }
 
         let config = NSWorkspace.OpenConfiguration()
         config.activates = false  // Launch in background

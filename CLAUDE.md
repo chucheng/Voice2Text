@@ -123,14 +123,17 @@ Upgrade installs auto-detect existing models (no re-download needed).
 
 ## Security
 - Punctuation server: body size limit (1MB), text length limit (50K chars), ThreadingHTTPServer
-- AnthropicClient: warns at runtime if ANTHROPIC_BASE_URL uses plaintext HTTP
+- AnthropicClient: rejects non-localhost plaintext HTTP base URLs (returns nil); localhost HTTP allowed for dev setups
+- WhisperBridge: language parameter validated against allowlist before passing to C layer
+- Clipboard auto-clear: after global hotkey auto-paste, clipboard is cleared after 30s (only if still contains our text)
+- PunctuationServer launch: code signature verified via `SecStaticCodeCheckValidity` before launching external .app
 - Debug logs redacted: only char counts logged, no transcription content
 - Hardened Runtime enabled; entitlements minimal (sandbox + audio-input + network-client)
 - No hardcoded secrets in source code
 - Accessibility permission: only used for CGEvent paste simulation, checked via `AXIsProcessTrusted()`
 - Upgrade detection: `@AppStorage("accessibilityWasGranted")` tracks prior grant; guides user to remove+re-add in System Settings after upgrade
 - Permission checks delayed 1s after init for SwiftUI alert readiness; also triggered after onboarding completion
-- Remaining accepted risks: localhost HTTP for punctuation IPC, no model checksum verification
+- Remaining accepted risks: localhost HTTP for punctuation IPC (no auth token), no model checksum verification, CGEvent paste targets frontmost app without verification
 
 ## TODO (Next Steps)
 1. **WAV Export** — write audio buffer to file for batch processing
