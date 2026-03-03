@@ -397,22 +397,12 @@ enum L {
     static var apiCredentialsSection: String {
         lang == .english ? "API Credentials" : "API 凭证"
     }
-    static var baseURLLabel: String {
-        lang == .english ? "Base URL" : "Base URL"
-    }
-    static var baseURLPlaceholder: String {
-        lang == .english ? "https://api.anthropic.com" : "https://api.anthropic.com"
-    }
-    static var modelLabel: String {
-        lang == .english ? "Model" : "模型"
-    }
+    static var baseURLLabel: String { "BASE_URL" }
+    static var baseURLPlaceholder: String { "https://api.anthropic.com" }
+    static var modelLabel: String { "MODEL" }
     static var modelPlaceholder: String { AnthropicClient.defaultModel }
-    static var apiTokenLabel: String {
-        lang == .english ? "API Token" : "API Token"
-    }
-    static var apiTokenPlaceholder: String {
-        lang == .english ? "sk-ant-..." : "sk-ant-..."
-    }
+    static var apiTokenLabel: String { "AUTH_TOKEN" }
+    static var apiTokenPlaceholder: String { "sk-ant-..." }
     static var saveToken: String {
         lang == .english ? "Save Token" : "保存 Token"
     }
@@ -455,6 +445,9 @@ enum L {
         lang == .english ? "Revise failed — using original text" : "修订失败 — 使用原始文本"
     }
     static var invalidBaseURL: String {
-        lang == .english ? "Invalid URL (must be HTTPS, or HTTP localhost)" : "无效 URL（必须为 HTTPS，或 HTTP localhost）"
+        lang == .english ? "Invalid URL (must start with http:// or https://)" : "无效 URL（必须以 http:// 或 https:// 开头）"
+    }
+    static var insecureURLWarning: String {
+        lang == .english ? "Warning: HTTP sends credentials in cleartext" : "警告：HTTP 以明文发送凭证"
     }
 }

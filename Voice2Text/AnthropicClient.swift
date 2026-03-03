@@ -31,13 +31,17 @@ final class AnthropicClient {
 
         """
 
-    /// Validate that a base URL is safe to send credentials to.
-    /// Allows HTTPS always, and HTTP only for localhost/127.0.0.1.
+    /// Validate that a base URL has a valid scheme (http or https).
     static func isValidBaseURL(_ urlString: String) -> Bool {
         guard !urlString.isEmpty else { return false }
-        if urlString.hasPrefix("https://") { return true }
+        return urlString.hasPrefix("https://") || urlString.hasPrefix("http://")
+    }
+
+    /// Returns true if the URL uses plaintext HTTP to a non-localhost host.
+    static func isInsecureURL(_ urlString: String) -> Bool {
+        guard urlString.hasPrefix("http://") else { return false }
         let isLocalhost = urlString.hasPrefix("http://127.0.0.1") || urlString.hasPrefix("http://localhost")
-        return isLocalhost
+        return !isLocalhost
     }
 
     init(baseURL: String, authToken: String, model: String = AnthropicClient.defaultModel) {

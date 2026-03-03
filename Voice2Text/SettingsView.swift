@@ -363,37 +363,51 @@ private struct DangerousZoneTab: View {
 
             Section(L.apiCredentialsSection) {
                 // Base URL
-                TextField(L.baseURLPlaceholder, text: $appState.dangerousZoneBaseURL)
-                    .textFieldStyle(.roundedBorder)
-                    .onChange(of: appState.dangerousZoneBaseURL) {
-                        appState.resetAPICheckState()
-                    }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L.baseURLLabel).font(.caption).foregroundColor(.secondary)
+                    TextField(L.baseURLPlaceholder, text: $appState.dangerousZoneBaseURL)
+                        .textFieldStyle(.roundedBorder)
+                        .onChange(of: appState.dangerousZoneBaseURL) {
+                            appState.resetAPICheckState()
+                        }
+                }
                 if !isBaseURLValid {
                     Text(L.invalidBaseURL)
                         .font(.caption)
                         .foregroundColor(.red)
                 }
+                if AnthropicClient.isInsecureURL(appState.dangerousZoneBaseURL) {
+                    Text(L.insecureURLWarning)
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
 
                 // Model
-                TextField(L.modelPlaceholder, text: $appState.dangerousZoneModel)
-                    .textFieldStyle(.roundedBorder)
-                    .onChange(of: appState.dangerousZoneModel) {
-                        appState.resetAPICheckState()
-                    }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L.modelLabel).font(.caption).foregroundColor(.secondary)
+                    TextField(L.modelPlaceholder, text: $appState.dangerousZoneModel)
+                        .textFieldStyle(.roundedBorder)
+                        .onChange(of: appState.dangerousZoneModel) {
+                            appState.resetAPICheckState()
+                        }
+                }
 
                 // API Token
-                HStack {
-                    if showToken {
-                        TextField(L.apiTokenPlaceholder, text: $tokenInput)
-                            .textFieldStyle(.roundedBorder)
-                    } else {
-                        SecureField(L.apiTokenPlaceholder, text: $tokenInput)
-                            .textFieldStyle(.roundedBorder)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L.apiTokenLabel).font(.caption).foregroundColor(.secondary)
+                    HStack {
+                        if showToken {
+                            TextField(L.apiTokenPlaceholder, text: $tokenInput)
+                                .textFieldStyle(.roundedBorder)
+                        } else {
+                            SecureField(L.apiTokenPlaceholder, text: $tokenInput)
+                                .textFieldStyle(.roundedBorder)
+                        }
+                        Button(action: { showToken.toggle() }) {
+                            Image(systemName: showToken ? "eye.slash" : "eye")
+                        }
+                        .buttonStyle(.borderless)
                     }
-                    Button(action: { showToken.toggle() }) {
-                        Image(systemName: showToken ? "eye.slash" : "eye")
-                    }
-                    .buttonStyle(.borderless)
                 }
 
                 HStack(spacing: 8) {
