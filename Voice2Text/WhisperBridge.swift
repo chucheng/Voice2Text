@@ -22,11 +22,27 @@ final class WhisperBridge {
     ///   - samples: PCM Float32 audio at 16kHz
     ///   - language: "zh" for Chinese, "en" for English, or "auto" for auto-detect
     ///   - completion: Called on main thread with transcribed text (empty string on failure)
+    /// Allowed language codes for whisper inference.
+    private static let allowedLanguages: Set<String> = [
+        "auto", "zh", "en", "ja", "ko", "de", "fr", "es", "pt", "ru", "it", "nl",
+        "pl", "tr", "sv", "da", "fi", "no", "hu", "cs", "ro", "bg", "el", "hr",
+        "sk", "sl", "lt", "lv", "et", "mt", "sq", "mk", "sr", "bs", "uk", "be",
+        "ca", "gl", "eu", "af", "cy", "ga", "gd", "is", "lb", "ms", "id", "tl",
+        "vi", "th", "hi", "bn", "ta", "te", "mr", "ur", "ne", "si", "km", "lo",
+        "my", "ka", "am", "sw", "yo", "ig", "ha", "so", "ar", "he", "fa", "ps",
+        "az", "uz", "kk", "ky", "tg", "tk", "mn", "bo", "jw", "su", "ht", "mg",
+        "oc", "br", "as", "nn", "ml", "kn", "gu", "pa", "or", "sa", "tt", "ba",
+        "sn", "ln", "fo", "mi", "yi", "la", "haw", "sd", "ug", "tk"
+    ]
+
     func transcribe(samples: [Float], language: String, completion: @escaping (String) -> Void) {
         guard let ctx else {
             DispatchQueue.main.async { completion("") }
             return
         }
+
+        // Security: validate language against allowlist before passing to C layer
+        let safeLanguage = Self.allowedLanguages.contains(language) ? language : "auto"
 
         inferenceQueue.async {
             var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
@@ -39,7 +55,7 @@ final class WhisperBridge {
             params.no_timestamps = true
             params.n_threads = max(1, Int32(ProcessInfo.processInfo.activeProcessorCount - 1))
 
-            let result = language.withCString { langPtr in
+            let result = safeLanguage.withCString { langPtr in
                 params.language = langPtr
                 return samples.withUnsafeBufferPointer { buf in
                     whisper_full(ctx, params, buf.baseAddress, Int32(buf.count))
