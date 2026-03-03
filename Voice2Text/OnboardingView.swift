@@ -250,6 +250,7 @@ struct OnboardingView: View {
                 if appState.isAccessibilityGranted {
                     Button("Continue") {
                         appState.onboardingCompleted = true
+                        appState.checkPermissionsOnLaunch()
                     }
                     .controlSize(.large)
                     .buttonStyle(.borderedProminent)
@@ -257,6 +258,7 @@ struct OnboardingView: View {
                     Button("Skip for Now") {
                         appState.globalHotkeyEnabled = true
                         appState.onboardingCompleted = true
+                        appState.checkPermissionsOnLaunch()
                     }
                     .controlSize(.large)
                     .buttonStyle(.bordered)

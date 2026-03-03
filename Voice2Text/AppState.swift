@@ -52,7 +52,7 @@ class AppState: ObservableObject {
     @Published var isTranscribing = false
     @Published var transcriptionText = ""
     @Published var isReformatting = false
-    @Published var outputScript: OutputScript = .traditional
+    @Published var outputScript: OutputScript = .simplified
     @Published var selectedModel: WhisperModel = {
         if let saved = UserDefaults.standard.string(forKey: "selectedModel"),
            let model = WhisperModel(rawValue: saved) {
@@ -143,7 +143,10 @@ class AppState: ObservableObject {
         checkPunctuationServer()
         setupGlobalHotkey()
         refreshAccessibilityStatus()
-        checkPermissionsOnLaunch()
+        // Delay permission checks to allow SwiftUI view to be ready for alerts
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            self?.checkPermissionsOnLaunch()
+        }
     }
 
     // MARK: - Push-to-Talk (Spacebar)
@@ -671,7 +674,7 @@ class AppState: ObservableObject {
 
     // MARK: - Permission Checks on Launch
 
-    private func checkPermissionsOnLaunch() {
+    func checkPermissionsOnLaunch() {
         guard onboardingCompleted else { return }
 
         // Check microphone permission
