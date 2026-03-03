@@ -441,8 +441,8 @@ enum L {
     }
     static var postEditReviseDescription: String {
         lang == .english
-            ? "After transcription, send text through Claude to improve clarity and flow. Falls back to original text on failure."
-            : "转写完成后，通过 Claude 改善文本的清晰度和流畅性。失败时回退到原始文本。"
+            ? "Send transcription through Claude for post-editing:\n• Auto-punctuation for all languages (no BERT server needed)\n• English: fix spelling typos & grammar (tense, articles, agreement)\n• Chinese: correct misheard words & add proper punctuation\n• All languages: improve clarity while preserving original meaning\nFalls back gracefully on failure."
+            : "将转写文本通过 Claude 进行后期编辑：\n• 自动为所有语言添加标点（无需 BERT 服务器）\n• 英文：修正拼写错误和语法（时态、冠词、主谓一致）\n• 中文：纠正误听词汇并添加正确标点\n• 所有语言：在保留原意的前提下提升清晰度\n失败时自动回退。"
     }
     static var reviseFailedBanner: String {
         lang == .english ? "Revise failed — using original text" : "修订失败 — 使用原始文本"
@@ -455,6 +455,12 @@ enum L {
     }
     static var resetToDefault: String {
         lang == .english ? "Reset to Default" : "恢复默认"
+    }
+    static var savePrompt: String {
+        lang == .english ? "Save" : "保存"
+    }
+    static var saved: String {
+        lang == .english ? "Saved" : "已保存"
     }
     static var punctuationHandledByRevise: String {
         lang == .english ? "Handled by Post-Edit Revise" : "由后编辑修订处理"

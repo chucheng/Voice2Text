@@ -37,6 +37,7 @@ final class AnthropicClient {
         8. Do NOT expand or add new ideas.
         9. Do NOT change the speaker's intent.
         10. If a sentence is ambiguous, make the smallest possible correction without guessing new meaning.
+        11. For English text: pay special attention to spelling typos, grammar errors (subject-verb agreement, tense, articles), and word choice errors caused by speech recognition.
 
         CRITICAL: Your response must contain ONLY the corrected transcript text — nothing else. No explanations, no commentary, no preamble, no reasoning, no meta-discussion. If you cannot improve the text, return it exactly as-is.
 

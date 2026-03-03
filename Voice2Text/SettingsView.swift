@@ -30,7 +30,7 @@ struct SettingsView: View {
                     Label(L.dangerousZoneTab, systemImage: "exclamationmark.triangle")
                 }
         }
-        .frame(minWidth: 400, idealWidth: 450, minHeight: 350, idealHeight: 500)
+        .frame(minWidth: 480, idealWidth: 560, minHeight: 400, idealHeight: 600)
     }
 }
 
@@ -322,6 +322,8 @@ private struct DangerousZoneTab: View {
     @State private var tokenInput = ""
     @State private var showToken = false
     @State private var tokenSavedFeedback = false
+    @State private var promptDraft = ""
+    @State private var promptSavedFeedback = false
 
     private var isBaseURLValid: Bool {
         appState.dangerousZoneBaseURL.isEmpty || AnthropicClient.isValidBaseURL(appState.dangerousZoneBaseURL)
@@ -481,17 +483,39 @@ private struct DangerousZoneTab: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Spacer()
+
+                            if promptDraft != appState.customRevisePrompt {
+                                Button(L.savePrompt) {
+                                    appState.customRevisePrompt = promptDraft
+                                    promptSavedFeedback = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                        promptSavedFeedback = false
+                                    }
+                                }
+                                .font(.caption)
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.small)
+                            }
+
+                            if promptSavedFeedback {
+                                Label(L.saved, systemImage: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                            }
+
                             Button(L.resetToDefault) {
+                                promptDraft = AnthropicClient.revisePrompt
                                 appState.customRevisePrompt = AnthropicClient.revisePrompt
                             }
                             .font(.caption)
                             .buttonStyle(.borderless)
-                            .disabled(appState.customRevisePrompt == AnthropicClient.revisePrompt)
+                            .disabled(promptDraft == AnthropicClient.revisePrompt)
                         }
-                        TextEditor(text: $appState.customRevisePrompt)
+                        TextEditor(text: $promptDraft)
                             .font(.system(size: 11, design: .monospaced))
-                            .frame(minHeight: 80, maxHeight: 120)
+                            .frame(minHeight: 120, maxHeight: 300)
                     }
+                    .onAppear { promptDraft = appState.customRevisePrompt }
                 }
             }
         }
