@@ -77,7 +77,6 @@ struct ContentView: View {
                     .background(Capsule().fill(Color.orange))
                     .padding(.bottom, 52)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .animation(.easeInOut(duration: 0.3), value: appState.reviseFailed)
             }
         }
         .background(.regularMaterial)

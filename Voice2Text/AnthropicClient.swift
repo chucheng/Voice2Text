@@ -31,8 +31,6 @@ final class AnthropicClient {
 
         """
 
-    static let reviseFallbackPrompt = "revise, no preamble: "
-
     /// Validate that a base URL is safe to send credentials to.
     /// Allows HTTPS always, and HTTP only for localhost/127.0.0.1.
     static func isValidBaseURL(_ urlString: String) -> Bool {

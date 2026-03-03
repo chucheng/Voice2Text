@@ -111,6 +111,9 @@ class AppState: ObservableObject {
     @Published var showAccessibilityUpgradeAlert = false
     @Published var isMicrophoneGranted = false
 
+    /// When true, the Apple Speech final result should trigger post-processing.
+    private var pendingAppleSpeechPostProcess = false
+
     private let networkMonitor = NWPathMonitor()
     private var keyDownMonitor: Any?
     private var keyUpMonitor: Any?
@@ -314,14 +317,27 @@ class AppState: ObservableObject {
             self.transcriptionText = ""
             self.appleSpeechRequest = self.appleSpeech.startRecognition(
                 onResult: { [weak self] text, isFinal in
-                    self?.transcriptionText = self?.convertScript(text) ?? text
+                    guard let self else { return }
+                    self.transcriptionText = self.convertScript(text)
                     if isFinal {
-                        self?.rawTranscription = text
-                        self?.log("Apple Speech: final result (\(text.count) chars)")
+                        self.rawTranscription = text
+                        self.log("Apple Speech: final result (\(text.count) chars)")
+                        if self.pendingAppleSpeechPostProcess {
+                            self.pendingAppleSpeechPostProcess = false
+                            self.postProcess(text)
+                        }
                     }
                 },
                 onError: { [weak self] error in
-                    self?.log("Apple Speech error: \(error)")
+                    guard let self else { return }
+                    self.log("Apple Speech error: \(error)")
+                    // If waiting for final result to post-process, fall back to current text
+                    if self.pendingAppleSpeechPostProcess {
+                        self.pendingAppleSpeechPostProcess = false
+                        self.rawTranscription = self.transcriptionText
+                        self.isReformatting = false
+                        self.performAutoPaste(self.transcriptionText)
+                    }
                 }
             )
 
@@ -344,13 +360,35 @@ class AppState: ObservableObject {
 
     private func stopAppleSpeech() {
         audioRecorder.stopRecording()
-        appleSpeech.stopRecognition()
-        appleSpeechRequest = nil
         isRecording = false
         audioLevel = 0
-        rawTranscription = transcriptionText
         log("Apple Speech: stopped")
-        performAutoPaste(transcriptionText)
+
+        // If Post-Edit Revise is enabled, wait for isFinal before post-processing
+        if usePostEditRevise && anthropicClient != nil {
+            pendingAppleSpeechPostProcess = true
+            isReformatting = true
+            if isGlobalHotkeyActive {
+                FloatingRecordingPanel.shared.show(state: .transcribing)
+            }
+            // endAudio + finish triggers final result callback
+            appleSpeech.stopRecognition()
+            appleSpeechRequest = nil
+            // Safety timeout: if isFinal never arrives, fall back after 5s
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+                guard let self, self.pendingAppleSpeechPostProcess else { return }
+                self.pendingAppleSpeechPostProcess = false
+                self.log("Apple Speech: isFinal timeout, falling back to current text")
+                self.rawTranscription = self.transcriptionText
+                self.isReformatting = false
+                self.performAutoPaste(self.transcriptionText)
+            }
+        } else {
+            appleSpeech.stopRecognition()
+            appleSpeechRequest = nil
+            rawTranscription = transcriptionText
+            performAutoPaste(transcriptionText)
+        }
     }
 
     private func transcribe(samples: [Float], language: String) {
@@ -595,9 +633,9 @@ class AppState: ObservableObject {
     private var reviseFailedTimer: DispatchWorkItem?
     private func showReviseFailed() {
         reviseFailedTimer?.cancel()
-        reviseFailed = true
+        withAnimation { reviseFailed = true }
         let item = DispatchWorkItem { [weak self] in
-            self?.reviseFailed = false
+            withAnimation { self?.reviseFailed = false }
         }
         reviseFailedTimer = item
         DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: item)
