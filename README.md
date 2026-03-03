@@ -26,12 +26,12 @@ That's it. No window switching, no copy-paste. Powered by [whisper.cpp](https://
 
 - **Global hotkey (⌘;)** — hold from any app to record, release to auto-paste at cursor
 - **Dual STT engines** — whisper.cpp (offline) and Apple Speech Recognition (online, streaming)
-- **Mixed Chinese + English** speech recognition
+- **99 languages supported** — Whisper auto-detects language; optimized for Chinese + English
 - **Simplified/Traditional Chinese** output toggle
 - **Multiple whisper models** — tiny, base, small, medium, large-v3-turbo (downloaded on-demand)
 - **Push-to-talk** — hold Spacebar to record in-app, release to transcribe
 - **Floating indicator** — compact pill shows recording/transcribing/done status
-- **Punctuation restoration** — optional BERT server adds punctuation automatically
+- **Punctuation restoration** — optional BERT server adds punctuation for Chinese text (auto-skipped for other languages)
 - **Customizable shortcut** — change the global hotkey in Settings
 - **Editable transcription** — edit text inline after transcription
 - **Cmd+C smart copy** — copies full transcription when nothing selected
@@ -155,25 +155,21 @@ Both engines currently support mixed Chinese + English speech.
 
 ## Adding Other Languages
 
-Whisper supports [99 languages](https://github.com/openai/whisper#available-models-and-languages). Voice2Text is currently tuned for Chinese + English, but adding another language requires only a few changes:
+Whisper supports [99 languages](https://github.com/openai/whisper#available-models-and-languages). **Voice2Text already works with all of them out of the box** — just speak in any language and Whisper's `language="auto"` will detect it.
 
-### Step 1: Change the Whisper language parameter
+The only difference: punctuation restoration (BERT server) is Chinese-only. For non-Chinese speech, it is automatically skipped — your text will be transcribed without auto-punctuation, but everything else works.
 
-In `AppState.swift`, find the `transcribe()` method:
+### What works automatically
 
-```swift
-transcribe(samples: samples, language: "auto")
-```
+- **Any Whisper-supported language** — transcription via `language="auto"`
+- **Punctuation auto-skip** — the Chinese BERT server is only used when Chinese text is detected
+- **Chinese + English mixed speech** — fully optimized with retry logic and punctuation restore
 
-Change `"auto"` to your target language code (e.g., `"ja"` for Japanese, `"ko"` for Korean, `"es"` for Spanish). Or keep `"auto"` and remove the Chinese-specific retry logic.
+### Optional: Fine-tune for a specific language
 
-### Step 2: Remove or adapt the language retry logic
+If you want to optimize for a specific non-Chinese language:
 
-The `containsUnexpectedLanguage()` method in `AppState.swift` checks for non-Chinese/English characters and retries with `language="zh"`. For other languages, either:
-- **Remove it** — delete the retry check in `transcribe()` and just use the first result
-- **Adapt it** — modify `containsUnexpectedLanguage()` to check for your target language's Unicode ranges instead
-
-### Step 3: Change Apple Speech locale (optional)
+#### Change Apple Speech locale (optional)
 
 In `AppleSpeechRecognizer.swift`, the recognizer is initialized with `zh-Hant` (Traditional Chinese):
 
@@ -183,19 +179,17 @@ private let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-Hant"
 
 Change this to your target locale (e.g., `"ja-JP"`, `"ko-KR"`, `"es-ES"`). You can also make this configurable via the UI.
 
-### Step 4: Remove or adapt script conversion (optional)
+#### Remove script conversion (optional)
 
 The `convertScript()` method in `AppState.swift` converts between Simplified and Traditional Chinese. For non-Chinese languages, you can simply remove this step or replace it with your own post-processing.
 
-### Step 5: Punctuation server (optional)
+#### Add a punctuation model for your language (optional)
 
-The bundled punctuation server uses a Chinese-specific BERT model. For other languages, either:
-- Disable punctuation restore (it's optional)
+The bundled punctuation server uses a Chinese-specific BERT model. To add punctuation for your language:
 - Replace the model in `scripts/punctuation_server.py` with one that supports your language
+- Or use a different punctuation restoration service
 
-### That's it!
-
-With these changes, Voice2Text will work with any language that Whisper supports. Pull requests for multi-language support are welcome.
+Pull requests for multi-language improvements are welcome.
 
 ## Available Whisper Models
 
@@ -321,6 +315,6 @@ Full license texts are available in [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES).
 | [PyTorch](https://github.com/pytorch/pytorch) | BSD 3-Clause | In PunctuationServer.app |
 | [Hugging Face Transformers](https://github.com/huggingface/transformers) | Apache 2.0 | In PunctuationServer.app |
 | [PyInstaller](https://github.com/pyinstaller/pyinstaller) | GPL 2.0 (bootloader exception) | Bootloader only |
-| [zh-wiki-punctuation-restore](https://huggingface.co/p208p2002/zh-wiki-punctuation-restore) | Not specified | Downloaded at runtime |
+| [zh-wiki-punctuation-restore](https://huggingface.co/p208p2002/zh-wiki-punctuation-restore) | Not specified | Downloaded at runtime (Chinese only, opt-in) |
 | [XcodeGen](https://github.com/yonaskolb/XcodeGen) | MIT | Build tool only |
 | Apple Frameworks (SwiftUI, AVFoundation, Speech, Carbon) | Apple SDK | OS-provided |

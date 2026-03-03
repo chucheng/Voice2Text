@@ -78,7 +78,7 @@ struct MenuBarView: View {
 
         Divider()
 
-        Toggle("Punctuation Restore", isOn: $appState.usePunctuationRestore)
+        Toggle("Punctuation Restore (中+英)", isOn: $appState.usePunctuationRestore)
             .disabled(!appState.isPunctuationServerAvailable)
 
         Divider()
