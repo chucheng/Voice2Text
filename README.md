@@ -201,7 +201,7 @@ Pull requests for multi-language improvements are welcome.
 | Medium | ~1.5 GB | High accuracy |
 | Large v3 Turbo | ~1.6 GB | Best accuracy |
 
-Models are downloaded from HuggingFace to `~/Library/Application Support/Voice2Text/`.
+Models are downloaded from [ggerganov/whisper.cpp on HuggingFace](https://huggingface.co/ggerganov/whisper.cpp) to `~/Library/Application Support/Voice2Text/`.
 
 ## Punctuation Server (Optional)
 
