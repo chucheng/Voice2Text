@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.1.0** — Global Push-to-Talk Hotkey release.
+**Version: 1.2.0** — 99 Language Support release.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -15,15 +15,16 @@ Shows in both the menu bar (MenuBarExtra) and the Dock.
 - **Requirements**: macOS 14+, Xcode 15+
 - **Sandbox**: App Sandbox enabled with audio-input + network-client entitlements
 
-## Current Status: v1.1.0 — Global Hotkey + Dual STT + Punctuation
+## Current Status: v1.2.0 — 99 Language Support + Global Hotkey + Dual STT
 Full voice-to-text pipeline with two recording modes:
 - **In-app**: Spacebar push-to-talk → transcribe → display
 - **Global hotkey (⌘;)**: Hold from any app → floating panel → release → transcribe → auto-paste at cursor
 
 STT engines:
-- **Whisper**: record → resample → whisper inference → punctuation restore → script conversion → display/paste
+- **Whisper**: record → resample → whisper inference → punctuation restore (Chinese only) → script conversion → display/paste
 - **Apple Speech**: record → stream buffers → real-time recognition → script conversion → display/paste
 
+99 languages supported via Whisper `language="auto"`. Punctuation server auto-skipped for non-Chinese text.
 Models downloaded on-demand from HuggingFace to `~/Library/Application Support/Voice2Text/`.
 Upgrade installs auto-detect existing models (no re-download needed).
 
@@ -82,7 +83,9 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - `WhisperBridge` runs inference on a dedicated background `DispatchQueue`
 - `WhisperBridge.freeModel()` must be called before app termination to avoid C++ static destructor crash
 - Whisper uses `language="auto"` for mixed Chinese+English speech
-- If whisper outputs non-Chinese/English text (wrong language detection), auto-retries with `language="zh"`
+- If whisper outputs mixed Chinese + unexpected language text, auto-retries with `language="zh"` (only when Chinese chars present)
+- Non-Chinese languages accepted as-is (no retry) — enables 99-language support
+- `textContainsChinese()` helper gates both retry logic and punctuation server usage
 - Apple Speech uses `zh-Hant` locale which handles mixed Chinese+English natively
 - Apple Speech requires network — NWPathMonitor detects connectivity in real-time
 - Post-processing pipeline: STT output → punctuation restore (optional) → Simplified/Traditional Chinese conversion
@@ -95,7 +98,8 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - Dev mode (off by default) shows debug log panel with timestamped entries
 - LLM reformat feature exists in code but is greyed out (company proxy limitation)
 - Keyboard shortcuts: Spacebar push-to-talk, Cmd+C copies full transcription (or selection if any)
-- Punctuation restore enabled by default when server is available; greyed out when unavailable
+- Punctuation restore enabled by default when server is available; greyed out when unavailable; auto-skipped for non-Chinese text
+- Output script (Simplified/Traditional Chinese) persisted via UserDefaults, default: Simplified
 - App icon: blue gradient with microphone, sound waves, text lines, "V2T" label
 
 ### Global Hotkey Architecture
@@ -117,6 +121,8 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - Hardened Runtime enabled; entitlements minimal (sandbox + audio-input + network-client)
 - No hardcoded secrets in source code
 - Accessibility permission: only used for CGEvent paste simulation, checked via `AXIsProcessTrusted()`
+- Upgrade detection: `@AppStorage("accessibilityWasGranted")` tracks prior grant; guides user to remove+re-add in System Settings after upgrade
+- Permission checks delayed 1s after init for SwiftUI alert readiness; also triggered after onboarding completion
 - Remaining accepted risks: localhost HTTP for punctuation IPC, no model checksum verification
 
 ## TODO (Next Steps)
