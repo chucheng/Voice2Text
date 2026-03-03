@@ -285,6 +285,10 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v1.6.2 — ATS Exception + Copyright Fix
+- **ATS exception** — allow HTTP for `sheincorp.cn` domain (internal proxy support)
+- **Copyright fix** — corrected to GPL v3.0 license, author C. C. Hsieh, year 2025-2026
+
 ### v1.6.1 — UI Label Update
 - **API Key label** — renamed AUTH_TOKEN to API_KEY in Settings > Dangerous Zone
 

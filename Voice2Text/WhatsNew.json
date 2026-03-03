@@ -1,5 +1,18 @@
 [
     {
+        "version": "1.6.2",
+        "changes": {
+            "en": [
+                "Allow HTTP for sheincorp.cn domain (ATS exception)",
+                "Fix copyright: GPL v3.0, correct author and year"
+            ],
+            "zh": [
+                "允许 sheincorp.cn 域名使用 HTTP（ATS 例外）",
+                "修正版权信息：GPL v3.0，正确作者和年份"
+            ]
+        }
+    },
+    {
         "version": "1.6.1",
         "changes": {
             "en": [
