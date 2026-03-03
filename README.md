@@ -34,6 +34,8 @@ That's it. No window switching, no copy-paste. Powered by [whisper.cpp](https://
 - **Customizable shortcut** — change the global hotkey in Settings
 - **Editable transcription** — edit text inline after transcription
 - **Cmd+C smart copy** — copies full transcription when nothing selected
+- **Post-Edit Revise** — optional Claude API integration to improve transcription clarity and flow (Settings > Dangerous Zone)
+- **Secure API token storage** — token stored in macOS Keychain, never in plaintext
 - **Dev mode** — debug log panel for troubleshooting
 - Menu bar + Dock presence
 
@@ -124,8 +126,8 @@ This will regenerate the Xcode project, build a Release archive, ad-hoc sign it,
   ┌─────────────────┐ ┌─────────────┐  ┌──────────────────┐
   │ PunctuationServer│ │  Anthropic  │  │   StringTransform │
   │ (.app / Python) │ │  Client     │  │   (Hans↔Hant)     │
-  │ BERT model      │ │  (greyed    │  │                    │
-  │ localhost:18230  │ │   out)      │  │                    │
+  │ BERT model      │ │ (Post-Edit  │  │                    │
+  │ localhost:18230  │ │  Revise)    │  │                    │
   └─────────────────┘ └─────────────┘  └──────────────────┘
 ```
 
@@ -136,7 +138,10 @@ Mic → AVAudioEngine → AVAudioConverter (16kHz mono) ─┬─→ Whisper inf
                                                       └─→ Apple Speech buffer → text
                                                                 │
                                                                 ▼
-                                              Punctuation Restore (optional, BERT)
+                                              Punctuation Restore (optional, BERT, Chinese only)
+                                                                │
+                                                                ▼
+                                              Post-Edit Revise (optional, Claude API)
                                                                 │
                                                                 ▼
                                               Script Conversion (Hans ↔ Hant)
@@ -239,7 +244,7 @@ Voice2Text/
 ├── MenuBarView.swift            # Menu bar dropdown UI
 ├── ContentView.swift            # Main window: record button, transcription editor, permission alerts
 ├── OnboardingView.swift         # First-launch setup wizard (model selection + permissions)
-├── SettingsView.swift           # Settings: General, Models, Shortcuts, Advanced
+├── SettingsView.swift           # Settings: General, Models, Shortcuts, Advanced, Dangerous Zone
 ├── GlobalHotkeyManager.swift    # Carbon hotkey registration, accessibility, auto-paste
 ├── FloatingRecordingPanel.swift # Non-activating floating panel for global hotkey feedback
 ├── HotkeyRecorderView.swift     # Custom shortcut recorder UI component
@@ -252,7 +257,8 @@ Voice2Text/
 ├── WhisperBridge.swift          # Swift wrapper around whisper.cpp C API
 ├── AppleSpeechRecognizer.swift  # Apple SFSpeechRecognizer wrapper
 ├── PunctuationClient.swift      # HTTP client + auto-launcher for punctuation server
-├── AnthropicClient.swift        # Claude API client (feature greyed out)
+├── AnthropicClient.swift        # Claude API client: API check, Post-Edit Revise
+├── KeychainHelper.swift         # macOS Keychain wrapper for API token storage
 ├── AppDelegate.swift            # Dock icon handler + graceful shutdown
 ├── WindowAccessor.swift         # NSWindow reference capture + hide-on-close
 ├── Voice2Text-Bridging-Header.h # C interop header for whisper.cpp
@@ -272,6 +278,14 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v1.4.0 — Dangerous Zone + Post-Edit Revise
+- **Post-Edit Revise** — optional Claude API integration that improves transcription clarity and flow after STT
+- **Dangerous Zone tab** — new Settings tab for configuring Anthropic API credentials (base URL, model, token)
+- **Keychain token storage** — API token stored securely in macOS Keychain, never in UserDefaults or logs
+- **API check** — validate credentials with latency measurement before enabling revise
+- **Graceful fallback** — on revise failure, falls back to original text with transient orange banner (4s)
+- **State machine** — API check state (Unchecked → Checking → Valid/Invalid), auto-resets on credential changes
 
 ### v1.3.0 — In-App Language Switching
 - **UI language switching** — English / 简体中文, with segmented picker on onboarding welcome step and Settings > General

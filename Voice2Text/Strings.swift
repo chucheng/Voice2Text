@@ -383,4 +383,78 @@ enum L {
     static var clear: String {
         lang == .english ? "Clear" : "清除"
     }
+
+    // MARK: SettingsView — Dangerous Zone Tab
+
+    static var dangerousZoneTab: String {
+        lang == .english ? "Dangerous" : "危险区"
+    }
+    static var dangerousZoneWarning: String {
+        lang == .english
+            ? "These settings connect to external AI services. Your transcription text will be sent to the configured API endpoint."
+            : "这些设置会连接外部 AI 服务。您的转写文本将被发送到配置的 API 端点。"
+    }
+    static var apiCredentialsSection: String {
+        lang == .english ? "API Credentials" : "API 凭证"
+    }
+    static var baseURLLabel: String {
+        lang == .english ? "Base URL" : "Base URL"
+    }
+    static var baseURLPlaceholder: String {
+        lang == .english ? "https://api.anthropic.com" : "https://api.anthropic.com"
+    }
+    static var modelLabel: String {
+        lang == .english ? "Model" : "模型"
+    }
+    static var modelPlaceholder: String { AnthropicClient.defaultModel }
+    static var apiTokenLabel: String {
+        lang == .english ? "API Token" : "API Token"
+    }
+    static var apiTokenPlaceholder: String {
+        lang == .english ? "sk-ant-..." : "sk-ant-..."
+    }
+    static var saveToken: String {
+        lang == .english ? "Save Token" : "保存 Token"
+    }
+    static var deleteToken: String {
+        lang == .english ? "Delete Token" : "删除 Token"
+    }
+    static var tokenSaved: String {
+        lang == .english ? "Token saved in Keychain" : "Token 已保存到钥匙串"
+    }
+    static var tokenNotSet: String {
+        lang == .english ? "No token saved" : "未保存 Token"
+    }
+    static var tokenIsSet: String {
+        lang == .english ? "Token saved in Keychain" : "Token 已保存在钥匙串"
+    }
+    static var checkAPI: String {
+        lang == .english ? "Check API" : "检查 API"
+    }
+    static var checking: String {
+        lang == .english ? "Checking..." : "检查中…"
+    }
+    static func apiValid(_ ms: Int) -> String {
+        lang == .english ? "Valid ✓ (\(ms)ms)" : "有效 ✓（\(ms)ms）"
+    }
+    static func apiInvalid(_ message: String) -> String {
+        lang == .english ? "Failed: \(message)" : "失败：\(message)"
+    }
+    static var postEditReviseSection: String {
+        lang == .english ? "Post-Edit Revise" : "后编辑修订"
+    }
+    static var enablePostEditRevise: String {
+        lang == .english ? "Enable Post-Edit Revise" : "启用后编辑修订"
+    }
+    static var postEditReviseDescription: String {
+        lang == .english
+            ? "After transcription, send text through Claude to improve clarity and flow. Falls back to original text on failure."
+            : "转写完成后，通过 Claude 改善文本的清晰度和流畅性。失败时回退到原始文本。"
+    }
+    static var reviseFailedBanner: String {
+        lang == .english ? "Revise failed — using original text" : "修订失败 — 使用原始文本"
+    }
+    static var invalidBaseURL: String {
+        lang == .english ? "Invalid URL (must be HTTPS, or HTTP localhost)" : "无效 URL（必须为 HTTPS，或 HTTP localhost）"
+    }
 }
