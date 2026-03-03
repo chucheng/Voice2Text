@@ -76,10 +76,12 @@ class AppState: ObservableObject {
     @AppStorage("showFirstUseTooltip") var showFirstUseTooltip = true
     @AppStorage("onboardingCompleted") var onboardingCompleted = false
     @AppStorage("globalHotkeyEnabled") var globalHotkeyEnabled = true
+    @AppStorage("accessibilityWasGranted") var accessibilityWasGranted = false
     @Published var isAccessibilityGranted = false
     @Published var isGlobalHotkeyActive = false
     @Published var showMicrophoneAlert = false
     @Published var showAccessibilityAlert = false
+    @Published var showAccessibilityUpgradeAlert = false
     @Published var isMicrophoneGranted = false
 
     private let networkMonitor = NWPathMonitor()
@@ -662,6 +664,9 @@ class AppState: ObservableObject {
 
     func refreshAccessibilityStatus() {
         isAccessibilityGranted = GlobalHotkeyManager.isAccessibilityGranted
+        if isAccessibilityGranted {
+            accessibilityWasGranted = true
+        }
     }
 
     // MARK: - Permission Checks on Launch
@@ -692,7 +697,12 @@ class AppState: ObservableObject {
         // Check accessibility (only if global hotkey is enabled)
         refreshAccessibilityStatus()
         if globalHotkeyEnabled && !isAccessibilityGranted {
-            showAccessibilityAlert = true
+            if accessibilityWasGranted {
+                // Previously granted but now invalid — likely app was upgraded
+                showAccessibilityUpgradeAlert = true
+            } else {
+                showAccessibilityAlert = true
+            }
         }
     }
 }
