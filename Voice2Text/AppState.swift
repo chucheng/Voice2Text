@@ -95,14 +95,20 @@ class AppState: ObservableObject {
     @Published var usePostEditRevise = false
     @Published var reviseFailed = false
     @Published var reviseFailedWithFallback = false
-    @Published var customRevisePrompt: String = UserDefaults.standard.string(forKey: "customRevisePrompt") ?? "" {
+    @Published var customRevisePrompt: String = {
+        let stored = UserDefaults.standard.string(forKey: "customRevisePrompt")
+        // Migrate: empty string from previous versions means "use default"
+        return (stored == nil || stored!.isEmpty) ? AnthropicClient.revisePrompt : stored!
+    }() {
         didSet { UserDefaults.standard.set(customRevisePrompt, forKey: "customRevisePrompt") }
     }
 
     @Published var usePunctuationRestore = false
     @Published var isPunctuationServerAvailable = false
     @Published var audioLevel: Float = 0
-    @Published var devMode = false
+    @Published var devMode: Bool = UserDefaults.standard.bool(forKey: "devMode") {
+        didSet { UserDefaults.standard.set(devMode, forKey: "devMode") }
+    }
     @Published var debugLog: [String] = []
     @AppStorage("showFirstUseTooltip") var showFirstUseTooltip = true
     @AppStorage("onboardingCompleted") var onboardingCompleted = false
@@ -164,7 +170,7 @@ class AppState: ObservableObject {
         dangerousZoneTokenIsSet = KeychainHelper.loadToken() != nil
         rebuildAnthropicClient()
         log("Post-Edit Revise: \(anthropicClient != nil ? "client ready" : "no credentials")")
-        if !customRevisePrompt.isEmpty {
+        if customRevisePrompt != AnthropicClient.revisePrompt {
             log("Custom revise prompt: \(customRevisePrompt.count) chars")
         }
 
@@ -575,12 +581,14 @@ class AppState: ObservableObject {
     /// On LLM failure, falls back to BERT punctuation if available + Chinese text.
     private func applyLLMAndConvert(_ text: String) {
         if usePostEditRevise, let client = anthropicClient {
-            let prompt = customRevisePrompt.isEmpty ? nil : customRevisePrompt
+            let prompt = (customRevisePrompt == AnthropicClient.revisePrompt) ? nil : customRevisePrompt
             log("Post-Edit Revise: sending \(text.count) chars...")
+            log("  → Input: \(text)")
             client.reviseText(text, prompt: prompt) { [weak self] result, error in
                 guard let self else { return }
                 if let result {
                     self.log("Post-Edit Revise: success (\(result.count) chars)")
+                    self.log("  ← Output: \(result)")
                     self.transcriptionText = self.convertScript(result)
                     self.isReformatting = false
                     self.performAutoPaste(self.transcriptionText)
