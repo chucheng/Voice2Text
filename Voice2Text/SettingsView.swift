@@ -367,7 +367,7 @@ private struct DangerousZoneTab: View {
                 // Model
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L.modelLabel).font(.caption).foregroundColor(.secondary)
-                    TextField(L.modelPlaceholder, text: $appState.dangerousZoneModel)
+                    TextField("", text: $appState.dangerousZoneModel)
                         .textFieldStyle(.roundedBorder)
                         .onChange(of: appState.dangerousZoneModel) {
                             appState.resetAPICheckState()

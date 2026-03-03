@@ -5,6 +5,10 @@ import SwiftUI
 struct DebugLogView: View {
     @ObservedObject var appState = AppState.shared
 
+    private var logText: String {
+        appState.debugLog.joined(separator: "\n")
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Toolbar
@@ -15,6 +19,12 @@ struct DebugLogView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                 Spacer()
+                Button(L.copyAll) {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(logText, forType: .string)
+                }
+                .controlSize(.small)
+                .disabled(appState.debugLog.isEmpty)
                 Button(L.clear) {
                     appState.debugLog.removeAll()
                 }
@@ -26,28 +36,20 @@ struct DebugLogView: View {
 
             Divider()
 
-            // Log content
+            // Log content — plain TextEditor for easy select-all and copy
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 1) {
-                        ForEach(Array(appState.debugLog.enumerated()), id: \.offset) { idx, line in
-                            Text(line)
-                                .font(.system(size: 11, design: .monospaced))
-                                .foregroundColor(.primary)
-                                .textSelection(.enabled)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 1)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(idx % 2 == 0 ? Color.clear : Color.primary.opacity(0.03))
-                                .id(idx)
-                        }
-                    }
+                    Text(logText)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(.primary)
+                        .textSelection(.enabled)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .id("logBottom")
                 }
                 .onChange(of: appState.debugLog.count) {
-                    if let last = appState.debugLog.indices.last {
-                        withAnimation(.easeOut(duration: 0.1)) {
-                            proxy.scrollTo(last, anchor: .bottom)
-                        }
+                    withAnimation(.easeOut(duration: 0.1)) {
+                        proxy.scrollTo("logBottom", anchor: .bottom)
                     }
                 }
             }

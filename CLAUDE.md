@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.4.0** — Dangerous Zone + Post-Edit Revise release.
+**Version: 1.6.0** — Custom Revise Prompt + What's New + Debug Log Window.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -15,7 +15,7 @@ Shows in both the menu bar (MenuBarExtra) and the Dock.
 - **Requirements**: macOS 14+, Xcode 15+
 - **Sandbox**: App Sandbox enabled with audio-input + network-client entitlements
 
-## Current Status: v1.4.0 — Dangerous Zone + Post-Edit Revise + In-App Language Switching + 99 Languages + Global Hotkey + Dual STT
+## Current Status: v1.6.0 — Custom Revise Prompt + What's New + Debug Log Window + LLM/BERT Exclusivity
 Full voice-to-text pipeline with two recording modes:
 - **In-app**: Spacebar push-to-talk → transcribe → display
 - **Global hotkey (⌘;)**: Hold from any app → floating panel → release → transcribe → auto-paste at cursor
@@ -24,7 +24,11 @@ STT engines:
 - **Whisper**: record → resample → whisper inference → punctuation restore (Chinese only) → Post-Edit Revise (optional) → script conversion → display/paste
 - **Apple Speech**: record → stream buffers → real-time recognition → script conversion → display/paste
 
-**Post-Edit Revise** (optional): after transcription, send text through Claude API to improve clarity and flow. Configured in Settings > Dangerous Zone tab. API token stored in macOS Keychain. Graceful fallback to original text on any failure.
+**Post-Edit Revise** (optional): after transcription, send text through Claude API to improve clarity and flow. Configured in Settings > Dangerous Zone tab. API token stored in macOS Keychain. Custom prompt support. When enabled, BERT punctuation is skipped (LLM handles it). On LLM failure, falls back to BERT if available, then to raw text.
+
+**What's New** screen: shown once after version update with 3-second countdown auto-dismiss. Reads from bundled `WhatsNew.json` (bilingual en/zh).
+
+**Debug Log Window**: separate resizable window (opened from Settings > Advanced > Dev Mode). Logs always collected (capped at 500 lines) so history is available when Dev Mode is toggled on. Copy All button for easy export.
 
 UI language switchable between English and Simplified Chinese (persisted via UserDefaults, default follows system locale).
 99 languages supported via Whisper `language="auto"`. Punctuation server auto-skipped for non-Chinese text.
@@ -45,9 +49,9 @@ Upgrade installs auto-detect existing models (no re-download needed).
 ### Completed Files
 | File | Purpose |
 |------|---------|
-| `Voice2Text/Voice2TextApp.swift` | @main entry point, MenuBarExtra + Window scene |
-| `Voice2Text/Strings.swift` | UILanguage enum + L localization enum (~107 strings × 2 languages: English / 简体中文) |
-| `Voice2Text/AppState.swift` | Shared ObservableObject: recording, transcription, model management, dual STT engines, global hotkey integration, script conversion, keyboard shortcuts, UI language, Dangerous Zone API config, Post-Edit Revise, debug logging |
+| `Voice2Text/Voice2TextApp.swift` | @main entry point, MenuBarExtra + Window + Debug Log Window scenes |
+| `Voice2Text/Strings.swift` | UILanguage enum + L localization enum (~120 strings × 2 languages: English / 简体中文) |
+| `Voice2Text/AppState.swift` | Shared ObservableObject: recording, transcription, model management, dual STT engines, global hotkey integration, script conversion, keyboard shortcuts, UI language, Dangerous Zone API config, Post-Edit Revise, custom prompt, What's New, debug logging |
 | `Voice2Text/MenuBarView.swift` | Menu bar dropdown: Start/Stop, model picker, script toggle, Punctuation Restore, Open Window, Quit |
 | `Voice2Text/ContentView.swift` | Main window: record button, waveform, status, editable transcription, Copy button, Settings shortcut, © copyright |
 | `Voice2Text/OnboardingView.swift` | First-launch wizard: language picker → welcome → model selection (with download detection) → downloading → permissions (Accessibility) |
@@ -63,7 +67,10 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `Voice2Text/WhisperBridge.swift` | Swift wrapper around whisper.cpp C API: load model, run inference, explicit freeModel() for clean shutdown |
 | `Voice2Text/AppleSpeechRecognizer.swift` | Apple SFSpeechRecognizer wrapper: streaming recognition with partial results |
 | `Voice2Text/PunctuationClient.swift` | HTTP client + auto-launcher for punctuation server |
-| `Voice2Text/AnthropicClient.swift` | Claude API client: APICheckResult enum, checkAPI(), reviseText(), configurable base URL/model/token |
+| `Voice2Text/AnthropicClient.swift` | Claude API client: APICheckResult enum, checkAPI(), reviseText(prompt:), configurable base URL/model/token |
+| `Voice2Text/WhatsNewView.swift` | What's New overlay: version changelog display with 3s countdown auto-dismiss |
+| `Voice2Text/WhatsNew.json` | Bundled changelog data (bilingual en/zh, all versions) |
+| `Voice2Text/DebugLogWindow.swift` | Separate debug log window with Copy All, text selection |
 | `Voice2Text/KeychainHelper.swift` | Minimal macOS Keychain wrapper: saveToken, loadToken, deleteToken |
 | `Voice2Text/Voice2Text-Bridging-Header.h` | `#include "whisper.h"` for Swift-C interop |
 | `Voice2Text/AppDelegate.swift` | Dock icon reopen + graceful shutdown (unregister hotkey, free model, stop recording) |
@@ -93,18 +100,20 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - `textContainsChinese()` helper gates both retry logic and punctuation server usage
 - Apple Speech uses `zh-Hant` locale which handles mixed Chinese+English natively
 - Apple Speech requires network — NWPathMonitor detects connectivity in real-time
-- Post-processing pipeline: STT output → punctuation restore (optional, Chinese) → Post-Edit Revise (optional, Claude API) → Simplified/Traditional Chinese conversion
+- Post-processing pipeline: when LLM enabled: STT output → Post-Edit Revise (LLM handles punctuation) → on failure: BERT fallback → script conversion. When LLM disabled: STT output → BERT punctuation (optional, Chinese) → script conversion
 - Punctuation server auto-launched from `/Applications/`, `~/Applications/`, or bundle-adjacent location
 - Script conversion uses Foundation `StringTransform` (`Hans-Hant` / `Hant-Hans`) — zero dependencies
 - Model selection persisted via `UserDefaults`
 - Models stored in `~/Library/Application Support/Voice2Text/`
 - Available models: tiny, base, small, medium, large-v3-turbo
 - Transcription text is editable by the user after transcription
-- Dev mode (off by default) shows debug log panel with timestamped entries
+- Dev mode: opens separate debug log window. Logs always collected (capped at 500 lines) even when dev mode is off, so history is available on toggle
 - Post-Edit Revise: optional Claude API integration, configured in Settings > Dangerous Zone
 - API token stored in macOS Keychain (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`), never in UserDefaults or logs
 - API check state machine: Unchecked → Checking → Valid(latencyMs) / Invalid(message); field changes reset to Unchecked
-- Revise failure: graceful fallback to original text + transient orange banner (4s) + debug log entry; never permanently disables
+- Revise failure: falls back to BERT (if available + Chinese) then to raw text + transient orange banner (4s) + debug log entry; never permanently disables
+- Custom revise prompt: persisted in UserDefaults (key: `"customRevisePrompt"`). Empty = use default. Reset to Default button in UI
+- What's New: `lastSeenVersion` tracked via `@AppStorage`. `WhatsNew.json` loaded from bundle. WhatsNewView auto-dismisses after 3s countdown, tap to dismiss early
 - Keyboard shortcuts: Spacebar push-to-talk, Cmd+C copies full transcription (or selection if any)
 - Punctuation restore enabled by default when server is available; greyed out when unavailable; auto-skipped for non-Chinese text
 - Output script (Simplified/Traditional Chinese) persisted via UserDefaults, default: Simplified
