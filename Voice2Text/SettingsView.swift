@@ -482,28 +482,15 @@ private struct DangerousZoneTab: View {
                                 .foregroundColor(.secondary)
                             Spacer()
                             Button(L.resetToDefault) {
-                                appState.customRevisePrompt = ""
+                                appState.customRevisePrompt = AnthropicClient.revisePrompt
                             }
                             .font(.caption)
                             .buttonStyle(.borderless)
-                            .disabled(appState.customRevisePrompt.isEmpty)
+                            .disabled(appState.customRevisePrompt == AnthropicClient.revisePrompt)
                         }
                         TextEditor(text: $appState.customRevisePrompt)
                             .font(.system(size: 11, design: .monospaced))
                             .frame(minHeight: 80, maxHeight: 120)
-                            .overlay(
-                                Group {
-                                    if appState.customRevisePrompt.isEmpty {
-                                        Text(AnthropicClient.revisePrompt.prefix(100) + "...")
-                                            .font(.system(size: 11, design: .monospaced))
-                                            .foregroundColor(.secondary.opacity(0.5))
-                                            .padding(.horizontal, 4)
-                                            .padding(.vertical, 2)
-                                            .allowsHitTesting(false)
-                                    }
-                                },
-                                alignment: .topLeading
-                            )
                     }
                 }
             }

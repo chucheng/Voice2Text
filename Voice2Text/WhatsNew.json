@@ -1,5 +1,22 @@
 [
     {
+        "version": "1.6.3",
+        "changes": {
+            "en": [
+                "Improved revise prompt: prevents LLM reasoning leaking into output",
+                "Custom prompt now pre-filled with default (edit instead of start from scratch)",
+                "Dev Mode persisted across launches, debug log auto-opens on start",
+                "Debug log now shows full revise input/output for easier debugging"
+            ],
+            "zh": [
+                "改进修订提示词：防止 LLM 推理内容泄漏到输出",
+                "自定义提示词现在预填默认值（直接编辑而非从零开始）",
+                "开发者模式跨启动保持，调试日志启动时自动打开",
+                "调试日志现在显示完整的修订输入/输出，便于调试"
+            ]
+        }
+    },
+    {
         "version": "1.6.2",
         "changes": {
             "en": [

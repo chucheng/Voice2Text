@@ -5,6 +5,8 @@ struct Voice2TextApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var appState = AppState.shared
 
+    @Environment(\.openWindow) private var openWindow
+
     var body: some Scene {
         WindowGroup("Voice2Text", id: "main") {
             Group {
@@ -18,6 +20,11 @@ struct Voice2TextApp: App {
                 }
             }
             .environmentObject(appState)
+            .onAppear {
+                if appState.devMode {
+                    openWindow(id: "debug-log")
+                }
+            }
         }
         .defaultSize(width: 440, height: 520)
 
