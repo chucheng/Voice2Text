@@ -24,8 +24,13 @@ struct SettingsView: View {
                 .tabItem {
                     Label(L.advancedTab, systemImage: "wrench.and.screwdriver")
                 }
+
+            DangerousZoneTab(appState: appState)
+                .tabItem {
+                    Label(L.dangerousZoneTab, systemImage: "exclamationmark.triangle")
+                }
         }
-        .frame(width: 450, height: 380)
+        .frame(width: 450, height: 420)
     }
 }
 
@@ -325,5 +330,152 @@ private struct AdvancedTab: View {
             .padding(.horizontal)
             .padding(.bottom)
         }
+    }
+}
+
+// MARK: - Dangerous Zone Tab
+
+private struct DangerousZoneTab: View {
+    @ObservedObject var appState: AppState
+    @State private var tokenInput = ""
+    @State private var showToken = false
+    @State private var tokenSavedFeedback = false
+
+    private var isBaseURLValid: Bool {
+        appState.dangerousZoneBaseURL.isEmpty || AnthropicClient.isValidBaseURL(appState.dangerousZoneBaseURL)
+    }
+
+    var body: some View {
+        Form {
+            // Warning banner
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.orange)
+                Text(L.dangerousZoneWarning)
+                    .font(.caption)
+                    .foregroundColor(.orange)
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.1)))
+            .listRowInsets(EdgeInsets())
+            .padding(.horizontal)
+
+            Section(L.apiCredentialsSection) {
+                // Base URL
+                TextField(L.baseURLPlaceholder, text: $appState.dangerousZoneBaseURL)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: appState.dangerousZoneBaseURL) {
+                        appState.resetAPICheckState()
+                    }
+                if !isBaseURLValid {
+                    Text(L.invalidBaseURL)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+
+                // Model
+                TextField(L.modelPlaceholder, text: $appState.dangerousZoneModel)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: appState.dangerousZoneModel) {
+                        appState.resetAPICheckState()
+                    }
+
+                // API Token
+                HStack {
+                    if showToken {
+                        TextField(L.apiTokenPlaceholder, text: $tokenInput)
+                            .textFieldStyle(.roundedBorder)
+                    } else {
+                        SecureField(L.apiTokenPlaceholder, text: $tokenInput)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                    Button(action: { showToken.toggle() }) {
+                        Image(systemName: showToken ? "eye.slash" : "eye")
+                    }
+                    .buttonStyle(.borderless)
+                }
+
+                HStack(spacing: 8) {
+                    Button(L.saveToken) {
+                        appState.saveDangerousZoneToken(tokenInput)
+                        tokenInput = ""
+                        tokenSavedFeedback = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                            tokenSavedFeedback = false
+                        }
+                    }
+                    .disabled(tokenInput.isEmpty)
+                    .controlSize(.small)
+
+                    if appState.dangerousZoneTokenIsSet {
+                        Button(L.deleteToken, role: .destructive) {
+                            appState.deleteDangerousZoneToken()
+                            tokenSavedFeedback = false
+                        }
+                        .controlSize(.small)
+                    }
+
+                    Spacer()
+
+                    // Token status
+                    if tokenSavedFeedback {
+                        Label(L.tokenSaved, systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                    } else if appState.dangerousZoneTokenIsSet {
+                        Label(L.tokenIsSet, systemImage: "key.fill")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Label(L.tokenNotSet, systemImage: "key")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                // Check API button + status
+                HStack(spacing: 8) {
+                    Button(L.checkAPI) {
+                        appState.performAPICheck()
+                    }
+                    .disabled(!appState.dangerousZoneTokenIsSet
+                              || appState.dangerousZoneBaseURL.isEmpty
+                              || !isBaseURLValid
+                              || appState.apiCheckState == .checking)
+                    .controlSize(.small)
+
+                    switch appState.apiCheckState {
+                    case .unchecked:
+                        EmptyView()
+                    case .checking:
+                        ProgressView()
+                            .controlSize(.small)
+                        Text(L.checking)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    case .valid(let ms):
+                        Label(L.apiValid(ms), systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                    case .invalid(let msg):
+                        Label(L.apiInvalid(msg), systemImage: "xmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
+                }
+            }
+
+            Section(L.postEditReviseSection) {
+                Toggle(L.enablePostEditRevise, isOn: $appState.usePostEditRevise)
+                    .disabled(!appState.apiCheckState.isValid)
+
+                Text(L.postEditReviseDescription)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
     }
 }

@@ -21,6 +21,8 @@
 		7518410A6E394FE6372B62FD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA3E3EC17A7601EFDA66D88 /* ContentView.swift */; };
 		82176D08A5BBCAD70BB88481 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA1436CBCDFBCD2045F2216 /* MenuBarView.swift */; };
 		967CCE006573610E3134B0E4 /* GlobalHotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D09497CC62015C5A2C8966F3 /* GlobalHotkeyManager.swift */; };
+		97B195D0564AA1001A200729 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EFBDC98DF22721ACF0599DE /* KeychainHelper.swift */; };
+		9B47DC7D6F66613BC14C4463 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB985066725A38DFB0DBA3E5 /* Security.framework */; };
 		ADE30F5B7B29DB40447CB373 /* WindowAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB59BC277616C02BAF0E751 /* WindowAccessor.swift */; };
 		AE65E69C48C7E7375C25B8CA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 686877A91928AF6DCF34133C /* Assets.xcassets */; };
 		C780D9A9F3E838BB873B51FA /* FloatingRecordingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89DB98EA7E9FE79C66E9667E /* FloatingRecordingPanel.swift */; };
@@ -39,6 +41,7 @@
 		0B3A6C140990D4FC86814099 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		1AB59BC277616C02BAF0E751 /* WindowAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAccessor.swift; sourceTree = "<group>"; };
 		1CA2D5D489F1259F37D5C860 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		1EFBDC98DF22721ACF0599DE /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		257E4F6E36A9D0538A8C8460 /* Voice2TextApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Voice2TextApp.swift; sourceTree = "<group>"; };
 		28E540758DB50D4FB2B47584 /* Strings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Strings.swift; sourceTree = "<group>"; };
 		2B8EDDD62BF49D3DAF3113F2 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
@@ -60,6 +63,7 @@
 		9EB76AB4A01EA80DD3A955A1 /* WaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformView.swift; sourceTree = "<group>"; };
 		A7E9A61FA62F439336DE7D42 /* HotkeyRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyRecorderView.swift; sourceTree = "<group>"; };
 		AD9EC33F2FDD613C1DB59147 /* Voice2Text.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Voice2Text.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB985066725A38DFB0DBA3E5 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		BBA1436CBCDFBCD2045F2216 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		C0A29669E65D4DB980F6DA71 /* AnthropicClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicClient.swift; sourceTree = "<group>"; };
 		C9BD370F623D776BACF7302B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -77,6 +81,7 @@
 				EDF4B17313B86C31FF1A87D6 /* Carbon.framework in Frameworks */,
 				F59BB482B16AF3533D94B6A2 /* Metal.framework in Frameworks */,
 				F15CB9D664C05110F6A249C7 /* MetalKit.framework in Frameworks */,
+				9B47DC7D6F66613BC14C4463 /* Security.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,6 +103,7 @@
 				D09497CC62015C5A2C8966F3 /* GlobalHotkeyManager.swift */,
 				A7E9A61FA62F439336DE7D42 /* HotkeyRecorderView.swift */,
 				1CA2D5D489F1259F37D5C860 /* Info.plist */,
+				1EFBDC98DF22721ACF0599DE /* KeychainHelper.swift */,
 				BBA1436CBCDFBCD2045F2216 /* MenuBarView.swift */,
 				96473EC3802040242118B3D5 /* OnboardingView.swift */,
 				8EF2095430F612A32FA9C745 /* PunctuationClient.swift */,
@@ -130,6 +136,7 @@
 				E926301EDFDBC04B56BB4681 /* Carbon.framework */,
 				0B3A6C140990D4FC86814099 /* Metal.framework */,
 				2B8EDDD62BF49D3DAF3113F2 /* MetalKit.framework */,
+				BB985066725A38DFB0DBA3E5 /* Security.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -219,6 +226,7 @@
 				C780D9A9F3E838BB873B51FA /* FloatingRecordingPanel.swift in Sources */,
 				967CCE006573610E3134B0E4 /* GlobalHotkeyManager.swift in Sources */,
 				56070AA1C35BC229E127C4ED /* HotkeyRecorderView.swift in Sources */,
+				97B195D0564AA1001A200729 /* KeychainHelper.swift in Sources */,
 				82176D08A5BBCAD70BB88481 /* MenuBarView.swift in Sources */,
 				17939FC1FBC123AD266B9455 /* OnboardingView.swift in Sources */,
 				7048256EC1394D1C7C2BF3BE /* PunctuationClient.swift in Sources */,
@@ -312,7 +320,7 @@
 					"$(PROJECT_DIR)/Whisper/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.4.0;
 				OTHER_LDFLAGS = (
 					"-lwhisper",
 					"-lggml",
@@ -348,7 +356,7 @@
 					"$(PROJECT_DIR)/Whisper/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.4.0;
 				OTHER_LDFLAGS = (
 					"-lwhisper",
 					"-lggml",

@@ -72,8 +72,6 @@ class AppState: ObservableObject {
     @Published var isDownloadingModel = false
     @Published var downloadProgress: Double = 0
     @Published var loadedModelName: String = ""
-    @Published var useLLMReformat = false
-    @Published var isLLMAvailable = false
     @Published var sttEngine: STTEngine = .whisper
     @Published var isNetworkAvailable = false
     @Published var uiLanguage: UILanguage = {
@@ -85,6 +83,18 @@ class AppState: ObservableObject {
     }() {
         didSet { UserDefaults.standard.set(uiLanguage.rawValue, forKey: "uiLanguage") }
     }
+    // MARK: - Dangerous Zone (Anthropic API)
+    @Published var dangerousZoneBaseURL: String = UserDefaults.standard.string(forKey: "dzBaseURL") ?? "" {
+        didSet { UserDefaults.standard.set(dangerousZoneBaseURL, forKey: "dzBaseURL") }
+    }
+    @Published var dangerousZoneModel: String = UserDefaults.standard.string(forKey: "dzModel") ?? AnthropicClient.defaultModel {
+        didSet { UserDefaults.standard.set(dangerousZoneModel, forKey: "dzModel") }
+    }
+    @Published var dangerousZoneTokenIsSet = false
+    @Published var apiCheckState: APICheckResult = .unchecked
+    @Published var usePostEditRevise = false
+    @Published var reviseFailed = false
+
     @Published var usePunctuationRestore = false
     @Published var isPunctuationServerAvailable = false
     @Published var audioLevel: Float = 0
@@ -134,10 +144,10 @@ class AppState: ObservableObject {
     }
 
     private init() {
-        anthropicClient = AnthropicClient.fromEnvironment()
-        isLLMAvailable = anthropicClient != nil
-        useLLMReformat = false
-        log("LLM reformat: disabled (feature greyed out)")
+        // Load Dangerous Zone token presence
+        dangerousZoneTokenIsSet = KeychainHelper.loadToken() != nil
+        rebuildAnthropicClient()
+        log("Post-Edit Revise: \(anthropicClient != nil ? "client ready" : "no credentials")")
 
         // Wire audio level callback
         audioRecorder.onAudioLevel = { [weak self] level in
@@ -479,25 +489,22 @@ class AppState: ObservableObject {
         }
     }
 
-    /// Apply LLM reformat (if enabled) then script conversion.
+    /// Apply Post-Edit Revise (if enabled) then script conversion.
     private func applyLLMAndConvert(_ text: String) {
-        if useLLMReformat, let client = anthropicClient {
-            log("LLM reformat: sending to Claude...")
-            client.reformatText(text) { [weak self] result, error in
-                DispatchQueue.main.async {
-                    guard let self else { return }
-                    if let result {
-                        self.log("LLM reformat: success (\(result.count) chars)")
-                        self.transcriptionText = self.convertScript(result)
-                    } else {
-                        self.log("LLM reformat failed: \(error ?? "unknown error"). Falling back.")
-                        self.isLLMAvailable = false
-                        self.useLLMReformat = false
-                        self.transcriptionText = self.convertScript(text)
-                    }
-                    self.isReformatting = false
-                    self.performAutoPaste(self.transcriptionText)
+        if usePostEditRevise, let client = anthropicClient {
+            log("Post-Edit Revise: sending \(text.count) chars...")
+            client.reviseText(text) { [weak self] result, error in
+                guard let self else { return }
+                if let result {
+                    self.log("Post-Edit Revise: success (\(result.count) chars)")
+                    self.transcriptionText = self.convertScript(result)
+                } else {
+                    self.log("Post-Edit Revise failed: \(error ?? "unknown"). Falling back to original.")
+                    self.transcriptionText = self.convertScript(text)
+                    self.showReviseFailed()
                 }
+                self.isReformatting = false
+                self.performAutoPaste(self.transcriptionText)
             }
         } else {
             transcriptionText = convertScript(text)
@@ -518,6 +525,82 @@ class AppState: ObservableObject {
         case .simplified:
             return text.applyingTransform(StringTransform("Hant-Hans"), reverse: false) ?? text
         }
+    }
+
+    // MARK: - Dangerous Zone (API)
+
+    func saveDangerousZoneToken(_ token: String) {
+        if token.isEmpty {
+            KeychainHelper.deleteToken()
+            dangerousZoneTokenIsSet = false
+        } else {
+            dangerousZoneTokenIsSet = KeychainHelper.saveToken(token)
+        }
+        rebuildAnthropicClient()
+        resetAPICheckState()
+    }
+
+    func deleteDangerousZoneToken() {
+        KeychainHelper.deleteToken()
+        dangerousZoneTokenIsSet = false
+        rebuildAnthropicClient()
+        resetAPICheckState()
+    }
+
+    func rebuildAnthropicClient() {
+        guard dangerousZoneTokenIsSet,
+              let token = KeychainHelper.loadToken(),
+              !token.isEmpty,
+              !dangerousZoneBaseURL.isEmpty,
+              AnthropicClient.isValidBaseURL(dangerousZoneBaseURL)
+        else {
+            anthropicClient = nil
+            return
+        }
+        anthropicClient = AnthropicClient(
+            baseURL: dangerousZoneBaseURL,
+            authToken: token,
+            model: dangerousZoneModel.isEmpty ? AnthropicClient.defaultModel : dangerousZoneModel
+        )
+    }
+
+    func resetAPICheckState() {
+        apiCheckState = .unchecked
+        usePostEditRevise = false
+    }
+
+    func performAPICheck() {
+        rebuildAnthropicClient()
+        guard let client = anthropicClient else {
+            apiCheckState = .invalid(message: "Missing credentials or invalid URL")
+            return
+        }
+        apiCheckState = .checking
+        log("API check: starting...")
+        client.checkAPI { [weak self] result in
+            guard let self else { return }
+            self.apiCheckState = result
+            switch result {
+            case .valid(let ms):
+                self.log("API check: valid (\(ms)ms)")
+            case .invalid(let msg):
+                self.log("API check: failed — \(msg)")
+                self.usePostEditRevise = false
+            default:
+                break
+            }
+        }
+    }
+
+    private var reviseFailedTimer: DispatchWorkItem?
+    private func showReviseFailed() {
+        reviseFailedTimer?.cancel()
+        reviseFailed = true
+        let item = DispatchWorkItem { [weak self] in
+            self?.reviseFailed = false
+        }
+        reviseFailedTimer = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: item)
     }
 
     // MARK: - Model Management

@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.3.0** — In-App Language Switching release.
+**Version: 1.4.0** — Dangerous Zone + Post-Edit Revise release.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -15,14 +15,16 @@ Shows in both the menu bar (MenuBarExtra) and the Dock.
 - **Requirements**: macOS 14+, Xcode 15+
 - **Sandbox**: App Sandbox enabled with audio-input + network-client entitlements
 
-## Current Status: v1.3.0 — In-App Language Switching + 99 Language Support + Global Hotkey + Dual STT
+## Current Status: v1.4.0 — Dangerous Zone + Post-Edit Revise + In-App Language Switching + 99 Languages + Global Hotkey + Dual STT
 Full voice-to-text pipeline with two recording modes:
 - **In-app**: Spacebar push-to-talk → transcribe → display
 - **Global hotkey (⌘;)**: Hold from any app → floating panel → release → transcribe → auto-paste at cursor
 
 STT engines:
-- **Whisper**: record → resample → whisper inference → punctuation restore (Chinese only) → script conversion → display/paste
+- **Whisper**: record → resample → whisper inference → punctuation restore (Chinese only) → Post-Edit Revise (optional) → script conversion → display/paste
 - **Apple Speech**: record → stream buffers → real-time recognition → script conversion → display/paste
+
+**Post-Edit Revise** (optional): after transcription, send text through Claude API to improve clarity and flow. Configured in Settings > Dangerous Zone tab. API token stored in macOS Keychain. Graceful fallback to original text on any failure.
 
 UI language switchable between English and Simplified Chinese (persisted via UserDefaults, default follows system locale).
 99 languages supported via Whisper `language="auto"`. Punctuation server auto-skipped for non-Chinese text.
@@ -44,12 +46,12 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | File | Purpose |
 |------|---------|
 | `Voice2Text/Voice2TextApp.swift` | @main entry point, MenuBarExtra + Window scene |
-| `Voice2Text/Strings.swift` | UILanguage enum + L localization enum (~85 strings × 2 languages: English / 简体中文) |
-| `Voice2Text/AppState.swift` | Shared ObservableObject: recording, transcription, model management, dual STT engines, global hotkey integration, script conversion, keyboard shortcuts, UI language, debug logging |
+| `Voice2Text/Strings.swift` | UILanguage enum + L localization enum (~107 strings × 2 languages: English / 简体中文) |
+| `Voice2Text/AppState.swift` | Shared ObservableObject: recording, transcription, model management, dual STT engines, global hotkey integration, script conversion, keyboard shortcuts, UI language, Dangerous Zone API config, Post-Edit Revise, debug logging |
 | `Voice2Text/MenuBarView.swift` | Menu bar dropdown: Start/Stop, model picker, script toggle, Punctuation Restore, Open Window, Quit |
 | `Voice2Text/ContentView.swift` | Main window: record button, waveform, status, editable transcription, Copy button, Settings shortcut, © copyright |
 | `Voice2Text/OnboardingView.swift` | First-launch wizard: language picker → welcome → model selection (with download detection) → downloading → permissions (Accessibility) |
-| `Voice2Text/SettingsView.swift` | Settings: General (language, engine, script), Models, Shortcuts (hotkey, accessibility), Advanced (punctuation, dev mode) |
+| `Voice2Text/SettingsView.swift` | Settings: General (language, engine, script), Models, Shortcuts (hotkey, accessibility), Advanced (punctuation, dev mode), Dangerous Zone (API credentials, Post-Edit Revise) |
 | `Voice2Text/GlobalHotkeyManager.swift` | Carbon hotkey registration/unregistration, HotkeyCombo (Codable), accessibility check, CGEvent paste simulation |
 | `Voice2Text/FloatingRecordingPanel.swift` | NSPanel (nonactivatingPanel + hudWindow) floating indicator: recording/transcribing/done states |
 | `Voice2Text/HotkeyRecorderView.swift` | SwiftUI custom key combo recorder with modifier requirement |
@@ -61,7 +63,8 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `Voice2Text/WhisperBridge.swift` | Swift wrapper around whisper.cpp C API: load model, run inference, explicit freeModel() for clean shutdown |
 | `Voice2Text/AppleSpeechRecognizer.swift` | Apple SFSpeechRecognizer wrapper: streaming recognition with partial results |
 | `Voice2Text/PunctuationClient.swift` | HTTP client + auto-launcher for punctuation server |
-| `Voice2Text/AnthropicClient.swift` | Claude API client for text reformatting (feature currently greyed out) |
+| `Voice2Text/AnthropicClient.swift` | Claude API client: APICheckResult enum, checkAPI(), reviseText(), configurable base URL/model/token |
+| `Voice2Text/KeychainHelper.swift` | Minimal macOS Keychain wrapper: saveToken, loadToken, deleteToken |
 | `Voice2Text/Voice2Text-Bridging-Header.h` | `#include "whisper.h"` for Swift-C interop |
 | `Voice2Text/AppDelegate.swift` | Dock icon reopen + graceful shutdown (unregister hotkey, free model, stop recording) |
 | `Voice2Text/WindowAccessor.swift` | Captures NSWindow reference for AppDelegate |
@@ -90,7 +93,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - `textContainsChinese()` helper gates both retry logic and punctuation server usage
 - Apple Speech uses `zh-Hant` locale which handles mixed Chinese+English natively
 - Apple Speech requires network — NWPathMonitor detects connectivity in real-time
-- Post-processing pipeline: STT output → punctuation restore (optional) → Simplified/Traditional Chinese conversion
+- Post-processing pipeline: STT output → punctuation restore (optional, Chinese) → Post-Edit Revise (optional, Claude API) → Simplified/Traditional Chinese conversion
 - Punctuation server auto-launched from `/Applications/`, `~/Applications/`, or bundle-adjacent location
 - Script conversion uses Foundation `StringTransform` (`Hans-Hant` / `Hant-Hans`) — zero dependencies
 - Model selection persisted via `UserDefaults`
@@ -98,7 +101,10 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - Available models: tiny, base, small, medium, large-v3-turbo
 - Transcription text is editable by the user after transcription
 - Dev mode (off by default) shows debug log panel with timestamped entries
-- LLM reformat feature exists in code but is greyed out (company proxy limitation)
+- Post-Edit Revise: optional Claude API integration, configured in Settings > Dangerous Zone
+- API token stored in macOS Keychain (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`), never in UserDefaults or logs
+- API check state machine: Unchecked → Checking → Valid(latencyMs) / Invalid(message); field changes reset to Unchecked
+- Revise failure: graceful fallback to original text + transient orange banner (4s) + debug log entry; never permanently disables
 - Keyboard shortcuts: Spacebar push-to-talk, Cmd+C copies full transcription (or selection if any)
 - Punctuation restore enabled by default when server is available; greyed out when unavailable; auto-skipped for non-Chinese text
 - Output script (Simplified/Traditional Chinese) persisted via UserDefaults, default: Simplified
@@ -123,7 +129,8 @@ Upgrade installs auto-detect existing models (no re-download needed).
 
 ## Security
 - Punctuation server: body size limit (1MB), text length limit (50K chars), ThreadingHTTPServer
-- AnthropicClient: rejects non-localhost plaintext HTTP base URLs (returns nil); localhost HTTP allowed for dev setups
+- AnthropicClient: rejects non-localhost plaintext HTTP base URLs via `isValidBaseURL()`; localhost HTTP allowed for dev setups
+- API token stored in macOS Keychain with `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`; never in UserDefaults, logs, or error messages
 - WhisperBridge: language parameter validated against allowlist before passing to C layer
 - Clipboard auto-clear: after global hotkey auto-paste, clipboard is cleared after 30s (only if still contains our text)
 - PunctuationServer launch: code signature verified via `SecStaticCodeCheckValidity` before launching external .app
@@ -138,8 +145,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 ## TODO (Next Steps)
 1. **WAV Export** — write audio buffer to file for batch processing
 2. **UI Redesign** — separate model management into Settings page, keep main view focused on record+transcribe+copy
-3. **LLM Reformat** — re-enable when API access is available (currently blocked by company proxy)
-4. **Model checksum** — add SHA-256 verification for downloaded whisper models
+3. **Model checksum** — add SHA-256 verification for downloaded whisper models
 
 ## Workflow Rules
 - **Clarify before implementing**: when user input is ambiguous or unclear, do NOT guess — ask for clarification first and offer concrete options for the user to choose from.

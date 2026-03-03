@@ -66,6 +66,20 @@ struct ContentView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
         }
+        .overlay(alignment: .bottom) {
+            if appState.reviseFailed {
+                Text(L.reviseFailedBanner)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(Color.orange))
+                    .padding(.bottom, 52)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.easeInOut(duration: 0.3), value: appState.reviseFailed)
+            }
+        }
         .background(.regularMaterial)
         .alert(L.micAccessRequired, isPresented: $appState.showMicrophoneAlert) {
             Button(L.openSystemSettings) {
