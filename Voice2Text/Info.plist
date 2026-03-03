@@ -18,8 +18,21 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>sheincorp.cn</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2025 Voice2Text. MIT License.</string>
+	<string>Copyright © 2025-2026 C. C. Hsieh. GPL v3.0 License.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Voice2Text needs microphone access to record audio for transcription.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
