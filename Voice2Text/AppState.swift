@@ -105,6 +105,19 @@ class AppState: ObservableObject {
 
     @Published var usePunctuationRestore = false
     @Published var isPunctuationServerAvailable = false
+
+    // MARK: - Punctuation Server Install
+    @Published var isDownloadingPunctuationServer = false
+    @Published var punctuationServerDownloadProgress: Double = 0
+    @Published var isExtractingPunctuationServer = false
+    @Published var punctuationServerInstallError: String?
+
+    /// GitHub Releases URL for the PunctuationServer zip.
+    static let punctuationServerDownloadURL = URL(string: "https://github.com/anthropics/punctuation-server/releases/latest/download/PunctuationServer.zip")!
+
+    var isPunctuationServerInstalled: Bool {
+        FileManager.default.fileExists(atPath: PunctuationClient.appSupportInstallURL.path)
+    }
     @Published var audioLevel: Float = 0
     @Published var devMode: Bool = UserDefaults.standard.bool(forKey: "devMode") {
         didSet { UserDefaults.standard.set(devMode, forKey: "devMode") }
@@ -746,6 +759,123 @@ class AppState: ObservableObject {
         }
         reviseFailedFallbackTimer = item
         DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: item)
+    }
+
+    // MARK: - Punctuation Server Install/Uninstall
+
+    func installPunctuationServer() {
+        guard !isDownloadingPunctuationServer else { return }
+        isDownloadingPunctuationServer = true
+        punctuationServerDownloadProgress = 0
+        isExtractingPunctuationServer = false
+        punctuationServerInstallError = nil
+        log("PunctuationServer: starting download from \(Self.punctuationServerDownloadURL)")
+
+        let session = URLSession(configuration: .default, delegate: nil, delegateQueue: nil)
+        let task = session.downloadTask(with: Self.punctuationServerDownloadURL) { [weak self] tmpURL, response, error in
+            session.finishTasksAndInvalidate()
+            DispatchQueue.main.async {
+                guard let self else { return }
+                guard let tmpURL, error == nil else {
+                    let msg = error?.localizedDescription ?? "Unknown download error"
+                    self.log("PunctuationServer: download failed — \(msg)")
+                    self.punctuationServerInstallError = msg
+                    self.isDownloadingPunctuationServer = false
+                    self.scheduleErrorClear()
+                    return
+                }
+                self.log("PunctuationServer: download complete, extracting...")
+                self.extractPunctuationServer(zipURL: tmpURL)
+            }
+        }
+
+        let observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+            DispatchQueue.main.async {
+                self?.punctuationServerDownloadProgress = progress.fractionCompleted
+            }
+        }
+        objc_setAssociatedObject(task, "progressObservation", observation, .OBJC_ASSOCIATION_RETAIN)
+
+        task.resume()
+    }
+
+    private func extractPunctuationServer(zipURL: URL) {
+        isExtractingPunctuationServer = true
+        let destDir = Self.modelDirectory // ~/Library/Application Support/Voice2Text/
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            // Ensure destination directory exists
+            try? FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
+
+            // Remove existing installation if any
+            let installURL = PunctuationClient.appSupportInstallURL
+            if FileManager.default.fileExists(atPath: installURL.path) {
+                try? FileManager.default.removeItem(at: installURL)
+            }
+
+            // Use ditto to extract zip
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+            process.arguments = ["-xk", zipURL.path, destDir.path]
+
+            do {
+                try process.run()
+                process.waitUntilExit()
+
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.isExtractingPunctuationServer = false
+                    self.isDownloadingPunctuationServer = false
+
+                    if process.terminationStatus == 0 && FileManager.default.fileExists(atPath: installURL.path) {
+                        self.log("PunctuationServer: extracted successfully to \(installURL.path)")
+                        self.punctuationServerInstallError = nil
+                        self.checkPunctuationServer()
+                    } else {
+                        let msg = "Extraction failed (exit code \(process.terminationStatus))"
+                        self.log("PunctuationServer: \(msg)")
+                        self.punctuationServerInstallError = msg
+                        self.scheduleErrorClear()
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.isExtractingPunctuationServer = false
+                    self.isDownloadingPunctuationServer = false
+                    let msg = error.localizedDescription
+                    self.log("PunctuationServer: extraction error — \(msg)")
+                    self.punctuationServerInstallError = msg
+                    self.scheduleErrorClear()
+                }
+            }
+
+            // Clean up temp zip
+            try? FileManager.default.removeItem(at: zipURL)
+        }
+    }
+
+    func uninstallPunctuationServer() {
+        let installURL = PunctuationClient.appSupportInstallURL
+        do {
+            try FileManager.default.removeItem(at: installURL)
+            log("PunctuationServer: uninstalled from \(installURL.path)")
+        } catch {
+            log("PunctuationServer: uninstall error — \(error.localizedDescription)")
+        }
+        isPunctuationServerAvailable = false
+        usePunctuationRestore = false
+        punctuationServerInstallError = nil
+    }
+
+    private var errorClearTimer: DispatchWorkItem?
+    private func scheduleErrorClear() {
+        errorClearTimer?.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            withAnimation { self?.punctuationServerInstallError = nil }
+        }
+        errorClearTimer = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6, execute: item)
     }
 
     // MARK: - Model Management

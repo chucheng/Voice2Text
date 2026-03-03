@@ -291,6 +291,54 @@ private struct AdvancedTab: View {
                         .controlSize(.small)
                     }
                 }
+
+                // Install / Uninstall Punctuation Server
+                if appState.isDownloadingPunctuationServer {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if appState.isExtractingPunctuationServer {
+                            HStack(spacing: 6) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text(L.extracting)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        } else {
+                            ProgressView(value: appState.punctuationServerDownloadProgress)
+                            Text(L.downloadingPunctuationServer(Int(appState.punctuationServerDownloadProgress * 100)))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                } else if appState.isPunctuationServerInstalled {
+                    HStack {
+                        Label(L.punctuationServerInstalled, systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                        Spacer()
+                        Button(L.uninstallPunctuationServer, role: .destructive) {
+                            appState.uninstallPunctuationServer()
+                        }
+                        .controlSize(.small)
+                    }
+                } else if !appState.isPunctuationServerAvailable {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Button(L.installPunctuationServer) {
+                            appState.installPunctuationServer()
+                        }
+                        .controlSize(.small)
+
+                        Text(L.punctuationServerSizeNote)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                if let error = appState.punctuationServerInstallError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
             }
 
             Section(L.developerSection) {

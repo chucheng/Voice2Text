@@ -477,6 +477,27 @@ enum L {
         lang == .english ? "Warning: HTTP sends credentials in cleartext" : "警告：HTTP 以明文发送凭证"
     }
 
+    // MARK: Punctuation Server Install
+
+    static var installPunctuationServer: String {
+        lang == .english ? "Install Punctuation Server" : "安装标点服务器"
+    }
+    static var uninstallPunctuationServer: String {
+        lang == .english ? "Uninstall Punctuation Server" : "卸载标点服务器"
+    }
+    static var punctuationServerInstalled: String {
+        lang == .english ? "Punctuation Server installed" : "标点服务器已安装"
+    }
+    static func downloadingPunctuationServer(_ percent: Int) -> String {
+        lang == .english ? "Downloading... \(percent)%" : "下载中… \(percent)%"
+    }
+    static var punctuationServerSizeNote: String {
+        lang == .english ? "~500 MB download (BERT model + runtime)" : "约 500 MB 下载（BERT 模型 + 运行时）"
+    }
+    static var extracting: String {
+        lang == .english ? "Extracting..." : "解压中…"
+    }
+
     // MARK: What's New
 
     static func whatsNewTitle(_ version: String) -> String {
