@@ -5,12 +5,16 @@
             "en": [
                 "In-app Punctuation Server install/uninstall from Settings > Advanced",
                 "One-click download (~500 MB) with progress bar, auto-extract and launch",
-                "Uninstall button to remove the server when no longer needed"
+                "Uninstall button to remove the server when no longer needed",
+                "BERT & LLM status indicators in main window top bar",
+                "Renamed 'Dangerous Zone' tab to 'AI Services'"
             ],
             "zh": [
                 "在设置 > 高级中一键安装/卸载标点服务器",
                 "一键下载（约 500 MB）含进度条，自动解压并启动",
-                "卸载按钮可在不需要时移除服务器"
+                "卸载按钮可在不需要时移除服务器",
+                "主窗口顶栏显示 BERT 和 LLM 状态指示器",
+                "「危险区」标签页更名为「AI 服务」"
             ]
         }
     },
