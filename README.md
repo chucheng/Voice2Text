@@ -6,11 +6,9 @@
 
 ---
 
-> **Currently supports Chinese + English mixed input.**
-> Other languages are not yet supported out of the box, but Whisper itself supports 99 languages — adding a new language is straightforward. See [Adding Other Languages](#adding-other-languages) below.
+> **Supports 99 languages via Whisper.** Optimized for Chinese + English mixed input with automatic punctuation restoration. Other languages work out of the box — just speak and Whisper auto-detects.
 >
-> **目前支援中文與英文混合輸入。**
-> 尚未內建其他語言支援，但 Whisper 本身支援 99 種語言 — 新增語言非常簡單，請參考下方說明。
+> **支援 99 種語言。** 針對中英文混合輸入特別優化，含自動標點還原。其他語言開箱即用 — 直接說話，Whisper 會自動辨識語言。
 
 ---
 
