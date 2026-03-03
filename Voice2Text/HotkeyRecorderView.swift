@@ -15,7 +15,7 @@ struct HotkeyRecorderView: View {
                     startListening()
                 }
             }) {
-                Text(isListening ? "Press shortcut..." : combo.displayString)
+                Text(isListening ? L.pressShortcut : combo.displayString)
                     .font(.system(size: 13, weight: .medium, design: .rounded))
                     .frame(minWidth: 100)
                     .padding(.horizontal, 12)
@@ -35,7 +35,7 @@ struct HotkeyRecorderView: View {
             }
 
             if combo != .default {
-                Button("Reset") {
+                Button(L.reset) {
                     combo = .default
                 }
                 .controlSize(.small)

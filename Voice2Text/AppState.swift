@@ -76,6 +76,15 @@ class AppState: ObservableObject {
     @Published var isLLMAvailable = false
     @Published var sttEngine: STTEngine = .whisper
     @Published var isNetworkAvailable = false
+    @Published var uiLanguage: UILanguage = {
+        if let saved = UserDefaults.standard.string(forKey: "uiLanguage"),
+           let lang = UILanguage(rawValue: saved) {
+            return lang
+        }
+        return UILanguage.systemDefault
+    }() {
+        didSet { UserDefaults.standard.set(uiLanguage.rawValue, forKey: "uiLanguage") }
+    }
     @Published var usePunctuationRestore = false
     @Published var isPunctuationServerAvailable = false
     @Published var audioLevel: Float = 0

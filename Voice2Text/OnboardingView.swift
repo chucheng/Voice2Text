@@ -36,14 +36,23 @@ struct OnboardingView: View {
         VStack(spacing: 20) {
             Spacer()
 
+            // Language picker
+            Picker("", selection: $appState.uiLanguage) {
+                ForEach(UILanguage.allCases) { lang in
+                    Text(lang.rawValue).tag(lang)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 200)
+
             Image(systemName: "waveform.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(.blue.gradient)
 
-            Text("Welcome to Voice2Text")
+            Text(L.welcomeTitle)
                 .font(.title.bold())
 
-            Text("Transcribe speech to text using AI — right from your menu bar.")
+            Text(L.welcomeSubtitle)
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -56,7 +65,7 @@ struct OnboardingView: View {
                     step = .modelSelection
                 }
             }) {
-                Text("Get Started")
+                Text(L.getStarted)
                     .font(.headline)
                     .frame(maxWidth: 200)
             }
@@ -73,11 +82,11 @@ struct OnboardingView: View {
 
     private var modelSelectionStep: some View {
         VStack(spacing: 16) {
-            Text("Choose a Speech Model")
+            Text(L.chooseModel)
                 .font(.title2.bold())
                 .padding(.top, 24)
 
-            Text("Download a Whisper model for offline transcription, or skip to use Apple Speech (requires internet).")
+            Text(L.chooseModelSubtitle)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -99,7 +108,7 @@ struct OnboardingView: View {
             .frame(maxHeight: 200)
 
             HStack(spacing: 12) {
-                Button("Skip — Use Apple Speech") {
+                Button(L.skipAppleSpeech) {
                     appState.sttEngine = .apple
                     withAnimation(.easeInOut(duration: 0.3)) {
                         step = .permissions
@@ -109,7 +118,7 @@ struct OnboardingView: View {
                 .buttonStyle(.bordered)
 
                 if appState.isModelDownloaded(selectedModel) {
-                    Button("Continue with \(selectedModel.rawValue)") {
+                    Button(L.continueWith(selectedModel.rawValue)) {
                         appState.sttEngine = .whisper
                         appState.switchModel(to: selectedModel)
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -119,7 +128,7 @@ struct OnboardingView: View {
                     .controlSize(.large)
                     .buttonStyle(.borderedProminent)
                 } else {
-                    Button("Download & Continue") {
+                    Button(L.downloadAndContinue) {
                         appState.sttEngine = .whisper
                         appState.switchModel(to: selectedModel)
                         appState.downloadModel(selectedModel)
@@ -153,7 +162,7 @@ struct OnboardingView: View {
                 .foregroundStyle(.blue)
                 .symbolEffect(.pulse, isActive: appState.isDownloadingModel)
 
-            Text("Downloading \(selectedModel.displayName)")
+            Text(L.downloading(selectedModel.displayName))
                 .font(.title3.bold())
 
             VStack(spacing: 8) {
@@ -167,7 +176,7 @@ struct OnboardingView: View {
             }
 
             if !appState.isDownloadingModel && appState.isModelDownloaded(selectedModel) {
-                Text("Download complete!")
+                Text(L.downloadComplete)
                     .font(.callout)
                     .foregroundColor(.green)
                     .transition(.opacity)
@@ -198,26 +207,26 @@ struct OnboardingView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.blue.gradient)
 
-            Text("Global Hotkey")
+            Text(L.globalHotkey)
                 .font(.title2.bold())
 
             VStack(spacing: 12) {
-                Text("**Hold ⌘; from any app** to start recording, **release** to transcribe and auto-paste at your cursor.")
+                Text(L.hotkeyDescription)
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 320)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Label("Voice-to-text in any app — no switching windows", systemImage: "text.cursor")
-                    Label("Hold to record, release to paste — one shortcut does it all", systemImage: "keyboard")
-                    Label("Works in browsers, editors, chat apps, terminals...", systemImage: "globe")
+                    Label(L.hotkeyFeature1, systemImage: "text.cursor")
+                    Label(L.hotkeyFeature2, systemImage: "keyboard")
+                    Label(L.hotkeyFeature3, systemImage: "globe")
                 }
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: 320, alignment: .leading)
 
-                Text("Accessibility permission is needed so Voice2Text can paste text at your cursor position.")
+                Text(L.accessibilityNote)
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)
@@ -225,7 +234,7 @@ struct OnboardingView: View {
             }
 
             if appState.isAccessibilityGranted {
-                Label("Accessibility Granted", systemImage: "checkmark.circle.fill")
+                Label(L.accessibilityGranted, systemImage: "checkmark.circle.fill")
                     .foregroundColor(.green)
                     .font(.callout.bold())
             }
@@ -239,7 +248,7 @@ struct OnboardingView: View {
                         // Poll for grant
                         pollAccessibility()
                     }) {
-                        Text("Open System Settings")
+                        Text(L.openSystemSettings)
                             .font(.headline)
                             .frame(maxWidth: 200)
                     }
@@ -248,14 +257,14 @@ struct OnboardingView: View {
                 }
 
                 if appState.isAccessibilityGranted {
-                    Button("Continue") {
+                    Button(L.continueButton) {
                         appState.onboardingCompleted = true
                         appState.checkPermissionsOnLaunch()
                     }
                     .controlSize(.large)
                     .buttonStyle(.borderedProminent)
                 } else {
-                    Button("Skip for Now") {
+                    Button(L.skipForNow) {
                         appState.globalHotkeyEnabled = true
                         appState.onboardingCompleted = true
                         appState.checkPermissionsOnLaunch()
@@ -307,7 +316,7 @@ private struct ModelOptionRow: View {
                     Text(model.displayName)
                         .fontWeight(isSelected ? .semibold : .regular)
                     if isDownloaded {
-                        Text("Downloaded")
+                        Text(L.downloaded)
                             .font(.caption2)
                             .fontWeight(.medium)
                             .padding(.horizontal, 6)
@@ -316,7 +325,7 @@ private struct ModelOptionRow: View {
                             .foregroundColor(.green)
                     }
                 }
-                Text(modelDescription(model))
+                Text(L.modelDescription(model))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -327,15 +336,5 @@ private struct ModelOptionRow: View {
             }
         }
         .padding(.vertical, 2)
-    }
-
-    private func modelDescription(_ model: WhisperModel) -> String {
-        switch model {
-        case .tiny: return "Fastest, lowest accuracy"
-        case .base: return "Good balance of speed and accuracy"
-        case .small: return "Better accuracy, moderate size"
-        case .medium: return "High accuracy, large download"
-        case .largeTurbo: return "Best accuracy, largest download"
-        }
     }
 }

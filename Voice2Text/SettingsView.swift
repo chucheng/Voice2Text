@@ -7,22 +7,22 @@ struct SettingsView: View {
         TabView {
             GeneralTab(appState: appState)
                 .tabItem {
-                    Label("General", systemImage: "gearshape")
+                    Label(L.generalTab, systemImage: "gearshape")
                 }
 
             ModelsTab(appState: appState)
                 .tabItem {
-                    Label("Models", systemImage: "cube.box")
+                    Label(L.modelsTab, systemImage: "cube.box")
                 }
 
             ShortcutsTab(appState: appState)
                 .tabItem {
-                    Label("Shortcuts", systemImage: "keyboard")
+                    Label(L.shortcutsTab, systemImage: "keyboard")
                 }
 
             AdvancedTab(appState: appState)
                 .tabItem {
-                    Label("Advanced", systemImage: "wrench.and.screwdriver")
+                    Label(L.advancedTab, systemImage: "wrench.and.screwdriver")
                 }
         }
         .frame(width: 450, height: 380)
@@ -36,8 +36,17 @@ private struct GeneralTab: View {
 
     var body: some View {
         Form {
-            Section("Speech-to-Text Engine") {
-                Picker("Engine", selection: $appState.sttEngine) {
+            Section(L.languageSection) {
+                Picker(L.languageLabel, selection: $appState.uiLanguage) {
+                    ForEach(UILanguage.allCases) { lang in
+                        Text(lang.rawValue).tag(lang)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Section(L.sttEngineSection) {
+                Picker(L.engineLabel, selection: $appState.sttEngine) {
                     ForEach(STTEngine.allCases) { engine in
                         Text(engine.rawValue).tag(engine)
                     }
@@ -48,15 +57,15 @@ private struct GeneralTab: View {
                     HStack {
                         Image(systemName: appState.isNetworkAvailable ? "wifi" : "wifi.slash")
                             .foregroundColor(appState.isNetworkAvailable ? .green : .red)
-                        Text(appState.isNetworkAvailable ? "Network available" : "No network — Apple Speech requires internet")
+                        Text(appState.isNetworkAvailable ? L.networkAvailable : L.noNetworkAppleSpeech)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                 }
             }
 
-            Section("Output Script") {
-                Picker("Script", selection: $appState.outputScript) {
+            Section(L.outputScriptSection) {
+                Picker(L.scriptLabel, selection: $appState.outputScript) {
                     ForEach(OutputScript.allCases) { script in
                         Text(script.rawValue).tag(script)
                     }
@@ -88,7 +97,7 @@ private struct ModelsTab: View {
             if appState.isDownloadingModel {
                 VStack(spacing: 4) {
                     ProgressView(value: appState.downloadProgress)
-                    Text("Downloading... \(Int(appState.downloadProgress * 100))%")
+                    Text(L.downloadingProgress(Int(appState.downloadProgress * 100)))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -119,7 +128,7 @@ private struct ModelRow: View {
                     }
                 }
                 if isSelected && !isLoaded && isDownloaded {
-                    Text("Loading...")
+                    Text(L.loading)
                         .font(.caption)
                         .foregroundColor(.orange)
                 }
@@ -129,7 +138,7 @@ private struct ModelRow: View {
 
             if isDownloaded {
                 if !isSelected {
-                    Button("Select") {
+                    Button(L.selectButton) {
                         appState.switchModel(to: model)
                     }
                     .controlSize(.small)
@@ -140,9 +149,9 @@ private struct ModelRow: View {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
-                .help("Delete model")
+                .help(L.deleteTooltip)
             } else {
-                Button("Download") {
+                Button(L.downloadButton) {
                     appState.switchModel(to: model)
                     appState.downloadModel(model)
                 }
@@ -163,8 +172,8 @@ private struct ShortcutsTab: View {
 
     var body: some View {
         Form {
-            Section("Global Push-to-Talk") {
-                Toggle("Enable global hotkey", isOn: $appState.globalHotkeyEnabled)
+            Section(L.globalPushToTalk) {
+                Toggle(L.enableGlobalHotkey, isOn: $appState.globalHotkeyEnabled)
                     .onChange(of: appState.globalHotkeyEnabled) { _, enabled in
                         if enabled {
                             GlobalHotkeyManager.shared.register()
@@ -175,7 +184,7 @@ private struct ShortcutsTab: View {
 
                 if appState.globalHotkeyEnabled {
                     HStack {
-                        Text("Shortcut")
+                        Text(L.shortcutLabel)
                         Spacer()
                         HotkeyRecorderView(combo: $combo)
                             .onChange(of: combo) { _, newCombo in
@@ -183,30 +192,30 @@ private struct ShortcutsTab: View {
                             }
                     }
 
-                    Text("Hold the shortcut from any app to record. Release to transcribe and auto-paste.")
+                    Text(L.hotkeyUsageHint)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
 
-            Section("Accessibility") {
+            Section(L.accessibilitySection) {
                 HStack {
                     Circle()
                         .fill(appState.isAccessibilityGranted ? .green : .orange)
                         .frame(width: 8, height: 8)
                     Text(appState.isAccessibilityGranted
-                         ? "Accessibility granted — auto-paste enabled"
-                         : "Accessibility not granted — auto-paste disabled")
+                         ? L.accessibilityGrantedStatus
+                         : L.accessibilityNotGrantedStatus)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
 
                 if !appState.isAccessibilityGranted {
-                    Text("Without Accessibility, the global hotkey will still record and copy to clipboard, but cannot auto-paste.")
+                    Text(L.accessibilityWarning)
                         .font(.caption)
                         .foregroundColor(.orange)
 
-                    Button("Open System Settings") {
+                    Button(L.openSystemSettings) {
                         GlobalHotkeyManager.requestAccessibility()
                     }
                     .controlSize(.small)
@@ -248,11 +257,11 @@ private struct AdvancedTab: View {
 
     var body: some View {
         Form {
-            Section("Punctuation Restoration (Chinese + English only)") {
-                Toggle("Enable punctuation restore", isOn: $appState.usePunctuationRestore)
+            Section(L.punctuationSection) {
+                Toggle(L.enablePunctuation, isOn: $appState.usePunctuationRestore)
                     .disabled(!appState.isPunctuationServerAvailable)
 
-                Text("Uses a BERT model to add punctuation to Chinese text. Non-Chinese speech is not affected. When disabled, the zh-wiki-punctuation-restore model is not used.")
+                Text(L.punctuationDescription)
                     .font(.caption)
                     .foregroundColor(.secondary)
 
@@ -260,12 +269,12 @@ private struct AdvancedTab: View {
                     Circle()
                         .fill(appState.isPunctuationServerAvailable ? .green : .red)
                         .frame(width: 8, height: 8)
-                    Text(appState.isPunctuationServerAvailable ? "Server available" : "Server unavailable")
+                    Text(appState.isPunctuationServerAvailable ? L.serverAvailable : L.serverUnavailable)
                         .font(.caption)
                         .foregroundColor(.secondary)
 
                     if !appState.isPunctuationServerAvailable {
-                        Button("Retry") {
+                        Button(L.retry) {
                             appState.checkPunctuationServer()
                         }
                         .controlSize(.small)
@@ -273,8 +282,8 @@ private struct AdvancedTab: View {
                 }
             }
 
-            Section("Developer") {
-                Toggle("Dev Mode", isOn: $appState.devMode)
+            Section(L.developerSection) {
+                Toggle(L.devModeToggle, isOn: $appState.devMode)
             }
         }
         .formStyle(.grouped)
@@ -283,11 +292,11 @@ private struct AdvancedTab: View {
         if appState.devMode {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text("Debug Log")
+                    Text(L.debugLogTitle)
                         .font(.caption.bold())
                         .foregroundColor(.secondary)
                     Spacer()
-                    Button("Clear") {
+                    Button(L.clear) {
                         appState.debugLog.removeAll()
                     }
                     .font(.caption)

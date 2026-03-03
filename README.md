@@ -25,6 +25,7 @@ That's it. No window switching, no copy-paste. Powered by [whisper.cpp](https://
 - **Global hotkey (⌘;)** — hold from any app to record, release to auto-paste at cursor
 - **Dual STT engines** — whisper.cpp (offline) and Apple Speech Recognition (online, streaming)
 - **99 languages supported** — Whisper auto-detects language; optimized for Chinese + English
+- **In-app language switching** — English / 简体中文 UI, selectable during onboarding and in Settings
 - **Simplified/Traditional Chinese** output toggle
 - **Multiple whisper models** — tiny, base, small, medium, large-v3-turbo (downloaded on-demand)
 - **Push-to-talk** — hold Spacebar to record in-app, release to transcribe
@@ -246,6 +247,7 @@ Voice2Text/
 ├── WaveformView.swift           # Canvas-based animated audio waveform
 ├── TranscriptionView.swift      # Editable transcription text area
 ├── CopyButton.swift             # Copy-to-clipboard button with animation
+├── Strings.swift                # UILanguage enum + L localization enum (English / 简体中文)
 ├── AudioRecorder.swift          # AVAudioEngine + AVAudioConverter (16kHz mono Float32)
 ├── WhisperBridge.swift          # Swift wrapper around whisper.cpp C API
 ├── AppleSpeechRecognizer.swift  # Apple SFSpeechRecognizer wrapper
@@ -270,6 +272,12 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v1.3.0 — In-App Language Switching
+- **UI language switching** — English / 简体中文, with segmented picker on onboarding welcome step and Settings > General
+- **Localized strings** — ~85 UI strings across all views, powered by `Strings.swift` `L` enum
+- **System language detection** — defaults to Chinese if macOS locale contains "zh", otherwise English
+- **Copyright notice** — "© C. C. Hsieh" appears in ContentView bottom toolbar after first-use tooltip disappears
 
 ### v1.2.0 — 99 Language Support
 - **99 languages** — Whisper auto-detects language; all languages work out of the box

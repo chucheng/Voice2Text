@@ -16,7 +16,7 @@ struct TranscriptionView: View {
                     Image(systemName: "text.bubble")
                         .font(.system(size: 28))
                         .foregroundStyle(.tertiary)
-                    Text("Transcription will appear here")
+                    Text(L.transcriptionPlaceholder)
                         .font(.callout)
                         .foregroundStyle(.tertiary)
                 }
@@ -39,7 +39,7 @@ struct TranscriptionView: View {
                     if !text.isEmpty {
                         HStack {
                             Spacer()
-                            Text("\(text.count) chars")
+                            Text(L.charCount(text.count))
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
                                 .padding(.trailing, 12)
