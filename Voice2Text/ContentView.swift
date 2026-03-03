@@ -89,6 +89,18 @@ struct ContentView: View {
         } message: {
             Text("Grant Accessibility permission to let the global hotkey (⌘;) auto-paste transcriptions at your cursor. Without it, text will only be copied to clipboard.")
         }
+        .alert("Accessibility Permission Needs Refresh", isPresented: $appState.showAccessibilityUpgradeAlert) {
+            Button("Open System Settings") {
+                GlobalHotkeyManager.requestAccessibility()
+            }
+            Button("Disable Global Hotkey") {
+                appState.globalHotkeyEnabled = false
+                GlobalHotkeyManager.shared.unregister()
+            }
+            Button("Later", role: .cancel) {}
+        } message: {
+            Text("After updating Voice2Text, macOS may invalidate the Accessibility permission. Please open System Settings → Privacy & Security → Accessibility, then toggle Voice2Text OFF and back ON to refresh.")
+        }
     }
 
     // MARK: - Top Bar
