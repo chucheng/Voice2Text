@@ -1,5 +1,16 @@
 [
     {
+        "version": "1.6.1",
+        "changes": {
+            "en": [
+                "Settings: AUTH_TOKEN label renamed to API_KEY"
+            ],
+            "zh": [
+                "设置：AUTH_TOKEN 标签改为 API_KEY"
+            ]
+        }
+    },
+    {
         "version": "1.6.0",
         "changes": {
             "en": [
