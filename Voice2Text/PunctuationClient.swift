@@ -55,9 +55,18 @@ final class PunctuationClient {
 
     // MARK: - Server Launch
 
+    /// Installation path inside Application Support (sandbox-safe).
+    static let appSupportInstallURL: URL = {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return appSupport.appendingPathComponent("Voice2Text/PunctuationServer.app")
+    }()
+
     /// Search paths for PunctuationServer.app
     private static let searchPaths: [URL] = {
         var paths: [URL] = []
+
+        // ~/Library/Application Support/Voice2Text/PunctuationServer.app (in-app install)
+        paths.append(appSupportInstallURL)
 
         // /Applications/
         paths.append(URL(fileURLWithPath: "/Applications/PunctuationServer.app"))

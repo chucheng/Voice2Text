@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.6.2** — ATS exception for sheincorp.cn + copyright fix.
+**Version: 1.7.0** — In-app PunctuationServer install/uninstall from Settings.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -41,7 +41,8 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - PyInstaller spec + build script in `scripts/` for packaging as `PunctuationServer.app`
 - Models cached to `~/Library/Application Support/PunctuationServer/models/`
 - Voice2Text auto-launches the server app if found in known locations
-- `PunctuationClient.swift` handles health checks, restoration requests, and auto-launch
+- In-app install/uninstall from Settings > Advanced (downloads zip from GitHub Releases, extracts to Application Support)
+- `PunctuationClient.swift` handles health checks, restoration requests, auto-launch, and install path
 
 ### Known Bugs
 - None currently tracked

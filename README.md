@@ -236,7 +236,7 @@ The server listens on `http://127.0.0.1:18230`:
 - `GET /health` — health check
 - `POST /restore` — `{"text": "..."}` → `{"text": "punctuated...", "elapsed_ms": 42}`
 
-Voice2Text auto-launches the server app if found in `/Applications/`, `~/Applications/`, or alongside the Voice2Text.app bundle.
+Voice2Text auto-launches the server app if found in `~/Library/Application Support/Voice2Text/`, `/Applications/`, `~/Applications/`, or alongside the Voice2Text.app bundle. You can also install it directly from **Settings > Advanced** with one click.
 
 ## Project Structure
 
@@ -284,6 +284,13 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v1.7.0 — In-App Punctuation Server Install
+- **One-click install** — install PunctuationServer.app directly from Settings > Advanced (~500 MB download)
+- **Progress tracking** — download progress bar with percentage, extraction status indicator
+- **Auto-launch** — server auto-launches and health-checks after installation
+- **Uninstall** — remove the server with one click when no longer needed
+- **Sandbox-safe** — installed to `~/Library/Application Support/Voice2Text/` (no admin privileges needed)
 
 ### v1.6.2 — ATS Exception + Copyright Fix
 - **ATS exception** — allow HTTP for `sheincorp.cn` domain (internal proxy support)
