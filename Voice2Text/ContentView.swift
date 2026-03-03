@@ -99,7 +99,7 @@ struct ContentView: View {
             }
             Button("Later", role: .cancel) {}
         } message: {
-            Text("After updating Voice2Text, macOS may invalidate the Accessibility permission. Please open System Settings → Privacy & Security → Accessibility, then toggle Voice2Text OFF and back ON to refresh.")
+            Text("After updating Voice2Text, macOS invalidates the Accessibility permission. Please open System Settings → Privacy & Security → Accessibility, select Voice2Text and click \"−\" to remove it, then re-add it by clicking \"+\" or relaunch the app.")
         }
     }
 
