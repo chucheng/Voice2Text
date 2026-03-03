@@ -21,6 +21,11 @@ struct Voice2TextApp: App {
         }
         .defaultSize(width: 440, height: 520)
 
+        Window(L.debugLogTitle, id: "debug-log") {
+            DebugLogView()
+        }
+        .defaultSize(width: 600, height: 400)
+
         Settings {
             SettingsView()
         }

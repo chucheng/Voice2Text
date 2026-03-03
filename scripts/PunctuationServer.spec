@@ -28,10 +28,9 @@ excludes = [
     'torch.distributions',
     'torch.testing',
     'torch.utils.tensorboard',
-    # CUDA backends — not needed on macOS
-    'torch.cuda',
+    # CUDA runtime binaries — not needed on macOS, but keep torch.cuda module
+    # (torch.__init__ imports torch.cuda at startup even on non-CUDA platforms)
     'torch._C._cuda',
-    'torch.backends.cuda',
     'torch.backends.cudnn',
     # Other unnecessary backends
     'torch.backends.mkl',

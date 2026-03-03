@@ -9,7 +9,9 @@
 /* Begin PBXBuildFile section */
 		007B47F4AA150FDA0850A2E3 /* RecordButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A87D51808C9EA1F06617B9 /* RecordButton.swift */; };
 		0B3E55E8EE1F4BA4F89039B8 /* Voice2TextApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257E4F6E36A9D0538A8C8460 /* Voice2TextApp.swift */; };
+		1485104CB81EAFEC00F78951 /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF9F95526071C429D9B8290F /* WhatsNewView.swift */; };
 		17939FC1FBC123AD266B9455 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96473EC3802040242118B3D5 /* OnboardingView.swift */; };
+		19A027F09DA438EABE50E0DD /* DebugLogWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED0EC7F0A949EB7FF906521 /* DebugLogWindow.swift */; };
 		1AD40BC12A00A0B05549FC14 /* Strings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28E540758DB50D4FB2B47584 /* Strings.swift */; };
 		1CE6204696086B1559DF273D /* AppleSpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFCE46EBEF6F1D9D4AC98D4 /* AppleSpeechRecognizer.swift */; };
 		234A6EAE6B9400C36FC9050B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6352532232E1E479AF6863A0 /* SettingsView.swift */; };
@@ -20,6 +22,7 @@
 		745FB61AFC0BB0F202444E49 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9BD370F623D776BACF7302B /* AppDelegate.swift */; };
 		7518410A6E394FE6372B62FD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA3E3EC17A7601EFDA66D88 /* ContentView.swift */; };
 		82176D08A5BBCAD70BB88481 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA1436CBCDFBCD2045F2216 /* MenuBarView.swift */; };
+		864449D5FBD9E613BA20D7C3 /* WhatsNew.json in Resources */ = {isa = PBXBuildFile; fileRef = 050E4D20A662937380AB9F30 /* WhatsNew.json */; };
 		967CCE006573610E3134B0E4 /* GlobalHotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D09497CC62015C5A2C8966F3 /* GlobalHotkeyManager.swift */; };
 		97B195D0564AA1001A200729 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EFBDC98DF22721ACF0599DE /* KeychainHelper.swift */; };
 		9B47DC7D6F66613BC14C4463 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB985066725A38DFB0DBA3E5 /* Security.framework */; };
@@ -38,6 +41,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		050E4D20A662937380AB9F30 /* WhatsNew.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = WhatsNew.json; sourceTree = "<group>"; };
 		0B3A6C140990D4FC86814099 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		1AB59BC277616C02BAF0E751 /* WindowAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAccessor.swift; sourceTree = "<group>"; };
 		1CA2D5D489F1259F37D5C860 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -61,12 +65,14 @@
 		8EF2095430F612A32FA9C745 /* PunctuationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PunctuationClient.swift; sourceTree = "<group>"; };
 		96473EC3802040242118B3D5 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		9EB76AB4A01EA80DD3A955A1 /* WaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformView.swift; sourceTree = "<group>"; };
+		9ED0EC7F0A949EB7FF906521 /* DebugLogWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogWindow.swift; sourceTree = "<group>"; };
 		A7E9A61FA62F439336DE7D42 /* HotkeyRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyRecorderView.swift; sourceTree = "<group>"; };
 		AD9EC33F2FDD613C1DB59147 /* Voice2Text.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Voice2Text.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB985066725A38DFB0DBA3E5 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		BBA1436CBCDFBCD2045F2216 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		C0A29669E65D4DB980F6DA71 /* AnthropicClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicClient.swift; sourceTree = "<group>"; };
 		C9BD370F623D776BACF7302B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		CF9F95526071C429D9B8290F /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
 		D09497CC62015C5A2C8966F3 /* GlobalHotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkeyManager.swift; sourceTree = "<group>"; };
 		E926301EDFDBC04B56BB4681 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 		F7524ADDFF9C1223A3FCAFAF /* Voice2Text-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Voice2Text-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -99,6 +105,7 @@
 				4D96081A4CA4C39943765931 /* AudioRecorder.swift */,
 				8BA3E3EC17A7601EFDA66D88 /* ContentView.swift */,
 				6618D7DE87DDD3E3C2B93335 /* CopyButton.swift */,
+				9ED0EC7F0A949EB7FF906521 /* DebugLogWindow.swift */,
 				89DB98EA7E9FE79C66E9667E /* FloatingRecordingPanel.swift */,
 				D09497CC62015C5A2C8966F3 /* GlobalHotkeyManager.swift */,
 				A7E9A61FA62F439336DE7D42 /* HotkeyRecorderView.swift */,
@@ -115,6 +122,8 @@
 				750BA70A1ADF91C2FFD1516E /* Voice2Text.entitlements */,
 				257E4F6E36A9D0538A8C8460 /* Voice2TextApp.swift */,
 				9EB76AB4A01EA80DD3A955A1 /* WaveformView.swift */,
+				050E4D20A662937380AB9F30 /* WhatsNew.json */,
+				CF9F95526071C429D9B8290F /* WhatsNewView.swift */,
 				6B743E6EBCCD2CEB90AF1569 /* WhisperBridge.swift */,
 				1AB59BC277616C02BAF0E751 /* WindowAccessor.swift */,
 			);
@@ -206,6 +215,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AE65E69C48C7E7375C25B8CA /* Assets.xcassets in Resources */,
+				864449D5FBD9E613BA20D7C3 /* WhatsNew.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -223,6 +233,7 @@
 				E6213B1B124C726FA0331476 /* AudioRecorder.swift in Sources */,
 				7518410A6E394FE6372B62FD /* ContentView.swift in Sources */,
 				D15A75500496C35876628348 /* CopyButton.swift in Sources */,
+				19A027F09DA438EABE50E0DD /* DebugLogWindow.swift in Sources */,
 				C780D9A9F3E838BB873B51FA /* FloatingRecordingPanel.swift in Sources */,
 				967CCE006573610E3134B0E4 /* GlobalHotkeyManager.swift in Sources */,
 				56070AA1C35BC229E127C4ED /* HotkeyRecorderView.swift in Sources */,
@@ -236,6 +247,7 @@
 				710DC49DAB81A54B9BC1B249 /* TranscriptionView.swift in Sources */,
 				0B3E55E8EE1F4BA4F89039B8 /* Voice2TextApp.swift in Sources */,
 				D6F3AC5A94B661D0E1118BE1 /* WaveformView.swift in Sources */,
+				1485104CB81EAFEC00F78951 /* WhatsNewView.swift in Sources */,
 				71BC54E749431CB1926B64D6 /* WhisperBridge.swift in Sources */,
 				ADE30F5B7B29DB40447CB373 /* WindowAccessor.swift in Sources */,
 			);
@@ -306,7 +318,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Voice2Text/Voice2Text.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Whisper/include",
@@ -320,7 +332,7 @@
 					"$(PROJECT_DIR)/Whisper/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				OTHER_LDFLAGS = (
 					"-lwhisper",
 					"-lggml",
@@ -342,7 +354,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Voice2Text/Voice2Text.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Whisper/include",
@@ -356,7 +368,7 @@
 					"$(PROJECT_DIR)/Whisper/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				OTHER_LDFLAGS = (
 					"-lwhisper",
 					"-lggml",

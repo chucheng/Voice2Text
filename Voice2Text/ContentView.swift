@@ -77,6 +77,26 @@ struct ContentView: View {
                     .background(Capsule().fill(Color.orange))
                     .padding(.bottom, 52)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if appState.reviseFailedWithFallback {
+                Text(L.reviseFailedFallbackBanner)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(Color.orange))
+                    .padding(.bottom, 52)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .overlay(alignment: .top) {
+            if appState.showWhatsNew, let entry = appState.whatsNewEntry {
+                WhatsNewView(
+                    entry: entry,
+                    language: appState.uiLanguage,
+                    onDismiss: { appState.dismissWhatsNew() }
+                )
+                .padding(.top, 8)
             }
         }
         .background(.regularMaterial)

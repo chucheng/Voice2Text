@@ -1,0 +1,103 @@
+[
+    {
+        "version": "1.6.0",
+        "changes": {
+            "en": [
+                "Custom Revise Prompt: customize what the LLM does with your transcript",
+                "LLM + BERT mutual exclusivity: LLM handles punctuation, BERT as fallback",
+                "What's New screen on version update (auto-dismiss 3s)",
+                "Resizable Settings window"
+            ],
+            "zh": [
+                "自定义修订提示词：自定义 LLM 对转写内容的处理方式",
+                "LLM 与 BERT 互斥：LLM 处理标点，BERT 作为回退",
+                "版本更新后显示新功能（3 秒自动关闭）",
+                "设置窗口可调整大小"
+            ]
+        }
+    },
+    {
+        "version": "1.5.0",
+        "changes": {
+            "en": [
+                "Allow HTTP URLs for internal proxies",
+                "Improved Dangerous Zone tab labels"
+            ],
+            "zh": [
+                "允许内部代理使用 HTTP URL",
+                "改进危险区标签显示"
+            ]
+        }
+    },
+    {
+        "version": "1.4.0",
+        "changes": {
+            "en": [
+                "Dangerous Zone: Post-Edit Revise via Claude API",
+                "API credentials stored securely in Keychain",
+                "Graceful fallback on API failure"
+            ],
+            "zh": [
+                "危险区：通过 Claude API 进行后编辑修订",
+                "API 凭证安全存储在钥匙串中",
+                "API 失败时优雅回退"
+            ]
+        }
+    },
+    {
+        "version": "1.3.0",
+        "changes": {
+            "en": [
+                "In-app language switching (English / Simplified Chinese)",
+                "All UI strings localized"
+            ],
+            "zh": [
+                "应用内语言切换（英语 / 简体中文）",
+                "所有界面文字已本地化"
+            ]
+        }
+    },
+    {
+        "version": "1.2.0",
+        "changes": {
+            "en": [
+                "99 language support via Whisper auto-detect",
+                "Punctuation server auto-launch"
+            ],
+            "zh": [
+                "通过 Whisper 自动检测支持 99 种语言",
+                "标点服务器自动启动"
+            ]
+        }
+    },
+    {
+        "version": "1.1.0",
+        "changes": {
+            "en": [
+                "Global hotkey (⌘;) push-to-talk from any app",
+                "Floating recording panel",
+                "Auto-paste at cursor position"
+            ],
+            "zh": [
+                "全局快捷键（⌘;）任意应用中按键说话",
+                "悬浮录音面板",
+                "自动粘贴到光标位置"
+            ]
+        }
+    },
+    {
+        "version": "1.0.0",
+        "changes": {
+            "en": [
+                "Voice-to-text with Whisper + Apple Speech",
+                "Menu bar + Dock app",
+                "Model download & management"
+            ],
+            "zh": [
+                "使用 Whisper + Apple Speech 语音转文字",
+                "菜单栏 + Dock 应用",
+                "模型下载与管理"
+            ]
+        }
+    }
+]

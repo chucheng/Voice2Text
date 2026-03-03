@@ -94,6 +94,10 @@ class AppState: ObservableObject {
     @Published var apiCheckState: APICheckResult = .unchecked
     @Published var usePostEditRevise = false
     @Published var reviseFailed = false
+    @Published var reviseFailedWithFallback = false
+    @Published var customRevisePrompt: String = UserDefaults.standard.string(forKey: "customRevisePrompt") ?? "" {
+        didSet { UserDefaults.standard.set(customRevisePrompt, forKey: "customRevisePrompt") }
+    }
 
     @Published var usePunctuationRestore = false
     @Published var isPunctuationServerAvailable = false
@@ -102,6 +106,9 @@ class AppState: ObservableObject {
     @Published var debugLog: [String] = []
     @AppStorage("showFirstUseTooltip") var showFirstUseTooltip = true
     @AppStorage("onboardingCompleted") var onboardingCompleted = false
+    @AppStorage("lastSeenVersion") var lastSeenVersion = ""
+    @Published var showWhatsNew = false
+    var whatsNewEntry: WhatsNewEntry?
     @AppStorage("globalHotkeyEnabled") var globalHotkeyEnabled = true
     @AppStorage("accessibilityWasGranted") var accessibilityWasGranted = false
     @Published var isAccessibilityGranted = false
@@ -138,19 +145,28 @@ class AppState: ObservableObject {
         return f
     }()
 
+    /// Always collect logs so history is available when Dev Mode is toggled on.
     func log(_ message: String) {
-        guard devMode else { return }
         let ts = Self.dateFormatter.string(from: Date())
         debugLog.append("[\(ts)] \(message)")
-        // Keep last 200 lines
-        if debugLog.count > 200 { debugLog.removeFirst(debugLog.count - 200) }
+        // Keep last 500 lines
+        if debugLog.count > 500 { debugLog.removeFirst(debugLog.count - 500) }
     }
 
     private init() {
+        let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let buildNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        log("Voice2Text v\(appVersion) (build \(buildNumber)) starting")
+        log("STT engine: \(sttEngine.rawValue), model: \(selectedModel.rawValue), script: \(outputScript.rawValue)")
+        log("UI language: \(uiLanguage.rawValue)")
+
         // Load Dangerous Zone token presence
         dangerousZoneTokenIsSet = KeychainHelper.loadToken() != nil
         rebuildAnthropicClient()
         log("Post-Edit Revise: \(anthropicClient != nil ? "client ready" : "no credentials")")
+        if !customRevisePrompt.isEmpty {
+            log("Custom revise prompt: \(customRevisePrompt.count) chars")
+        }
 
         // Wire audio level callback
         audioRecorder.onAudioLevel = { [weak self] level in
@@ -163,7 +179,9 @@ class AppState: ObservableObject {
         // Monitor network for Apple Speech
         networkMonitor.pathUpdateHandler = { [weak self] path in
             DispatchQueue.main.async {
-                self?.isNetworkAvailable = path.status == .satisfied
+                let available = path.status == .satisfied
+                self?.isNetworkAvailable = available
+                self?.log("Network: \(available ? "available" : "unavailable")")
             }
         }
         networkMonitor.start(queue: DispatchQueue(label: "com.voice2text.network"))
@@ -176,7 +194,27 @@ class AppState: ObservableObject {
         // Delay permission checks to allow SwiftUI view to be ready for alerts
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             self?.checkPermissionsOnLaunch()
+            self?.checkWhatsNew()
         }
+    }
+
+    // MARK: - What's New
+
+    private func checkWhatsNew() {
+        guard onboardingCompleted else { return }
+        let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        guard !currentVersion.isEmpty, currentVersion != lastSeenVersion else { return }
+        if let entry = WhatsNewLoader.entry(for: currentVersion) {
+            whatsNewEntry = entry
+            withAnimation { showWhatsNew = true }
+            log("What's New: showing for v\(currentVersion)")
+        }
+        lastSeenVersion = currentVersion
+    }
+
+    func dismissWhatsNew() {
+        withAnimation { showWhatsNew = false }
+        whatsNewEntry = nil
     }
 
     // MARK: - Push-to-Talk (Spacebar)
@@ -506,10 +544,15 @@ class AppState: ObservableObject {
     }
 
     /// Post-process whisper output: punctuation restore → LLM reformat → script conversion.
+    /// When Post-Edit Revise is enabled, BERT punctuation is skipped (LLM handles it).
+    /// On LLM failure, falls back to BERT if available.
     private func postProcess(_ text: String) {
         isReformatting = true
 
-        if usePunctuationRestore && isPunctuationServerAvailable && textContainsChinese(text) {
+        // When Post-Edit Revise is active, skip BERT — LLM handles punctuation
+        if usePostEditRevise, anthropicClient != nil {
+            applyLLMAndConvert(text)
+        } else if usePunctuationRestore && isPunctuationServerAvailable && textContainsChinese(text) {
             log("Punctuation restore: sending \(text.count) chars...")
             PunctuationClient.shared.restore(text) { [weak self] restored, error in
                 guard let self else { return }
@@ -528,16 +571,43 @@ class AppState: ObservableObject {
     }
 
     /// Apply Post-Edit Revise (if enabled) then script conversion.
+    /// On LLM failure, falls back to BERT punctuation if available + Chinese text.
     private func applyLLMAndConvert(_ text: String) {
         if usePostEditRevise, let client = anthropicClient {
+            let prompt = customRevisePrompt.isEmpty ? nil : customRevisePrompt
             log("Post-Edit Revise: sending \(text.count) chars...")
-            client.reviseText(text) { [weak self] result, error in
+            client.reviseText(text, prompt: prompt) { [weak self] result, error in
                 guard let self else { return }
                 if let result {
                     self.log("Post-Edit Revise: success (\(result.count) chars)")
                     self.transcriptionText = self.convertScript(result)
+                    self.isReformatting = false
+                    self.performAutoPaste(self.transcriptionText)
                 } else {
-                    self.log("Post-Edit Revise failed: \(error ?? "unknown"). Falling back to original.")
+                    self.log("Post-Edit Revise failed: \(error ?? "unknown"). Attempting BERT fallback...")
+                    self.tryBERTFallback(text)
+                }
+            }
+        } else {
+            transcriptionText = convertScript(text)
+            isReformatting = false
+            performAutoPaste(transcriptionText)
+        }
+    }
+
+    /// On LLM failure, try BERT punctuation as fallback. If unavailable, use raw text.
+    private func tryBERTFallback(_ text: String) {
+        if isPunctuationServerAvailable && textContainsChinese(text) {
+            log("BERT fallback: sending \(text.count) chars...")
+            PunctuationClient.shared.restore(text) { [weak self] restored, error in
+                guard let self else { return }
+                if let restored {
+                    self.log("BERT fallback: success (\(restored.count) chars)")
+                    self.rawTranscription = restored
+                    self.transcriptionText = self.convertScript(restored)
+                    self.showReviseFailedWithFallback()
+                } else {
+                    self.log("BERT fallback also failed: \(error ?? "unknown"). Using raw text.")
                     self.transcriptionText = self.convertScript(text)
                     self.showReviseFailed()
                 }
@@ -545,7 +615,9 @@ class AppState: ObservableObject {
                 self.performAutoPaste(self.transcriptionText)
             }
         } else {
+            log("BERT fallback unavailable. Using raw text.")
             transcriptionText = convertScript(text)
+            showReviseFailed()
             isReformatting = false
             performAutoPaste(transcriptionText)
         }
@@ -638,6 +710,17 @@ class AppState: ObservableObject {
             withAnimation { self?.reviseFailed = false }
         }
         reviseFailedTimer = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: item)
+    }
+
+    private var reviseFailedFallbackTimer: DispatchWorkItem?
+    private func showReviseFailedWithFallback() {
+        reviseFailedFallbackTimer?.cancel()
+        withAnimation { reviseFailedWithFallback = true }
+        let item = DispatchWorkItem { [weak self] in
+            withAnimation { self?.reviseFailedWithFallback = false }
+        }
+        reviseFailedFallbackTimer = item
         DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: item)
     }
 
