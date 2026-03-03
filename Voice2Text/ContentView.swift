@@ -90,9 +90,9 @@ struct ContentView: View {
             }
         }
         .overlay(alignment: .top) {
-            if appState.showWhatsNew, let entry = appState.whatsNewEntry {
+            if appState.showWhatsNew, !appState.whatsNewEntries.isEmpty {
                 WhatsNewView(
-                    entry: entry,
+                    entries: appState.whatsNewEntries,
                     language: appState.uiLanguage,
                     onDismiss: { appState.dismissWhatsNew() }
                 )

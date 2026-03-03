@@ -404,22 +404,22 @@ enum L {
     static var baseURLPlaceholder: String { "https://api.anthropic.com" }
     static var modelLabel: String { "MODEL" }
     static var modelPlaceholder: String { AnthropicClient.defaultModel }
-    static var apiTokenLabel: String { "AUTH_TOKEN" }
-    static var apiTokenPlaceholder: String { "sk-ant-..." }
+    static var apiTokenLabel: String { "API_KEY" }
+    static var apiTokenPlaceholder: String { "sk-..." }
     static var saveToken: String {
-        lang == .english ? "Save Token" : "保存 Token"
+        lang == .english ? "Save API Key" : "保存 API Key"
     }
     static var deleteToken: String {
-        lang == .english ? "Delete Token" : "删除 Token"
+        lang == .english ? "Delete API Key" : "删除 API Key"
     }
     static var tokenSaved: String {
-        lang == .english ? "Token saved in Keychain" : "Token 已保存到钥匙串"
+        lang == .english ? "API Key saved in Keychain" : "API Key 已保存到钥匙串"
     }
     static var tokenNotSet: String {
-        lang == .english ? "No token saved" : "未保存 Token"
+        lang == .english ? "No API Key saved" : "未保存 API Key"
     }
     static var tokenIsSet: String {
-        lang == .english ? "Token saved in Keychain" : "Token 已保存在钥匙串"
+        lang == .english ? "API Key saved in Keychain" : "API Key 已保存在钥匙串"
     }
     static var checkAPI: String {
         lang == .english ? "Check API" : "检查 API"

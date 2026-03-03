@@ -22,21 +22,36 @@ enum WhatsNewLoader {
         return entries
     }
 
-    /// Get the entry for a specific version.
-    static func entry(for version: String) -> WhatsNewEntry? {
-        load().first { $0.version == version }
+    /// Get all entries sharing the same minor version (e.g. "1.6") as `version`.
+    /// Returns entries sorted newest-first.
+    static func entriesForMinor(of version: String) -> [WhatsNewEntry] {
+        let prefix = minorPrefix(of: version)
+        guard !prefix.isEmpty else { return [] }
+        return load().filter { minorPrefix(of: $0.version) == prefix }
+    }
+
+    /// Extract "Major.Minor" prefix from a version string (e.g. "1.6.1" → "1.6").
+    private static func minorPrefix(of version: String) -> String {
+        let parts = version.split(separator: ".")
+        guard parts.count >= 2 else { return "" }
+        return "\(parts[0]).\(parts[1])"
     }
 }
 
 // MARK: - WhatsNewView
 
 struct WhatsNewView: View {
-    let entry: WhatsNewEntry
+    let entries: [WhatsNewEntry]
     let language: UILanguage
     let onDismiss: () -> Void
 
     @State private var countdown = 3
     @State private var timer: Timer?
+
+    /// Display version: use the first (newest) entry's version for the title.
+    private var displayVersion: String {
+        entries.first?.version ?? ""
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -44,7 +59,7 @@ struct WhatsNewView: View {
             HStack {
                 Image(systemName: "sparkles")
                     .foregroundColor(.blue)
-                Text(L.whatsNewTitle(entry.version))
+                Text(L.whatsNewTitle(displayVersion))
                     .font(.headline)
                 Spacer()
                 Text("\(countdown)")
@@ -53,14 +68,21 @@ struct WhatsNewView: View {
                     .frame(width: 16)
             }
 
-            // Changes list
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(entry.localizedChanges(for: language), id: \.self) { change in
-                    HStack(alignment: .top, spacing: 6) {
-                        Text("•")
-                            .foregroundColor(.blue)
-                        Text(change)
-                            .font(.callout)
+            // Changes list — group by version
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(entries, id: \.version) { entry in
+                    if entries.count > 1 {
+                        Text("v\(entry.version)")
+                            .font(.caption.bold())
+                            .foregroundColor(.secondary)
+                    }
+                    ForEach(entry.localizedChanges(for: language), id: \.self) { change in
+                        HStack(alignment: .top, spacing: 6) {
+                            Text("•")
+                                .foregroundColor(.blue)
+                            Text(change)
+                                .font(.callout)
+                        }
                     }
                 }
             }

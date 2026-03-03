@@ -35,7 +35,7 @@ That's it. No window switching, no copy-paste. Powered by [whisper.cpp](https://
 - **Editable transcription** — edit text inline after transcription
 - **Cmd+C smart copy** — copies full transcription when nothing selected
 - **Post-Edit Revise** — optional Claude API integration to improve transcription clarity and flow (Settings > Dangerous Zone)
-- **Secure API token storage** — token stored in macOS Keychain, never in plaintext
+- **Secure API Key storage** — API Key stored in macOS Keychain, never in plaintext
 - **Custom Revise Prompt** — customize what the LLM does with your transcript
 - **What's New screen** — shows changes after version update, auto-dismisses in 3 seconds
 - **Debug log window** — separate resizable window with Copy All for troubleshooting
@@ -284,6 +284,9 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v1.6.1 — UI Label Update
+- **API Key label** — renamed AUTH_TOKEN to API_KEY in Settings > Dangerous Zone
 
 ### v1.6.0 — Custom Revise Prompt + What's New + Debug Log Window
 - **Custom Revise Prompt** — customize the LLM prompt in Settings > Dangerous Zone; Reset to Default button

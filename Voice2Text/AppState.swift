@@ -108,7 +108,7 @@ class AppState: ObservableObject {
     @AppStorage("onboardingCompleted") var onboardingCompleted = false
     @AppStorage("lastSeenVersion") var lastSeenVersion = ""
     @Published var showWhatsNew = false
-    var whatsNewEntry: WhatsNewEntry?
+    var whatsNewEntries: [WhatsNewEntry] = []
     @AppStorage("globalHotkeyEnabled") var globalHotkeyEnabled = true
     @AppStorage("accessibilityWasGranted") var accessibilityWasGranted = false
     @Published var isAccessibilityGranted = false
@@ -204,17 +204,18 @@ class AppState: ObservableObject {
         guard onboardingCompleted else { return }
         let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
         guard !currentVersion.isEmpty, currentVersion != lastSeenVersion else { return }
-        if let entry = WhatsNewLoader.entry(for: currentVersion) {
-            whatsNewEntry = entry
+        let entries = WhatsNewLoader.entriesForMinor(of: currentVersion)
+        if !entries.isEmpty {
+            whatsNewEntries = entries
             withAnimation { showWhatsNew = true }
-            log("What's New: showing for v\(currentVersion)")
+            log("What's New: showing \(entries.count) entries for v\(currentVersion)")
         }
         lastSeenVersion = currentVersion
     }
 
     func dismissWhatsNew() {
         withAnimation { showWhatsNew = false }
-        whatsNewEntry = nil
+        whatsNewEntries = []
     }
 
     // MARK: - Push-to-Talk (Spacebar)
