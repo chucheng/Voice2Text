@@ -156,6 +156,10 @@ Note: This model does not have an explicitly declared license. The model
 weights are downloaded at runtime from Hugging Face Hub. Users should be
 aware that redistribution rights are not explicitly granted by the author.
 
+This model is only used when the "Punctuation Restore" option is enabled
+in Settings (Chinese + English only). When disabled or when transcribing
+non-Chinese speech, this model is not loaded or used.
+
 ================================================================================
 7. XcodeGen (Build Tool Only)
 ================================================================================

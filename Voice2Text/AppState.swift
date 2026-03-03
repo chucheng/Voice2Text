@@ -341,9 +341,14 @@ class AppState: ObservableObject {
     }
 
     /// Returns true if text contains characters that are not Chinese, English, or common punctuation/numbers.
+    /// Only triggers retry when text also contains some Chinese (partial misdetection).
+    /// If text is purely another language (no Chinese at all), accepts it as-is.
     private func containsUnexpectedLanguage(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
+
+        // If no Chinese characters at all, it's likely a different language — don't retry with "zh"
+        guard textContainsChinese(trimmed) else { return false }
 
         for scalar in trimmed.unicodeScalars {
             // Allow: ASCII (English + numbers + punctuation), CJK Unified Ideographs,
@@ -363,6 +368,17 @@ class AppState: ObservableObject {
             }
             // Found a character outside expected range
             return true
+        }
+        return false
+    }
+
+    /// Returns true if the text contains any CJK Unified Ideograph characters.
+    private func textContainsChinese(_ text: String) -> Bool {
+        for scalar in text.unicodeScalars {
+            let v = scalar.value
+            if (0x4E00...0x9FFF).contains(v) || (0x3400...0x4DBF).contains(v) || (0xF900...0xFAFF).contains(v) {
+                return true
+            }
         }
         return false
     }
@@ -423,7 +439,7 @@ class AppState: ObservableObject {
     private func postProcess(_ text: String) {
         isReformatting = true
 
-        if usePunctuationRestore && isPunctuationServerAvailable {
+        if usePunctuationRestore && isPunctuationServerAvailable && textContainsChinese(text) {
             log("Punctuation restore: sending \(text.count) chars...")
             PunctuationClient.shared.restore(text) { [weak self] restored, error in
                 guard let self else { return }

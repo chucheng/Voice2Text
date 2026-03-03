@@ -248,9 +248,13 @@ private struct AdvancedTab: View {
 
     var body: some View {
         Form {
-            Section("Punctuation Restoration") {
+            Section("Punctuation Restoration (Chinese + English only)") {
                 Toggle("Enable punctuation restore", isOn: $appState.usePunctuationRestore)
                     .disabled(!appState.isPunctuationServerAvailable)
+
+                Text("Uses a BERT model to add punctuation to Chinese text. Non-Chinese speech is not affected. When disabled, the zh-wiki-punctuation-restore model is not used.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
 
                 HStack {
                     Circle()
