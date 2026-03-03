@@ -24,7 +24,7 @@ STT engines:
 - **Whisper**: record → resample → whisper inference → punctuation restore (Chinese only) → Post-Edit Revise (optional) → script conversion → display/paste
 - **Apple Speech**: record → stream buffers → real-time recognition → script conversion → display/paste
 
-**Post-Edit Revise** (optional): after transcription, send text through Claude API to improve clarity and flow. Configured in Settings > Dangerous Zone tab. API token stored in macOS Keychain. Custom prompt support. When enabled, BERT punctuation is skipped (LLM handles it). On LLM failure, falls back to BERT if available, then to raw text.
+**Post-Edit Revise** (optional): after transcription, send text through Claude API to improve clarity and flow. Configured in Settings > AI Services tab. API token stored in macOS Keychain. Custom prompt support. When enabled, BERT punctuation is skipped (LLM handles it). On LLM failure, falls back to BERT if available, then to raw text.
 
 **What's New** screen: shown once after version update with 3-second countdown auto-dismiss. Reads from bundled `WhatsNew.json` (bilingual en/zh).
 
@@ -52,11 +52,11 @@ Upgrade installs auto-detect existing models (no re-download needed).
 |------|---------|
 | `Voice2Text/Voice2TextApp.swift` | @main entry point, MenuBarExtra + Window + Debug Log Window scenes |
 | `Voice2Text/Strings.swift` | UILanguage enum + L localization enum (~120 strings × 2 languages: English / 简体中文) |
-| `Voice2Text/AppState.swift` | Shared ObservableObject: recording, transcription, model management, dual STT engines, global hotkey integration, script conversion, keyboard shortcuts, UI language, Dangerous Zone API config, Post-Edit Revise, custom prompt, What's New, debug logging |
+| `Voice2Text/AppState.swift` | Shared ObservableObject: recording, transcription, model management, dual STT engines, global hotkey integration, script conversion, keyboard shortcuts, UI language, AI Services API config, Post-Edit Revise, custom prompt, What's New, debug logging |
 | `Voice2Text/MenuBarView.swift` | Menu bar dropdown: Start/Stop, model picker, script toggle, Punctuation Restore, Open Window, Quit |
 | `Voice2Text/ContentView.swift` | Main window: record button, waveform, status, editable transcription, Copy button, Settings shortcut, © copyright |
 | `Voice2Text/OnboardingView.swift` | First-launch wizard: language picker → welcome → model selection (with download detection) → downloading → permissions (Accessibility) |
-| `Voice2Text/SettingsView.swift` | Settings: General (language, engine, script), Models, Shortcuts (hotkey, accessibility), Advanced (punctuation, dev mode), Dangerous Zone (API credentials, Post-Edit Revise) |
+| `Voice2Text/SettingsView.swift` | Settings: General (language, engine, script), Models, Shortcuts (hotkey, accessibility), Advanced (punctuation, dev mode), AI Services (API credentials, Post-Edit Revise) |
 | `Voice2Text/GlobalHotkeyManager.swift` | Carbon hotkey registration/unregistration, HotkeyCombo (Codable), accessibility check, CGEvent paste simulation |
 | `Voice2Text/FloatingRecordingPanel.swift` | NSPanel (nonactivatingPanel + hudWindow) floating indicator: recording/transcribing/done states |
 | `Voice2Text/HotkeyRecorderView.swift` | SwiftUI custom key combo recorder with modifier requirement |
@@ -109,7 +109,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - Available models: tiny, base, small, medium, large-v3-turbo
 - Transcription text is editable by the user after transcription
 - Dev mode: opens separate debug log window. Logs always collected (capped at 500 lines) even when dev mode is off, so history is available on toggle
-- Post-Edit Revise: optional Claude API integration, configured in Settings > Dangerous Zone
+- Post-Edit Revise: optional Claude API integration, configured in Settings > AI Services
 - API token stored in macOS Keychain (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`), never in UserDefaults or logs
 - API check state machine: Unchecked → Checking → Valid(latencyMs) / Invalid(message); field changes reset to Unchecked
 - Revise failure: falls back to BERT (if available + Chinese) then to raw text + transient orange banner (4s) + debug log entry; never permanently disables

@@ -34,7 +34,7 @@ That's it. No window switching, no copy-paste. Powered by [whisper.cpp](https://
 - **Customizable shortcut** — change the global hotkey in Settings
 - **Editable transcription** — edit text inline after transcription
 - **Cmd+C smart copy** — copies full transcription when nothing selected
-- **Post-Edit Revise** — optional Claude API integration to improve transcription clarity and flow (Settings > Dangerous Zone)
+- **Post-Edit Revise** — optional Claude API integration to improve transcription clarity and flow (Settings > AI Services)
 - **Secure API Key storage** — API Key stored in macOS Keychain, never in plaintext
 - **Custom Revise Prompt** — customize what the LLM does with your transcript
 - **What's New screen** — shows changes after version update, auto-dismisses in 3 seconds
@@ -247,7 +247,7 @@ Voice2Text/
 ├── MenuBarView.swift            # Menu bar dropdown UI
 ├── ContentView.swift            # Main window: record button, transcription editor, permission alerts
 ├── OnboardingView.swift         # First-launch setup wizard (model selection + permissions)
-├── SettingsView.swift           # Settings: General, Models, Shortcuts, Advanced, Dangerous Zone
+├── SettingsView.swift           # Settings: General, Models, Shortcuts, Advanced, AI Services
 ├── GlobalHotkeyManager.swift    # Carbon hotkey registration, accessibility, auto-paste
 ├── FloatingRecordingPanel.swift # Non-activating floating panel for global hotkey feedback
 ├── HotkeyRecorderView.swift     # Custom shortcut recorder UI component
@@ -285,12 +285,14 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
-### v1.7.0 — In-App Punctuation Server Install
+### v1.7.0 — In-App Punctuation Server Install + Service Status + AI Services Tab
 - **One-click install** — install PunctuationServer.app directly from Settings > Advanced (~500 MB download)
 - **Progress tracking** — download progress bar with percentage, extraction status indicator
 - **Auto-launch** — server auto-launches and health-checks after installation
 - **Uninstall** — remove the server with one click when no longer needed
 - **Sandbox-safe** — installed to `~/Library/Application Support/Voice2Text/` (no admin privileges needed)
+- **Service status indicators** — BERT and LLM status capsules in the main window top bar (green/red dot, shown only when enabled)
+- **AI Services tab** — renamed "Dangerous Zone" to "AI Services" with cloud icon
 
 ### v1.6.2 — ATS Exception + Copyright Fix
 - **ATS exception** — allow HTTP for `sheincorp.cn` domain (internal proxy support)

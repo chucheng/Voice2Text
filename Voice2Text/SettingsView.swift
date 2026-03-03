@@ -25,9 +25,9 @@ struct SettingsView: View {
                     Label(L.advancedTab, systemImage: "wrench.and.screwdriver")
                 }
 
-            DangerousZoneTab(appState: appState)
+            AIServicesTab(appState: appState)
                 .tabItem {
-                    Label(L.dangerousZoneTab, systemImage: "exclamationmark.triangle")
+                    Label(L.aiServicesTab, systemImage: "cloud")
                 }
         }
         .frame(minWidth: 480, idealWidth: 560, minHeight: 400, idealHeight: 600)
@@ -363,9 +363,9 @@ private struct AdvancedTab: View {
     }
 }
 
-// MARK: - Dangerous Zone Tab
+// MARK: - AI Services Tab
 
-private struct DangerousZoneTab: View {
+private struct AIServicesTab: View {
     @ObservedObject var appState: AppState
     @State private var tokenInput = ""
     @State private var showToken = false
@@ -383,7 +383,7 @@ private struct DangerousZoneTab: View {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundColor(.orange)
-                Text(L.dangerousZoneWarning)
+                Text(L.aiServicesWarning)
                     .font(.caption)
                     .foregroundColor(.orange)
             }

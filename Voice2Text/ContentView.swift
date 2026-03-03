@@ -153,6 +153,35 @@ struct ContentView: View {
             .padding(.vertical, 4)
             .background(Capsule().fill(.quaternary))
 
+            // Service status capsules
+            if appState.usePunctuationRestore {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(appState.isPunctuationServerAvailable ? .green : .red)
+                        .frame(width: 6, height: 6)
+                    Text("BERT")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(.quaternary))
+            }
+
+            if appState.usePostEditRevise {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(appState.apiCheckState.isValid ? .green : .red)
+                        .frame(width: 6, height: 6)
+                    Text("LLM")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(.quaternary))
+            }
+
             // Warnings
             if appState.sttEngine == .whisper && !appState.isModelLoaded {
                 Label(L.noModelLoaded, systemImage: "exclamationmark.triangle.fill")

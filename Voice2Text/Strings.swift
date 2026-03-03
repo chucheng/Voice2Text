@@ -387,12 +387,12 @@ enum L {
         lang == .english ? "Copy All" : "全部复制"
     }
 
-    // MARK: SettingsView — Dangerous Zone Tab
+    // MARK: SettingsView — AI Services Tab
 
-    static var dangerousZoneTab: String {
-        lang == .english ? "Dangerous" : "危险区"
+    static var aiServicesTab: String {
+        lang == .english ? "AI Services" : "AI 服务"
     }
-    static var dangerousZoneWarning: String {
+    static var aiServicesWarning: String {
         lang == .english
             ? "These settings connect to external AI services. Your transcription text will be sent to the configured API endpoint."
             : "这些设置会连接外部 AI 服务。您的转写文本将被发送到配置的 API 端点。"
