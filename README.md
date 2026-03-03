@@ -36,7 +36,10 @@ That's it. No window switching, no copy-paste. Powered by [whisper.cpp](https://
 - **Cmd+C smart copy** — copies full transcription when nothing selected
 - **Post-Edit Revise** — optional Claude API integration to improve transcription clarity and flow (Settings > Dangerous Zone)
 - **Secure API token storage** — token stored in macOS Keychain, never in plaintext
-- **Dev mode** — debug log panel for troubleshooting
+- **Custom Revise Prompt** — customize what the LLM does with your transcript
+- **What's New screen** — shows changes after version update, auto-dismisses in 3 seconds
+- **Debug log window** — separate resizable window with Copy All for troubleshooting
+- **Dev mode** — always-on logging (capped at 500 lines), viewable in debug log window
 - Menu bar + Dock presence
 
 ## Installation (Non-Developer)
@@ -257,7 +260,10 @@ Voice2Text/
 ├── WhisperBridge.swift          # Swift wrapper around whisper.cpp C API
 ├── AppleSpeechRecognizer.swift  # Apple SFSpeechRecognizer wrapper
 ├── PunctuationClient.swift      # HTTP client + auto-launcher for punctuation server
-├── AnthropicClient.swift        # Claude API client: API check, Post-Edit Revise
+├── AnthropicClient.swift        # Claude API client: API check, Post-Edit Revise, custom prompt
+├── WhatsNewView.swift           # What's New overlay with 3s countdown auto-dismiss
+├── WhatsNew.json                # Bundled changelog (bilingual en/zh)
+├── DebugLogWindow.swift         # Separate debug log window with Copy All
 ├── KeychainHelper.swift         # macOS Keychain wrapper for API token storage
 ├── AppDelegate.swift            # Dock icon handler + graceful shutdown
 ├── WindowAccessor.swift         # NSWindow reference capture + hide-on-close
@@ -278,6 +284,18 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v1.6.0 — Custom Revise Prompt + What's New + Debug Log Window
+- **Custom Revise Prompt** — customize the LLM prompt in Settings > Dangerous Zone; Reset to Default button
+- **LLM/BERT mutual exclusivity** — when Post-Edit Revise is enabled, BERT punctuation is skipped (LLM handles it). On LLM failure, falls back to BERT if available
+- **What's New screen** — shown once after version update, 3-second countdown auto-dismiss, reads from bundled WhatsNew.json
+- **Debug log window** — separate resizable window with Copy All button; logs always collected (500 line cap)
+- **Resizable Settings window** — Settings window can now be resized
+- **Updated default revise prompt** — focused on transcript correction (error fixing, punctuation, minimal rewrites)
+
+### v1.5.0 — HTTP URL Support + UI Polish
+- Allow HTTP URLs for internal proxies
+- Improved Dangerous Zone tab labels
 
 ### v1.4.0 — Dangerous Zone + Post-Edit Revise
 - **Post-Edit Revise** — optional Claude API integration that improves transcription clarity and flow after STT

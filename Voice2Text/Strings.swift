@@ -383,6 +383,9 @@ enum L {
     static var clear: String {
         lang == .english ? "Clear" : "清除"
     }
+    static var copyAll: String {
+        lang == .english ? "Copy All" : "全部复制"
+    }
 
     // MARK: SettingsView — Dangerous Zone Tab
 
