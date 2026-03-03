@@ -152,7 +152,12 @@ class AppState: ObservableObject {
     }()
 
     /// Always collect logs so history is available when Dev Mode is toggled on.
-    func log(_ message: String) {
+    /// Whether app is in init phase (logs always recorded during init).
+    private var isInitializing = true
+
+    /// Log a debug message. Records when Dev Mode is on or during app init phase.
+    func log(_ message: String, force: Bool = false) {
+        guard force || devMode || isInitializing else { return }
         let ts = Self.dateFormatter.string(from: Date())
         debugLog.append("[\(ts)] \(message)")
         // Keep last 500 lines
@@ -169,9 +174,13 @@ class AppState: ObservableObject {
         // Load Dangerous Zone token presence
         dangerousZoneTokenIsSet = KeychainHelper.loadToken() != nil
         rebuildAnthropicClient()
-        log("Post-Edit Revise: \(anthropicClient != nil ? "client ready" : "no credentials")")
+        if let client = anthropicClient {
+            log("Post-Edit Revise: client ready (base: \(client.baseURL), model: \(client.model))")
+        } else {
+            log("Post-Edit Revise: disabled (no API key or base URL configured)")
+        }
         if customRevisePrompt != AnthropicClient.revisePrompt {
-            log("Custom revise prompt: \(customRevisePrompt.count) chars")
+            log("Post-Edit Revise: using custom prompt (\(customRevisePrompt.count) chars)")
         }
 
         // Wire audio level callback
@@ -187,7 +196,7 @@ class AppState: ObservableObject {
             DispatchQueue.main.async {
                 let available = path.status == .satisfied
                 self?.isNetworkAvailable = available
-                self?.log("Network: \(available ? "available" : "unavailable")")
+                self?.log("Network status changed: \(available ? "connected" : "disconnected") (affects Apple Speech)")
             }
         }
         networkMonitor.start(queue: DispatchQueue(label: "com.voice2text.network"))
@@ -201,6 +210,12 @@ class AppState: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             self?.checkPermissionsOnLaunch()
             self?.checkWhatsNew()
+        }
+
+        // End init phase — after this, logs only record when Dev Mode is on.
+        // Use asyncAfter to allow init-triggered async callbacks (network, punctuation server) to log.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
+            self?.isInitializing = false
         }
     }
 
@@ -344,7 +359,7 @@ class AppState: ObservableObject {
             FloatingRecordingPanel.shared.show(state: .transcribing)
         }
 
-        log("Recorded \(samples.count) samples (\(String(format: "%.1f", Double(samples.count) / 16000))s)")
+        log("Audio recorded: \(samples.count) samples (\(String(format: "%.1f", Double(samples.count) / 16000))s @ 16kHz)")
         isTranscribing = true
         transcribe(samples: samples, language: "auto")
     }
@@ -356,7 +371,7 @@ class AppState: ObservableObject {
         appleSpeech.requestPermission { [weak self] granted in
             guard let self, granted else {
                 self?.isStarting = false
-                self?.log("Apple Speech: permission denied")
+                self?.log("Apple Speech: microphone/speech permission denied by user")
                 return
             }
             self.transcriptionText = ""
@@ -398,7 +413,7 @@ class AppState: ObservableObject {
             }) { [weak self] success in
                 self?.isStarting = false
                 self?.isRecording = success
-                self?.log("Apple Speech: recording started = \(success)")
+                self?.log("Apple Speech: recording \(success ? "started successfully" : "failed to start (audio engine error)")")
             }
         }
     }
@@ -407,7 +422,7 @@ class AppState: ObservableObject {
         audioRecorder.stopRecording()
         isRecording = false
         audioLevel = 0
-        log("Apple Speech: stopped")
+        log("Apple Speech: recognition stopped, processing final result...")
 
         // If Post-Edit Revise is enabled, wait for isFinal before post-processing
         if usePostEditRevise && anthropicClient != nil {
@@ -423,7 +438,7 @@ class AppState: ObservableObject {
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
                 guard let self, self.pendingAppleSpeechPostProcess else { return }
                 self.pendingAppleSpeechPostProcess = false
-                self.log("Apple Speech: isFinal timeout, falling back to current text")
+                self.log("Apple Speech: no final result after timeout, using partial transcription as-is")
                 self.rawTranscription = self.transcriptionText
                 self.isReformatting = false
                 self.performAutoPaste(self.transcriptionText)
@@ -437,14 +452,14 @@ class AppState: ObservableObject {
     }
 
     private func transcribe(samples: [Float], language: String) {
-        log("Whisper inference started (language=\(language))")
+        log("Whisper: inference started (language=\(language), model=\(selectedModel.rawValue))")
         whisperBridge.transcribe(samples: samples, language: language) { [weak self] text in
             guard let self else { return }
-            self.log("Whisper result: \(text.count) chars")
+            self.log("Whisper: inference complete, result: \(text.count) chars")
 
             // If auto-detected and result contains non-Chinese/English text, retry with "zh"
             if language == "auto" && self.containsUnexpectedLanguage(text) {
-                self.log("Unexpected language detected, retrying with language=zh")
+                self.log("Whisper: detected mixed Chinese + unexpected language, retrying with language=zh")
                 self.transcribe(samples: samples, language: "zh")
                 return
             }
@@ -506,9 +521,9 @@ class AppState: ObservableObject {
             if ok {
                 self.isPunctuationServerAvailable = true
                 self.usePunctuationRestore = true
-                self.log("Punctuation server: available, enabled by default")
+                self.log("BERT punctuation server: running at localhost, enabled by default")
             } else {
-                self.log("Punctuation server: unavailable, attempting auto-launch...")
+                self.log("BERT punctuation server: not running, attempting auto-launch...")
                 self.autoLaunchPunctuationServer()
             }
         }
@@ -517,12 +532,12 @@ class AppState: ObservableObject {
     /// Try to launch PunctuationServer.app, then poll health until ready.
     private func autoLaunchPunctuationServer() {
         guard PunctuationClient.launchServer() else {
-            log("Punctuation server: .app not found in known locations")
+            log("BERT punctuation server: PunctuationServer.app not found in /Applications, ~/Applications, or bundle-adjacent")
             isPunctuationServerAvailable = false
             usePunctuationRestore = false
             return
         }
-        log("Punctuation server: launch attempted, waiting for startup...")
+        log("BERT punctuation server: launch attempted, polling health every 2s (up to 60s)...")
 
         // Poll health every 2s, up to 60s (model download on first run can be slow)
         let maxAttempts = 30
@@ -536,13 +551,13 @@ class AppState: ObservableObject {
                     if ok {
                         self.isPunctuationServerAvailable = true
                         self.usePunctuationRestore = true
-                        self.log("Punctuation server: ready after \(attempt * 2)s")
+                        self.log("BERT punctuation server: ready after \(attempt * 2)s")
                     } else if attempt < maxAttempts {
                         poll()
                     } else {
                         self.isPunctuationServerAvailable = false
                         self.usePunctuationRestore = false
-                        self.log("Punctuation server: failed to start after \(maxAttempts * 2)s")
+                        self.log("BERT punctuation server: failed to start after \(maxAttempts * 2)s, punctuation restore disabled")
                     }
                 }
             }
@@ -560,15 +575,15 @@ class AppState: ObservableObject {
         if usePostEditRevise, anthropicClient != nil {
             applyLLMAndConvert(text)
         } else if usePunctuationRestore && isPunctuationServerAvailable && textContainsChinese(text) {
-            log("Punctuation restore: sending \(text.count) chars...")
+            log("BERT punctuation restore: sending \(text.count) chars to localhost server...")
             PunctuationClient.shared.restore(text) { [weak self] restored, error in
                 guard let self else { return }
                 if let restored {
-                    self.log("Punctuation restore: success (\(restored.count) chars)")
+                    self.log("BERT punctuation restore: success (\(restored.count) chars)")
                     self.rawTranscription = restored
                     self.applyLLMAndConvert(restored)
                 } else {
-                    self.log("Punctuation restore failed: \(error ?? "unknown"). Passing through.")
+                    self.log("BERT punctuation restore failed: \(error ?? "unknown"), using raw text without punctuation")
                     self.applyLLMAndConvert(text)
                 }
             }
@@ -695,15 +710,15 @@ class AppState: ObservableObject {
             return
         }
         apiCheckState = .checking
-        log("API check: starting...")
+        log("API credential check: testing connection to \(client.baseURL) (model: \(client.model))...")
         client.checkAPI { [weak self] result in
             guard let self else { return }
             self.apiCheckState = result
             switch result {
             case .valid(let ms):
-                self.log("API check: valid (\(ms)ms)")
+                self.log("API credential check: passed, latency \(ms)ms")
             case .invalid(let msg):
-                self.log("API check: failed — \(msg)")
+                self.log("API credential check: failed — \(msg)")
                 self.usePostEditRevise = false
             default:
                 break
@@ -762,19 +777,19 @@ class AppState: ObservableObject {
         guard FileManager.default.fileExists(atPath: path.path) else {
             isModelLoaded = false
             loadedModelName = ""
-            log("Model \(selectedModel.rawValue) not found at \(path.path)")
+            log("Whisper model \(selectedModel.rawValue) not found at \(path.path), skipping load")
             return
         }
         isModelLoaded = false
         loadedModelName = ""
-        log("Loading model \(selectedModel.rawValue)...")
+        log("Whisper: loading model \(selectedModel.rawValue) from disk...")
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
             let success = self.whisperBridge.loadModel(path: path.path)
             DispatchQueue.main.async {
                 self.isModelLoaded = success
                 self.loadedModelName = success ? self.selectedModel.displayName : ""
-                self.log(success ? "Model \(self.selectedModel.rawValue) loaded" : "Model \(self.selectedModel.rawValue) failed to load")
+                self.log(success ? "Whisper: model \(self.selectedModel.rawValue) loaded successfully" : "Whisper: model \(self.selectedModel.rawValue) failed to load")
             }
         }
     }
@@ -859,14 +874,14 @@ class AppState: ObservableObject {
         isGlobalHotkeyActive = true
         FloatingRecordingPanel.shared.show(state: .recording)
         toggleRecording()
-        log("Global hotkey: started recording")
+        log("Global hotkey: key down → started recording (will auto-paste on release)")
     }
 
     func globalHotkeyUp() {
         guard isGlobalHotkeyActive, isRecording else { return }
         FloatingRecordingPanel.shared.show(state: .transcribing)
         toggleRecording()
-        log("Global hotkey: stopped recording, transcribing...")
+        log("Global hotkey: key up → stopped recording, transcribing...")
     }
 
     func performAutoPaste(_ text: String) {
@@ -880,20 +895,20 @@ class AppState: ObservableObject {
 
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
-        log("Global hotkey: copied to clipboard (\(text.count) chars)")
+        log("Global hotkey: result copied to clipboard (\(text.count) chars)")
 
         if GlobalHotkeyManager.isAccessibilityGranted {
             // Small delay to ensure clipboard is ready
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 GlobalHotkeyManager.pasteFromClipboard()
                 FloatingRecordingPanel.shared.showDoneAndHide()
-                self.log("Global hotkey: auto-pasted")
+                self.log("Global hotkey: auto-pasted via ⌘V to frontmost app")
                 // Security: clear clipboard after paste to reduce exposure window
                 self.scheduleClipboardClear()
             }
         } else {
             FloatingRecordingPanel.shared.showDoneAndHide()
-            log("Global hotkey: accessibility not granted, skipping auto-paste")
+            log("Global hotkey: accessibility permission not granted, text in clipboard but cannot auto-paste")
         }
     }
 
@@ -906,7 +921,7 @@ class AppState: ObservableObject {
             if let current = NSPasteboard.general.string(forType: .string),
                current == self?.transcriptionText {
                 NSPasteboard.general.clearContents()
-                self?.log("Clipboard cleared (security)")
+                self?.log("Clipboard auto-cleared after 30s (security: remove transcription from clipboard)")
             }
         }
         clipboardClearTimer = item
