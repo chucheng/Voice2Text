@@ -30,7 +30,7 @@ struct SettingsView: View {
                     Label(L.dangerousZoneTab, systemImage: "exclamationmark.triangle")
                 }
         }
-        .frame(width: 450, height: 420)
+        .frame(minWidth: 400, idealWidth: 450, minHeight: 350, idealHeight: 500)
     }
 }
 
@@ -264,11 +264,17 @@ private struct AdvancedTab: View {
         Form {
             Section(L.punctuationSection) {
                 Toggle(L.enablePunctuation, isOn: $appState.usePunctuationRestore)
-                    .disabled(!appState.isPunctuationServerAvailable)
+                    .disabled(!appState.isPunctuationServerAvailable || appState.usePostEditRevise)
 
-                Text(L.punctuationDescription)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                if appState.usePostEditRevise {
+                    Text(L.punctuationHandledByRevise)
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                } else {
+                    Text(L.punctuationDescription)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
 
                 HStack {
                     Circle()
@@ -289,47 +295,23 @@ private struct AdvancedTab: View {
 
             Section(L.developerSection) {
                 Toggle(L.devModeToggle, isOn: $appState.devMode)
+
+                if appState.devMode {
+                    Button(L.debugLogTitle) {
+                        openDebugLog()
+                    }
+                    .controlSize(.small)
+                }
             }
         }
         .formStyle(.grouped)
         .padding()
+    }
 
-        if appState.devMode {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(L.debugLogTitle)
-                        .font(.caption.bold())
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Button(L.clear) {
-                        appState.debugLog.removeAll()
-                    }
-                    .font(.caption)
-                    .buttonStyle(.borderless)
-                }
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 2) {
-                            ForEach(Array(appState.debugLog.enumerated()), id: \.offset) { idx, line in
-                                Text(line)
-                                    .font(.system(size: 10, design: .monospaced))
-                                    .foregroundColor(.secondary)
-                                    .textSelection(.enabled)
-                                    .id(idx)
-                            }
-                        }
-                    }
-                    .frame(maxHeight: 120)
-                    .onChange(of: appState.debugLog.count) {
-                        if let last = appState.debugLog.indices.last {
-                            proxy.scrollTo(last, anchor: .bottom)
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal)
-            .padding(.bottom)
-        }
+    @Environment(\.openWindow) private var openWindow
+
+    private func openDebugLog() {
+        openWindow(id: "debug-log")
     }
 }
 
@@ -487,6 +469,43 @@ private struct DangerousZoneTab: View {
                 Text(L.postEditReviseDescription)
                     .font(.caption)
                     .foregroundColor(.secondary)
+
+                if appState.usePostEditRevise {
+                    Text(L.reviseExclusivityNote)
+                        .font(.caption)
+                        .foregroundColor(.orange)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(L.customPromptLabel)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Button(L.resetToDefault) {
+                                appState.customRevisePrompt = ""
+                            }
+                            .font(.caption)
+                            .buttonStyle(.borderless)
+                            .disabled(appState.customRevisePrompt.isEmpty)
+                        }
+                        TextEditor(text: $appState.customRevisePrompt)
+                            .font(.system(size: 11, design: .monospaced))
+                            .frame(minHeight: 80, maxHeight: 120)
+                            .overlay(
+                                Group {
+                                    if appState.customRevisePrompt.isEmpty {
+                                        Text(AnthropicClient.revisePrompt.prefix(100) + "...")
+                                            .font(.system(size: 11, design: .monospaced))
+                                            .foregroundColor(.secondary.opacity(0.5))
+                                            .padding(.horizontal, 4)
+                                            .padding(.vertical, 2)
+                                            .allowsHitTesting(false)
+                                    }
+                                },
+                                alignment: .topLeading
+                            )
+                    }
+                }
             }
         }
         .formStyle(.grouped)

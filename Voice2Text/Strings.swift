@@ -444,10 +444,33 @@ enum L {
     static var reviseFailedBanner: String {
         lang == .english ? "Revise failed — using original text" : "修订失败 — 使用原始文本"
     }
+    static var reviseFailedFallbackBanner: String {
+        lang == .english ? "Revise failed — fell back to punctuation restore" : "修订失败 — 已回退到标点修复"
+    }
+    static var customPromptLabel: String {
+        lang == .english ? "Custom Prompt" : "自定义提示词"
+    }
+    static var resetToDefault: String {
+        lang == .english ? "Reset to Default" : "恢复默认"
+    }
+    static var punctuationHandledByRevise: String {
+        lang == .english ? "Handled by Post-Edit Revise" : "由后编辑修订处理"
+    }
+    static var reviseExclusivityNote: String {
+        lang == .english
+            ? "When enabled, punctuation is handled by the LLM. On failure, falls back to BERT."
+            : "启用后，标点由 LLM 处理。失败时回退到 BERT。"
+    }
     static var invalidBaseURL: String {
         lang == .english ? "Invalid URL (must start with http:// or https://)" : "无效 URL（必须以 http:// 或 https:// 开头）"
     }
     static var insecureURLWarning: String {
         lang == .english ? "Warning: HTTP sends credentials in cleartext" : "警告：HTTP 以明文发送凭证"
+    }
+
+    // MARK: What's New
+
+    static func whatsNewTitle(_ version: String) -> String {
+        lang == .english ? "What's New in v\(version)" : "v\(version) 新功能"
     }
 }
