@@ -10,6 +10,7 @@
 		007B47F4AA150FDA0850A2E3 /* RecordButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A87D51808C9EA1F06617B9 /* RecordButton.swift */; };
 		0B3E55E8EE1F4BA4F89039B8 /* Voice2TextApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257E4F6E36A9D0538A8C8460 /* Voice2TextApp.swift */; };
 		17939FC1FBC123AD266B9455 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96473EC3802040242118B3D5 /* OnboardingView.swift */; };
+		1AD40BC12A00A0B05549FC14 /* Strings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28E540758DB50D4FB2B47584 /* Strings.swift */; };
 		1CE6204696086B1559DF273D /* AppleSpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFCE46EBEF6F1D9D4AC98D4 /* AppleSpeechRecognizer.swift */; };
 		234A6EAE6B9400C36FC9050B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6352532232E1E479AF6863A0 /* SettingsView.swift */; };
 		56070AA1C35BC229E127C4ED /* HotkeyRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E9A61FA62F439336DE7D42 /* HotkeyRecorderView.swift */; };
@@ -39,6 +40,7 @@
 		1AB59BC277616C02BAF0E751 /* WindowAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAccessor.swift; sourceTree = "<group>"; };
 		1CA2D5D489F1259F37D5C860 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		257E4F6E36A9D0538A8C8460 /* Voice2TextApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Voice2TextApp.swift; sourceTree = "<group>"; };
+		28E540758DB50D4FB2B47584 /* Strings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Strings.swift; sourceTree = "<group>"; };
 		2B8EDDD62BF49D3DAF3113F2 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		33A87D51808C9EA1F06617B9 /* RecordButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordButton.swift; sourceTree = "<group>"; };
 		4D96081A4CA4C39943765931 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
@@ -101,6 +103,7 @@
 				8EF2095430F612A32FA9C745 /* PunctuationClient.swift */,
 				33A87D51808C9EA1F06617B9 /* RecordButton.swift */,
 				6352532232E1E479AF6863A0 /* SettingsView.swift */,
+				28E540758DB50D4FB2B47584 /* Strings.swift */,
 				77742FC776C7397C96C85058 /* TranscriptionView.swift */,
 				F7524ADDFF9C1223A3FCAFAF /* Voice2Text-Bridging-Header.h */,
 				750BA70A1ADF91C2FFD1516E /* Voice2Text.entitlements */,
@@ -221,6 +224,7 @@
 				7048256EC1394D1C7C2BF3BE /* PunctuationClient.swift in Sources */,
 				007B47F4AA150FDA0850A2E3 /* RecordButton.swift in Sources */,
 				234A6EAE6B9400C36FC9050B /* SettingsView.swift in Sources */,
+				1AD40BC12A00A0B05549FC14 /* Strings.swift in Sources */,
 				710DC49DAB81A54B9BC1B249 /* TranscriptionView.swift in Sources */,
 				0B3E55E8EE1F4BA4F89039B8 /* Voice2TextApp.swift in Sources */,
 				D6F3AC5A94B661D0E1118BE1 /* WaveformView.swift in Sources */,
@@ -308,7 +312,7 @@
 					"$(PROJECT_DIR)/Whisper/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.3.0;
 				OTHER_LDFLAGS = (
 					"-lwhisper",
 					"-lggml",
@@ -344,7 +348,7 @@
 					"$(PROJECT_DIR)/Whisper/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.3.0;
 				OTHER_LDFLAGS = (
 					"-lwhisper",
 					"-lggml",

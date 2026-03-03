@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.2.0** — 99 Language Support release.
+**Version: 1.3.0** — In-App Language Switching release.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -15,7 +15,7 @@ Shows in both the menu bar (MenuBarExtra) and the Dock.
 - **Requirements**: macOS 14+, Xcode 15+
 - **Sandbox**: App Sandbox enabled with audio-input + network-client entitlements
 
-## Current Status: v1.2.0 — 99 Language Support + Global Hotkey + Dual STT
+## Current Status: v1.3.0 — In-App Language Switching + 99 Language Support + Global Hotkey + Dual STT
 Full voice-to-text pipeline with two recording modes:
 - **In-app**: Spacebar push-to-talk → transcribe → display
 - **Global hotkey (⌘;)**: Hold from any app → floating panel → release → transcribe → auto-paste at cursor
@@ -24,6 +24,7 @@ STT engines:
 - **Whisper**: record → resample → whisper inference → punctuation restore (Chinese only) → script conversion → display/paste
 - **Apple Speech**: record → stream buffers → real-time recognition → script conversion → display/paste
 
+UI language switchable between English and Simplified Chinese (persisted via UserDefaults, default follows system locale).
 99 languages supported via Whisper `language="auto"`. Punctuation server auto-skipped for non-Chinese text.
 Models downloaded on-demand from HuggingFace to `~/Library/Application Support/Voice2Text/`.
 Upgrade installs auto-detect existing models (no re-download needed).
@@ -43,11 +44,12 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | File | Purpose |
 |------|---------|
 | `Voice2Text/Voice2TextApp.swift` | @main entry point, MenuBarExtra + Window scene |
-| `Voice2Text/AppState.swift` | Shared ObservableObject: recording, transcription, model management, dual STT engines, global hotkey integration, script conversion, keyboard shortcuts, debug logging |
+| `Voice2Text/Strings.swift` | UILanguage enum + L localization enum (~85 strings × 2 languages: English / 简体中文) |
+| `Voice2Text/AppState.swift` | Shared ObservableObject: recording, transcription, model management, dual STT engines, global hotkey integration, script conversion, keyboard shortcuts, UI language, debug logging |
 | `Voice2Text/MenuBarView.swift` | Menu bar dropdown: Start/Stop, model picker, script toggle, Punctuation Restore, Open Window, Quit |
-| `Voice2Text/ContentView.swift` | Main window: record button, waveform, status, editable transcription, Copy button, Settings shortcut |
-| `Voice2Text/OnboardingView.swift` | First-launch wizard: welcome → model selection (with download detection) → downloading → permissions (Accessibility) |
-| `Voice2Text/SettingsView.swift` | Settings: General (engine, script), Models, Shortcuts (hotkey, accessibility), Advanced (punctuation, dev mode) |
+| `Voice2Text/ContentView.swift` | Main window: record button, waveform, status, editable transcription, Copy button, Settings shortcut, © copyright |
+| `Voice2Text/OnboardingView.swift` | First-launch wizard: language picker → welcome → model selection (with download detection) → downloading → permissions (Accessibility) |
+| `Voice2Text/SettingsView.swift` | Settings: General (language, engine, script), Models, Shortcuts (hotkey, accessibility), Advanced (punctuation, dev mode) |
 | `Voice2Text/GlobalHotkeyManager.swift` | Carbon hotkey registration/unregistration, HotkeyCombo (Codable), accessibility check, CGEvent paste simulation |
 | `Voice2Text/FloatingRecordingPanel.swift` | NSPanel (nonactivatingPanel + hudWindow) floating indicator: recording/transcribing/done states |
 | `Voice2Text/HotkeyRecorderView.swift` | SwiftUI custom key combo recorder with modifier requirement |
@@ -101,6 +103,11 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - Punctuation restore enabled by default when server is available; greyed out when unavailable; auto-skipped for non-Chinese text
 - Output script (Simplified/Traditional Chinese) persisted via UserDefaults, default: Simplified
 - App icon: blue gradient with microphone, sound waves, text lines, "V2T" label
+- UI language (English / 简体中文) persisted via UserDefaults (key: `"uiLanguage"`), default follows system locale
+- All UI strings centralized in `Strings.swift` `L` enum; `L.lang` reads `AppState.shared.uiLanguage`
+- Language picker: segmented control on OnboardingView welcome step + Settings > General top section
+- Copyright notice "© C. C. Hsieh" shown in ContentView bottom toolbar center after first-use tooltip disappears
+- Strings that stay English in both languages: WhisperModel.displayName, STTEngine.rawValue, OutputScript.rawValue, "V2T"
 
 ### Global Hotkey Architecture
 - `GlobalHotkeyManager` (singleton): Carbon `RegisterEventHotKey` for system-wide key capture

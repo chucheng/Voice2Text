@@ -15,7 +15,7 @@ class FloatingRecordingPanel {
     static let shared = FloatingRecordingPanel()
 
     private var panel: NSPanel?
-    private var hostingView: NSHostingView<FloatingIndicatorView>?
+    private var hostingView: NSView?
     private var indicatorState = FloatingIndicatorState()
     private var hideTimer: DispatchWorkItem?
 
@@ -64,14 +64,15 @@ class FloatingRecordingPanel {
 
     private func createPanel() {
         let view = FloatingIndicatorView(state: indicatorState)
+            .frame(width: 200, height: 56)
         let hosting = NSHostingView(rootView: view)
         hosting.frame = NSRect(x: 0, y: 0, width: 200, height: 56)
 
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 200, height: 56),
-            styleMask: [.nonactivatingPanel, .hudWindow, .fullSizeContentView],
+            styleMask: [.nonactivatingPanel, .hudWindow],
             backing: .buffered,
-            defer: true
+            defer: false
         )
         panel.isFloatingPanel = true
         panel.level = .floating
@@ -79,6 +80,8 @@ class FloatingRecordingPanel {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
+        panel.contentMinSize = NSSize(width: 200, height: 56)
+        panel.contentMaxSize = NSSize(width: 200, height: 56)
         panel.contentView = hosting
         panel.isMovableByWindowBackground = true
 
@@ -150,9 +153,9 @@ struct FloatingIndicatorView: View {
 
     private var labelText: String {
         switch state.state {
-        case .recording: return "Recording..."
-        case .transcribing: return "Transcribing..."
-        case .done: return "Pasted!"
+        case .recording: return L.floatingRecording
+        case .transcribing: return L.floatingTranscribing
+        case .done: return L.floatingPasted
         }
     }
 }

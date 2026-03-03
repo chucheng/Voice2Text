@@ -21,6 +21,6 @@ struct CopyButton: View {
         }
         .buttonStyle(.plain)
         .disabled(text.isEmpty)
-        .help("Copy transcription")
+        .help(L.copyTooltip)
     }
 }

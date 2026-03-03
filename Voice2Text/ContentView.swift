@@ -13,11 +13,11 @@ struct ContentView: View {
     }
 
     private var statusText: String {
-        if appState.isReformatting { return "Reformatting..." }
-        if appState.isTranscribing { return "Transcribing..." }
-        if appState.isStarting { return "Starting..." }
-        if appState.isRecording { return "Recording..." }
-        return "Hold Space to record"
+        if appState.isReformatting { return L.reformatting }
+        if appState.isTranscribing { return L.transcribing }
+        if appState.isStarting { return L.starting }
+        if appState.isRecording { return L.recording }
+        return L.holdSpaceToRecord
     }
 
     var body: some View {
@@ -67,39 +67,39 @@ struct ContentView: View {
                 .padding(.vertical, 10)
         }
         .background(.regularMaterial)
-        .alert("Microphone Access Required", isPresented: $appState.showMicrophoneAlert) {
-            Button("Open System Settings") {
+        .alert(L.micAccessRequired, isPresented: $appState.showMicrophoneAlert) {
+            Button(L.openSystemSettings) {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
                     NSWorkspace.shared.open(url)
                 }
             }
-            Button("Later", role: .cancel) {}
+            Button(L.later, role: .cancel) {}
         } message: {
-            Text("Voice2Text needs microphone access to record audio. Please enable it in System Settings > Privacy & Security > Microphone.")
+            Text(L.micAccessMessage)
         }
-        .alert("Enable Auto-Paste?", isPresented: $appState.showAccessibilityAlert) {
-            Button("Open System Settings") {
+        .alert(L.enableAutoPaste, isPresented: $appState.showAccessibilityAlert) {
+            Button(L.openSystemSettings) {
                 GlobalHotkeyManager.requestAccessibility()
             }
-            Button("Disable Global Hotkey") {
+            Button(L.disableGlobalHotkey) {
                 appState.globalHotkeyEnabled = false
                 GlobalHotkeyManager.shared.unregister()
             }
-            Button("Later", role: .cancel) {}
+            Button(L.later, role: .cancel) {}
         } message: {
-            Text("Grant Accessibility permission to let the global hotkey (⌘;) auto-paste transcriptions at your cursor. Without it, text will only be copied to clipboard.")
+            Text(L.autoPasteMessage)
         }
-        .alert("Accessibility Permission Needs Refresh", isPresented: $appState.showAccessibilityUpgradeAlert) {
-            Button("Open System Settings") {
+        .alert(L.accessibilityNeedsRefresh, isPresented: $appState.showAccessibilityUpgradeAlert) {
+            Button(L.openSystemSettings) {
                 GlobalHotkeyManager.requestAccessibility()
             }
-            Button("Disable Global Hotkey") {
+            Button(L.disableGlobalHotkey) {
                 appState.globalHotkeyEnabled = false
                 GlobalHotkeyManager.shared.unregister()
             }
-            Button("Later", role: .cancel) {}
+            Button(L.later, role: .cancel) {}
         } message: {
-            Text("After updating Voice2Text, macOS invalidates the Accessibility permission. Please open System Settings → Privacy & Security → Accessibility, select Voice2Text and click \"−\" to remove it, then re-add it by clicking \"+\" or relaunch the app.")
+            Text(L.accessibilityRefreshMessage)
         }
     }
 
@@ -122,12 +122,12 @@ struct ContentView: View {
 
             // Warnings
             if appState.sttEngine == .whisper && !appState.isModelLoaded {
-                Label("No model loaded", systemImage: "exclamationmark.triangle.fill")
+                Label(L.noModelLoaded, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundColor(.orange)
             }
             if appState.sttEngine == .apple && !appState.isNetworkAvailable {
-                Label("No network", systemImage: "wifi.slash")
+                Label(L.noNetwork, systemImage: "wifi.slash")
                     .font(.caption)
                     .foregroundColor(.red)
             }
@@ -150,13 +150,13 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .help("Settings (⌘,)")
+            .help(L.settingsTooltip)
 
             Spacer()
 
-            // First-use tooltip
+            // First-use tooltip or copyright
             if appState.showFirstUseTooltip {
-                Text("Hold Space to record, ⌘C to copy")
+                Text(L.firstUseTooltip)
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .onAppear {
@@ -166,6 +166,10 @@ struct ContentView: View {
                             }
                         }
                     }
+            } else {
+                Text("\u{00A9} C. C. Hsieh")
+                    .font(.caption2)
+                    .foregroundStyle(.quaternary)
             }
 
             Spacer()

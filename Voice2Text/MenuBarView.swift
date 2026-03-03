@@ -6,9 +6,9 @@ struct MenuBarView: View {
     @Environment(\.openSettings) private var openSettings
 
     private var recordingLabel: String {
-        if appState.isTranscribing { return "Transcribing..." }
-        if appState.isStarting { return "Starting..." }
-        return appState.isRecording ? "Stop Recording" : "Start Recording"
+        if appState.isTranscribing { return L.transcribing }
+        if appState.isStarting { return L.starting }
+        return appState.isRecording ? L.stopRecording : L.startRecording
     }
 
     var body: some View {
@@ -21,7 +21,7 @@ struct MenuBarView: View {
         Divider()
 
         // Script selection (繁體/簡體)
-        Picker("Output", selection: $appState.outputScript) {
+        Picker(L.output, selection: $appState.outputScript) {
             ForEach(OutputScript.allCases) { script in
                 Text(script.rawValue).tag(script)
             }
@@ -33,7 +33,7 @@ struct MenuBarView: View {
         Divider()
 
         // Model selection
-        Menu("Model: \(appState.selectedModel.displayName)") {
+        Menu(L.modelMenu(appState.selectedModel.displayName)) {
             ForEach(WhisperModel.allCases) { model in
                 Button {
                     appState.switchModel(to: model)
@@ -47,7 +47,7 @@ struct MenuBarView: View {
                             Text("✓")
                         }
                         if !appState.isModelDownloaded(model) {
-                            Text("(Download)")
+                            Text(L.downloadLabel)
                         }
                     }
                 }
@@ -56,7 +56,7 @@ struct MenuBarView: View {
 
         Divider()
 
-        Button("Copy Transcription") {
+        Button(L.copyTranscription) {
             if !appState.transcriptionText.isEmpty {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(appState.transcriptionText, forType: .string)
@@ -66,24 +66,24 @@ struct MenuBarView: View {
 
         Divider()
 
-        Button("Open Window") {
+        Button(L.openWindow) {
             openWindow(id: "main")
         }
         .keyboardShortcut("o")
 
-        Button("Settings...") {
+        Button(L.settings) {
             openSettings()
         }
         .keyboardShortcut(",")
 
         Divider()
 
-        Toggle("Punctuation Restore (中+英)", isOn: $appState.usePunctuationRestore)
+        Toggle(L.punctuationRestore, isOn: $appState.usePunctuationRestore)
             .disabled(!appState.isPunctuationServerAvailable)
 
         Divider()
 
-        Button("Quit") {
+        Button(L.quit) {
             NSApplication.shared.terminate(nil)
         }
         .keyboardShortcut("q")
