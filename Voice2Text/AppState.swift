@@ -52,7 +52,15 @@ class AppState: ObservableObject {
     @Published var isTranscribing = false
     @Published var transcriptionText = ""
     @Published var isReformatting = false
-    @Published var outputScript: OutputScript = .simplified
+    @Published var outputScript: OutputScript = {
+        if let saved = UserDefaults.standard.string(forKey: "outputScript"),
+           let script = OutputScript(rawValue: saved) {
+            return script
+        }
+        return .simplified
+    }() {
+        didSet { UserDefaults.standard.set(outputScript.rawValue, forKey: "outputScript") }
+    }
     @Published var selectedModel: WhisperModel = {
         if let saved = UserDefaults.standard.string(forKey: "selectedModel"),
            let model = WhisperModel(rawValue: saved) {

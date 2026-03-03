@@ -271,6 +271,14 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v1.2.0 — 99 Language Support
+- **99 languages** — Whisper auto-detects language; all languages work out of the box
+- **Smart punctuation skip** — Chinese BERT server auto-skipped for non-Chinese speech
+- **Upgrade permission detection** — detects invalidated Accessibility after app upgrade, guides user to remove and re-add
+- **Microphone check on first launch** — prompts immediately after onboarding completes
+- **Default Simplified Chinese** — output script defaults to Simplified (persisted across launches)
+- **UI clarity** — Punctuation option labeled "Chinese + English only" with license note
+
 ### v1.1.1 — Bug Fixes & Polish
 - **Launch permission checks** — proactively prompts for Microphone and Accessibility on startup
 - **"Disable Global Hotkey" option** — users who don't want auto-paste can disable to suppress Accessibility prompts
