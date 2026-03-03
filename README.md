@@ -41,9 +41,11 @@ That's it. No window switching, no copy-paste. Powered by [whisper.cpp](https://
 1. Download `Voice2Text.dmg` from the [Releases](../../releases) page
 2. Open the DMG and drag **Voice2Text** to the **Applications** folder
 3. Eject the DMG
-4. Open **Voice2Text** from Applications — on first launch, macOS may block it:
+4. Open **Voice2Text** from Applications — on first launch, macOS will show a security warning ("cannot verify"):
    - Right-click (or Control-click) the app → **Open** → click **Open** in the dialog
+   - Or run in Terminal: `xattr -cr /Applications/Voice2Text.app`
    - This is only needed once; subsequent launches work normally
+   - *(This happens because the app is ad-hoc signed without an Apple Developer certificate)*
 5. The **Setup Wizard** will guide you:
    - **Choose a model** — select a Whisper model to download for offline transcription, then click **Download & Continue**
    - **Or skip** — click **Skip — Use Apple Speech** to use Apple's built-in speech recognition (requires internet)
