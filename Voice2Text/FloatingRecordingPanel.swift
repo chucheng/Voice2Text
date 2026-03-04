@@ -32,6 +32,7 @@ class FloatingRecordingPanel {
                 createPanel()
             }
 
+            repositionPanel()
             panel?.orderFrontRegardless()
         }
     }
@@ -85,16 +86,17 @@ class FloatingRecordingPanel {
         panel.contentView = hosting
         panel.isMovableByWindowBackground = true
 
-        // Position top-center of main screen
-        if let screen = NSScreen.main {
-            let screenFrame = screen.visibleFrame
-            let x = screenFrame.midX - 100
-            let y = screenFrame.maxY - 80
-            panel.setFrameOrigin(NSPoint(x: x, y: y))
-        }
-
         self.panel = panel
         self.hostingView = hosting
+    }
+
+    /// Reposition panel to top-center of the current main screen.
+    private func repositionPanel() {
+        guard let panel, let screen = NSScreen.main else { return }
+        let screenFrame = screen.visibleFrame
+        let x = screenFrame.midX - panel.frame.width / 2
+        let y = screenFrame.maxY - 80
+        panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 }
 

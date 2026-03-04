@@ -1,5 +1,16 @@
 [
     {
+        "version": "1.8.3",
+        "changes": {
+            "en": [
+                "Fix: floating panel now repositions on screen/resolution change"
+            ],
+            "zh": [
+                "修复：切换屏幕或分辨率变化时，悬浮面板自动重新定位"
+            ]
+        }
+    },
+    {
         "version": "1.8.2",
         "changes": {
             "en": [

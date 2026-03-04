@@ -280,6 +280,9 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v1.8.3 — Floating Panel Fix
+- **Fix** — floating recording panel now repositions to top-center of current screen on every hotkey press (handles screen/resolution changes)
+
 ### v1.8.1 — UI Polish + Auto API Check
 - **User-friendly capsules** — renamed BERT → Auto-Punct, LLM → AI Revise in top bar
 - **Smart capsule visibility** — Auto-Punct capsule hidden when AI Revise is active (avoids confusion)
