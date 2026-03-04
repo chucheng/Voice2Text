@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.8.1** — User-friendly capsule names, auto API check on revise toggle.
+**Version: 1.8.2** — Show version number in bottom toolbar.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
