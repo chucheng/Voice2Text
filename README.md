@@ -1,14 +1,14 @@
 # Voice2Text — Open-Source Whisper Voice Input for macOS
 
-**Free, open-source, offline voice-to-text for macOS.** Hold a hotkey, speak, and your words appear at the cursor — in any app.
+**Free, open-source voice-to-text for macOS — powered by OpenAI's Whisper model running locally on your Mac.** Hold a hotkey, speak, and your words appear at the cursor — in any app. Built-in punctuation restoration via CoreML BERT and optional AI post-editing via Claude API.
 
-**免費、開源、離線語音輸入工具。** 按住快捷鍵說話，文字自動出現在游標位置 — 在任何應用程式中都能使用。
+**免費、開源的 macOS 語音輸入工具 — 採用 OpenAI Whisper 模型，完全在本機運行。** 按住快捷鍵說話，文字自動出現在游標位置 — 在任何應用程式中都能使用。內建 CoreML BERT 自動標點，可選搭配 Claude API 進行 AI 潤稿。
 
 ---
 
-> **Supports 99 languages via Whisper.** Optimized for Chinese + English mixed input with automatic punctuation restoration. Other languages work out of the box — just speak and Whisper auto-detects.
+> **Supports 99 languages via Whisper.** Optimized for Chinese + English mixed input with automatic punctuation restoration. Optional Claude LLM integration polishes transcription for better clarity and flow.
 >
-> **支援 99 種語言。** 針對中英文混合輸入特別優化，含自動標點還原。其他語言開箱即用 — 直接說話，Whisper 會自動辨識語言。
+> **支援 99 種語言。** 針對中英文混合輸入特別優化，含自動標點還原。可選搭配 Claude LLM 潤稿，讓語音轉文字更通順自然。
 
 ---
 
@@ -18,7 +18,7 @@
 2. **Speak** in Chinese, English, or both
 3. **Release** — text is transcribed and pasted at your cursor
 
-That's it. No window switching, no copy-paste. Powered by [whisper.cpp](https://github.com/ggerganov/whisper.cpp) running entirely on your Mac — no cloud, no API keys, no subscription.
+That's it. No window switching, no copy-paste. Core transcription powered by [whisper.cpp](https://github.com/ggerganov/whisper.cpp) running entirely on your Mac — no cloud required. Optionally connect a Claude API for AI-powered post-editing.
 
 ## Features
 
