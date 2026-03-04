@@ -34,6 +34,10 @@ scripts/.venv/
 scripts/build/
 scripts/dist/
 
+# CoreML model artifacts (large, hosted on GitHub Releases)
+scripts/zh-punctuation-bert.mlpackage/
+scripts/zh-punctuation-bert.mlpackage.zip
+
 # Misc
 *.hmap
 *.ipa
