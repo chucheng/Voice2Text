@@ -481,8 +481,21 @@ private struct AIServicesTab: View {
             }
 
             Section(L.postEditReviseSection) {
-                Toggle(L.enablePostEditRevise, isOn: $appState.usePostEditRevise)
-                    .disabled(!appState.apiCheckState.isValid)
+                Toggle(L.enablePostEditRevise, isOn: Binding(
+                    get: { appState.usePostEditRevise },
+                    set: { newValue in
+                        if newValue && !appState.apiCheckState.isValid {
+                            // Auto-check API when user tries to enable
+                            appState.pendingEnableRevise = true
+                            appState.performAPICheck()
+                        } else {
+                            appState.usePostEditRevise = newValue
+                        }
+                    }
+                ))
+                .disabled(appState.apiCheckState == .checking
+                          || !appState.dangerousZoneTokenIsSet
+                          || appState.dangerousZoneBaseURL.isEmpty)
 
                 Text(L.postEditReviseDescription)
                     .font(.caption)

@@ -153,13 +153,13 @@ struct ContentView: View {
             .padding(.vertical, 4)
             .background(Capsule().fill(.quaternary))
 
-            // Service status capsules
-            if appState.usePunctuationRestore {
+            // Service status capsules (BERT hidden when LLM active — LLM handles punctuation)
+            if appState.usePunctuationRestore && !appState.usePostEditRevise {
                 HStack(spacing: 4) {
                     Circle()
                         .fill(appState.isPunctuationModelLoaded ? .green : .red)
                         .frame(width: 6, height: 6)
-                    Text("BERT")
+                    Text(L.autoPunctuation)
                         .font(.caption)
                         .fontWeight(.medium)
                 }
@@ -173,7 +173,7 @@ struct ContentView: View {
                     Circle()
                         .fill(appState.apiCheckState.isValid ? .green : .red)
                         .frame(width: 6, height: 6)
-                    Text("LLM")
+                    Text(L.aiRevise)
                         .font(.caption)
                         .fontWeight(.medium)
                 }
