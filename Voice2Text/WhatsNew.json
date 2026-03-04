@@ -1,5 +1,22 @@
 [
     {
+        "version": "1.8.1",
+        "changes": {
+            "en": [
+                "Renamed status capsules: BERT → Auto-Punct, LLM → AI Revise",
+                "Auto-punctuation capsule hidden when AI Revise is active",
+                "Enabling AI Revise now auto-triggers API check",
+                "Fix: credential changes now correctly cancel pending auto-enable"
+            ],
+            "zh": [
+                "重命名状态胶囊：BERT → 自动标点，LLM → AI 修正",
+                "AI 修正启用时隐藏自动标点胶囊",
+                "启用 AI 修正时自动触发 API 检查",
+                "修复：修改凭证时正确取消待处理的自动启用"
+            ]
+        }
+    },
+    {
         "version": "1.8.0",
         "changes": {
             "en": [

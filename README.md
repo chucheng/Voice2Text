@@ -280,6 +280,12 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v1.8.1 — UI Polish + Auto API Check
+- **User-friendly capsules** — renamed BERT → Auto-Punct, LLM → AI Revise in top bar
+- **Smart capsule visibility** — Auto-Punct capsule hidden when AI Revise is active (avoids confusion)
+- **Auto API check** — enabling AI Revise now auto-triggers API credential check
+- **Bug fix** — credential changes correctly cancel pending auto-enable
+
 ### v1.8.0 — Built-in CoreML Punctuation (No External Server)
 - **In-process BERT** — punctuation restoration runs natively via CoreML, no external PunctuationServer.app needed
 - **Smaller download** — ~179 MB CoreML model vs ~500 MB PyInstaller server
