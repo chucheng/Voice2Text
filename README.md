@@ -286,6 +286,9 @@ project.yml                      # XcodeGen spec
 - **Auto API check** — enabling AI Revise now auto-triggers API credential check
 - **Bug fix** — credential changes correctly cancel pending auto-enable
 
+### v1.8.2 — Version Display
+- **Version in toolbar** — app version now shown in bottom toolbar copyright text
+
 ### v1.8.0 — Built-in CoreML Punctuation (No External Server)
 - **In-process BERT** — punctuation restoration runs natively via CoreML, no external PunctuationServer.app needed
 - **Smaller download** — ~179 MB CoreML model vs ~500 MB PyInstaller server
