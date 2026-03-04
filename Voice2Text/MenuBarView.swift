@@ -79,7 +79,7 @@ struct MenuBarView: View {
         Divider()
 
         Toggle(L.punctuationRestore, isOn: $appState.usePunctuationRestore)
-            .disabled(!appState.isPunctuationServerAvailable || appState.usePostEditRevise)
+            .disabled(!appState.isPunctuationModelLoaded || appState.usePostEditRevise)
 
         Divider()
 

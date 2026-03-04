@@ -157,7 +157,7 @@ struct ContentView: View {
             if appState.usePunctuationRestore {
                 HStack(spacing: 4) {
                     Circle()
-                        .fill(appState.isPunctuationServerAvailable ? .green : .red)
+                        .fill(appState.isPunctuationModelLoaded ? .green : .red)
                         .frame(width: 6, height: 6)
                     Text("BERT")
                         .font(.caption)

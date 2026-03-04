@@ -104,19 +104,15 @@ class AppState: ObservableObject {
     }
 
     @Published var usePunctuationRestore = false
-    @Published var isPunctuationServerAvailable = false
 
-    // MARK: - Punctuation Server Install
-    @Published var isDownloadingPunctuationServer = false
-    @Published var punctuationServerDownloadProgress: Double = 0
-    @Published var isExtractingPunctuationServer = false
-    @Published var punctuationServerInstallError: String?
+    // MARK: - Punctuation Model (CoreML)
+    let punctuationRestorer = PunctuationRestorer()
+    @Published var isPunctuationModelLoaded = false
+    @Published var isDownloadingPunctuationModel = false
+    @Published var punctuationModelDownloadProgress: Double = 0
 
-    /// GitHub Releases URL for the PunctuationServer zip.
-    static let punctuationServerDownloadURL = URL(string: "https://github.com/anthropics/punctuation-server/releases/latest/download/PunctuationServer.zip")!
-
-    var isPunctuationServerInstalled: Bool {
-        FileManager.default.fileExists(atPath: PunctuationClient.appSupportInstallURL.path)
+    var isPunctuationModelDownloaded: Bool {
+        PunctuationRestorer.isModelDownloaded
     }
     @Published var audioLevel: Float = 0
     @Published var devMode: Bool = UserDefaults.standard.bool(forKey: "devMode") {
@@ -216,7 +212,8 @@ class AppState: ObservableObject {
 
         loadModelIfAvailable()
         setupKeyboardShortcuts()
-        checkPunctuationServer()
+        loadPunctuationModelIfAvailable()
+        migratePunctuationServer()
         setupGlobalHotkey()
         refreshAccessibilityStatus()
         // Delay permission checks to allow SwiftUI view to be ready for alerts
@@ -226,7 +223,7 @@ class AppState: ObservableObject {
         }
 
         // End init phase — after this, logs only record when Dev Mode is on.
-        // Use asyncAfter to allow init-triggered async callbacks (network, punctuation server) to log.
+        // Use asyncAfter to allow init-triggered async callbacks (network, punctuation model) to log.
         DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
             self?.isInitializing = false
         }
@@ -526,56 +523,44 @@ class AppState: ObservableObject {
         return false
     }
 
-    // MARK: - Punctuation Restore
+    // MARK: - Punctuation Model
 
-    func checkPunctuationServer() {
-        PunctuationClient.shared.checkHealth { [weak self] ok in
+    /// Load the CoreML punctuation model if already downloaded.
+    func loadPunctuationModelIfAvailable() {
+        guard isPunctuationModelDownloaded else {
+            log("BERT punctuation model: not downloaded")
+            isPunctuationModelLoaded = false
+            usePunctuationRestore = false
+            return
+        }
+        log("BERT punctuation model: found on disk, loading CoreML model...")
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
-            if ok {
-                self.isPunctuationServerAvailable = true
-                self.usePunctuationRestore = true
-                self.log("BERT punctuation server: running at localhost, enabled by default")
-            } else {
-                self.log("BERT punctuation server: not running, attempting auto-launch...")
-                self.autoLaunchPunctuationServer()
+            let success = self.punctuationRestorer.loadModel()
+            DispatchQueue.main.async {
+                self.isPunctuationModelLoaded = success
+                if success {
+                    self.usePunctuationRestore = true
+                    self.log("BERT punctuation model: loaded, enabled by default")
+                } else {
+                    self.usePunctuationRestore = false
+                    self.log("BERT punctuation model: failed to load")
+                }
             }
         }
     }
 
-    /// Try to launch PunctuationServer.app, then poll health until ready.
-    private func autoLaunchPunctuationServer() {
-        guard PunctuationClient.launchServer() else {
-            log("BERT punctuation server: PunctuationServer.app not found in /Applications, ~/Applications, or bundle-adjacent")
-            isPunctuationServerAvailable = false
-            usePunctuationRestore = false
-            return
-        }
-        log("BERT punctuation server: launch attempted, polling health every 2s (up to 60s)...")
-
-        // Poll health every 2s, up to 60s (model download on first run can be slow)
-        let maxAttempts = 30
-        var attempt = 0
-        func poll() {
-            attempt += 1
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
-                guard let self else { return }
-                PunctuationClient.shared.checkHealth { [weak self] ok in
-                    guard let self else { return }
-                    if ok {
-                        self.isPunctuationServerAvailable = true
-                        self.usePunctuationRestore = true
-                        self.log("BERT punctuation server: ready after \(attempt * 2)s")
-                    } else if attempt < maxAttempts {
-                        poll()
-                    } else {
-                        self.isPunctuationServerAvailable = false
-                        self.usePunctuationRestore = false
-                        self.log("BERT punctuation server: failed to start after \(maxAttempts * 2)s, punctuation restore disabled")
-                    }
-                }
+    /// Remove legacy PunctuationServer.app if present in Application Support.
+    private func migratePunctuationServer() {
+        let legacyPath = Self.modelDirectory.appendingPathComponent("PunctuationServer.app")
+        if FileManager.default.fileExists(atPath: legacyPath.path) {
+            do {
+                try FileManager.default.removeItem(at: legacyPath)
+                log("Migration: removed legacy PunctuationServer.app from \(legacyPath.path)")
+            } catch {
+                log("Migration: failed to remove legacy PunctuationServer.app — \(error.localizedDescription)")
             }
         }
-        poll()
     }
 
     /// Post-process whisper output: punctuation restore → LLM reformat → script conversion.
@@ -587,9 +572,9 @@ class AppState: ObservableObject {
         // When Post-Edit Revise is active, skip BERT — LLM handles punctuation
         if usePostEditRevise, anthropicClient != nil {
             applyLLMAndConvert(text)
-        } else if usePunctuationRestore && isPunctuationServerAvailable && textContainsChinese(text) {
-            log("BERT punctuation restore: sending \(text.count) chars to localhost server...")
-            PunctuationClient.shared.restore(text) { [weak self] restored, error in
+        } else if usePunctuationRestore && isPunctuationModelLoaded && textContainsChinese(text) {
+            log("BERT punctuation restore: sending \(text.count) chars to CoreML model...")
+            punctuationRestorer.restore(text) { [weak self] restored, error in
                 guard let self else { return }
                 if let restored {
                     self.log("BERT punctuation restore: success (\(restored.count) chars)")
@@ -606,7 +591,7 @@ class AppState: ObservableObject {
     }
 
     /// Apply Post-Edit Revise (if enabled) then script conversion.
-    /// On LLM failure, falls back to BERT punctuation if available + Chinese text.
+    /// On LLM failure, falls back to BERT punctuation model if loaded + Chinese text.
     private func applyLLMAndConvert(_ text: String) {
         if usePostEditRevise, let client = anthropicClient {
             let prompt = (customRevisePrompt == AnthropicClient.revisePrompt) ? nil : customRevisePrompt
@@ -634,9 +619,9 @@ class AppState: ObservableObject {
 
     /// On LLM failure, try BERT punctuation as fallback. If unavailable, use raw text.
     private func tryBERTFallback(_ text: String) {
-        if isPunctuationServerAvailable && textContainsChinese(text) {
+        if isPunctuationModelLoaded && textContainsChinese(text) {
             log("BERT fallback: sending \(text.count) chars...")
-            PunctuationClient.shared.restore(text) { [weak self] restored, error in
+            punctuationRestorer.restore(text) { [weak self] restored, error in
                 guard let self else { return }
                 if let restored {
                     self.log("BERT fallback: success (\(restored.count) chars)")
@@ -761,37 +746,40 @@ class AppState: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: item)
     }
 
-    // MARK: - Punctuation Server Install/Uninstall
+    // MARK: - Punctuation Model Download/Delete
 
-    func installPunctuationServer() {
-        guard !isDownloadingPunctuationServer else { return }
-        isDownloadingPunctuationServer = true
-        punctuationServerDownloadProgress = 0
-        isExtractingPunctuationServer = false
-        punctuationServerInstallError = nil
-        log("PunctuationServer: starting download from \(Self.punctuationServerDownloadURL)")
+    func downloadPunctuationModel() {
+        guard !isDownloadingPunctuationModel else { return }
+        isDownloadingPunctuationModel = true
+        punctuationModelDownloadProgress = 0
+        log("BERT punctuation model: starting download from \(PunctuationRestorer.downloadURL)")
 
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: nil)
-        let task = session.downloadTask(with: Self.punctuationServerDownloadURL) { [weak self] tmpURL, response, error in
+        let task = session.downloadTask(with: PunctuationRestorer.downloadURL) { [weak self] tmpURL, response, error in
             session.finishTasksAndInvalidate()
             DispatchQueue.main.async {
                 guard let self else { return }
                 guard let tmpURL, error == nil else {
                     let msg = error?.localizedDescription ?? "Unknown download error"
-                    self.log("PunctuationServer: download failed — \(msg)")
-                    self.punctuationServerInstallError = msg
-                    self.isDownloadingPunctuationServer = false
-                    self.scheduleErrorClear()
+                    self.log("BERT punctuation model: download failed — \(msg)")
+                    self.isDownloadingPunctuationModel = false
                     return
                 }
-                self.log("PunctuationServer: download complete, extracting...")
-                self.extractPunctuationServer(zipURL: tmpURL)
+                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+                    let msg = "HTTP \(httpResponse.statusCode)"
+                    self.log("BERT punctuation model: download failed — \(msg)")
+                    self.isDownloadingPunctuationModel = false
+                    try? FileManager.default.removeItem(at: tmpURL)
+                    return
+                }
+                self.log("BERT punctuation model: download complete, extracting...")
+                self.extractPunctuationModel(zipURL: tmpURL)
             }
         }
 
         let observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
             DispatchQueue.main.async {
-                self?.punctuationServerDownloadProgress = progress.fractionCompleted
+                self?.punctuationModelDownloadProgress = progress.fractionCompleted
             }
         }
         objc_setAssociatedObject(task, "progressObservation", observation, .OBJC_ASSOCIATION_RETAIN)
@@ -799,21 +787,18 @@ class AppState: ObservableObject {
         task.resume()
     }
 
-    private func extractPunctuationServer(zipURL: URL) {
-        isExtractingPunctuationServer = true
-        let destDir = Self.modelDirectory // ~/Library/Application Support/Voice2Text/
+    private func extractPunctuationModel(zipURL: URL) {
+        let destDir = Self.modelDirectory
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            // Ensure destination directory exists
             try? FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
 
-            // Remove existing installation if any
-            let installURL = PunctuationClient.appSupportInstallURL
-            if FileManager.default.fileExists(atPath: installURL.path) {
-                try? FileManager.default.removeItem(at: installURL)
+            // Remove existing model if any
+            let modelPath = PunctuationRestorer.modelPath
+            if FileManager.default.fileExists(atPath: modelPath.path) {
+                try? FileManager.default.removeItem(at: modelPath)
             }
 
-            // Use ditto to extract zip
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
             process.arguments = ["-xk", zipURL.path, destDir.path]
@@ -824,58 +809,38 @@ class AppState: ObservableObject {
 
                 DispatchQueue.main.async {
                     guard let self else { return }
-                    self.isExtractingPunctuationServer = false
-                    self.isDownloadingPunctuationServer = false
+                    self.isDownloadingPunctuationModel = false
 
-                    if process.terminationStatus == 0 && FileManager.default.fileExists(atPath: installURL.path) {
-                        self.log("PunctuationServer: extracted successfully to \(installURL.path)")
-                        self.punctuationServerInstallError = nil
-                        self.checkPunctuationServer()
+                    if process.terminationStatus == 0 && FileManager.default.fileExists(atPath: modelPath.path) {
+                        self.log("BERT punctuation model: extracted successfully")
+                        self.loadPunctuationModelIfAvailable()
                     } else {
-                        let msg = "Extraction failed (exit code \(process.terminationStatus))"
-                        self.log("PunctuationServer: \(msg)")
-                        self.punctuationServerInstallError = msg
-                        self.scheduleErrorClear()
+                        self.log("BERT punctuation model: extraction failed (exit code \(process.terminationStatus))")
                     }
                 }
             } catch {
                 DispatchQueue.main.async {
                     guard let self else { return }
-                    self.isExtractingPunctuationServer = false
-                    self.isDownloadingPunctuationServer = false
-                    let msg = error.localizedDescription
-                    self.log("PunctuationServer: extraction error — \(msg)")
-                    self.punctuationServerInstallError = msg
-                    self.scheduleErrorClear()
+                    self.isDownloadingPunctuationModel = false
+                    self.log("BERT punctuation model: extraction error — \(error.localizedDescription)")
                 }
             }
 
-            // Clean up temp zip
             try? FileManager.default.removeItem(at: zipURL)
         }
     }
 
-    func uninstallPunctuationServer() {
-        let installURL = PunctuationClient.appSupportInstallURL
+    func deletePunctuationModel() {
+        let modelPath = PunctuationRestorer.modelPath
         do {
-            try FileManager.default.removeItem(at: installURL)
-            log("PunctuationServer: uninstalled from \(installURL.path)")
+            try FileManager.default.removeItem(at: modelPath)
+            log("BERT punctuation model: deleted from \(modelPath.path)")
         } catch {
-            log("PunctuationServer: uninstall error — \(error.localizedDescription)")
+            log("BERT punctuation model: delete error — \(error.localizedDescription)")
         }
-        isPunctuationServerAvailable = false
+        punctuationRestorer.unloadModel()
+        isPunctuationModelLoaded = false
         usePunctuationRestore = false
-        punctuationServerInstallError = nil
-    }
-
-    private var errorClearTimer: DispatchWorkItem?
-    private func scheduleErrorClear() {
-        errorClearTimer?.cancel()
-        let item = DispatchWorkItem { [weak self] in
-            withAnimation { self?.punctuationServerInstallError = nil }
-        }
-        errorClearTimer = item
-        DispatchQueue.main.asyncAfter(deadline: .now() + 6, execute: item)
     }
 
     // MARK: - Model Management

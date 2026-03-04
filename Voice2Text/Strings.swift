@@ -359,17 +359,8 @@ enum L {
     }
     static var punctuationDescription: String {
         lang == .english
-            ? "Uses a BERT model to add punctuation to Chinese text. Non-Chinese speech is not affected. When disabled, the zh-wiki-punctuation-restore model is not used."
-            : "使用 BERT 模型为中文文本添加标点。非中文语音不受影响。禁用后，不使用 zh-wiki-punctuation-restore 模型。"
-    }
-    static var serverAvailable: String {
-        lang == .english ? "Server available" : "服务器可用"
-    }
-    static var serverUnavailable: String {
-        lang == .english ? "Server unavailable" : "服务器不可用"
-    }
-    static var retry: String {
-        lang == .english ? "Retry" : "重试"
+            ? "Uses a built-in BERT model to add punctuation to Chinese text. Non-Chinese speech is not affected. When disabled, the zh-wiki-punctuation-restore model is not used."
+            : "使用内置 BERT 模型为中文文本添加标点。非中文语音不受影响。禁用后，不使用 zh-wiki-punctuation-restore 模型。"
     }
     static var developerSection: String {
         lang == .english ? "Developer" : "开发者"
@@ -441,8 +432,8 @@ enum L {
     }
     static var postEditReviseDescription: String {
         lang == .english
-            ? "Send transcription through Claude for post-editing:\n• Auto-punctuation for all languages (no BERT server needed)\n• English: fix spelling typos & grammar (tense, articles, agreement)\n• Chinese: correct misheard words & add proper punctuation\n• All languages: improve clarity while preserving original meaning\nFalls back gracefully on failure."
-            : "将转写文本通过 Claude 进行后期编辑：\n• 自动为所有语言添加标点（无需 BERT 服务器）\n• 英文：修正拼写错误和语法（时态、冠词、主谓一致）\n• 中文：纠正误听词汇并添加正确标点\n• 所有语言：在保留原意的前提下提升清晰度\n失败时自动回退。"
+            ? "Send transcription through Claude for post-editing:\n• Auto-punctuation for all languages (no BERT model needed)\n• English: fix spelling typos & grammar (tense, articles, agreement)\n• Chinese: correct misheard words & add proper punctuation\n• All languages: improve clarity while preserving original meaning\nFalls back gracefully on failure."
+            : "将转写文本通过 Claude 进行后期编辑：\n• 自动为所有语言添加标点（无需 BERT 模型）\n• 英文：修正拼写错误和语法（时态、冠词、主谓一致）\n• 中文：纠正误听词汇并添加正确标点\n• 所有语言：在保留原意的前提下提升清晰度\n失败时自动回退。"
     }
     static var reviseFailedBanner: String {
         lang == .english ? "Revise failed — using original text" : "修订失败 — 使用原始文本"
@@ -477,25 +468,19 @@ enum L {
         lang == .english ? "Warning: HTTP sends credentials in cleartext" : "警告：HTTP 以明文发送凭证"
     }
 
-    // MARK: Punctuation Server Install
+    // MARK: Punctuation Model
 
-    static var installPunctuationServer: String {
-        lang == .english ? "Install Punctuation Server" : "安装标点服务器"
+    static var downloadPunctuationModel: String {
+        lang == .english ? "Download Punctuation Model" : "下载标点模型"
     }
-    static var uninstallPunctuationServer: String {
-        lang == .english ? "Uninstall Punctuation Server" : "卸载标点服务器"
+    static var deletePunctuationModel: String {
+        lang == .english ? "Delete Model" : "删除模型"
     }
-    static var punctuationServerInstalled: String {
-        lang == .english ? "Punctuation Server installed" : "标点服务器已安装"
+    static var punctuationModelDownloaded: String {
+        lang == .english ? "Punctuation model loaded" : "标点模型已加载"
     }
-    static func downloadingPunctuationServer(_ percent: Int) -> String {
-        lang == .english ? "Downloading... \(percent)%" : "下载中… \(percent)%"
-    }
-    static var punctuationServerSizeNote: String {
-        lang == .english ? "~500 MB download (BERT model + runtime)" : "约 500 MB 下载（BERT 模型 + 运行时）"
-    }
-    static var extracting: String {
-        lang == .english ? "Extracting..." : "解压中…"
+    static var punctuationModelSizeNote: String {
+        lang == .english ? "~100 MB download (CoreML BERT model)" : "约 100 MB 下载（CoreML BERT 模型）"
     }
 
     // MARK: What's New
