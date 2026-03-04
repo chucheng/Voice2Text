@@ -1,5 +1,22 @@
 [
     {
+        "version": "1.8.0",
+        "changes": {
+            "en": [
+                "Built-in punctuation restoration — no external server needed",
+                "CoreML BERT model runs in-process (~100 MB download vs ~500 MB server)",
+                "Download/delete punctuation model from Settings > Advanced",
+                "Auto-migration removes legacy PunctuationServer.app"
+            ],
+            "zh": [
+                "内置标点恢复 — 无需外部服务器",
+                "CoreML BERT 模型在进程内运行（约 100 MB 下载，原服务器约 500 MB）",
+                "在设置 > 高级中下载/删除标点模型",
+                "自动迁移移除旧版 PunctuationServer.app"
+            ]
+        }
+    },
+    {
         "version": "1.7.0",
         "changes": {
             "en": [

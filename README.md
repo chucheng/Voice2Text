@@ -30,7 +30,7 @@ That's it. No window switching, no copy-paste. Powered by [whisper.cpp](https://
 - **Multiple whisper models** — tiny, base, small, medium, large-v3-turbo (downloaded on-demand)
 - **Push-to-talk** — hold Spacebar to record in-app, release to transcribe
 - **Floating indicator** — compact pill shows recording/transcribing/done status
-- **Punctuation restoration** — optional BERT server adds punctuation for Chinese text (auto-skipped for other languages)
+- **Punctuation restoration** — built-in CoreML BERT model adds punctuation for Chinese text (auto-skipped for other languages)
 - **Customizable shortcut** — change the global hotkey in Settings
 - **Editable transcription** — edit text inline after transcription
 - **Cmd+C smart copy** — copies full transcription when nothing selected
@@ -127,10 +127,10 @@ This will regenerate the Xcode project, build a Release archive, ad-hoc sign it,
            ┌──────────────────┼──────────────────┐
            ▼                  ▼                  ▼
   ┌─────────────────┐ ┌─────────────┐  ┌──────────────────┐
-  │ PunctuationServer│ │  Anthropic  │  │   StringTransform │
-  │ (.app / Python) │ │  Client     │  │   (Hans↔Hant)     │
-  │ BERT model      │ │ (Post-Edit  │  │                    │
-  │ localhost:18230  │ │  Revise)    │  │                    │
+  │  Punctuation    │ │  Anthropic  │  │   StringTransform │
+  │  Restorer       │ │  Client     │  │   (Hans↔Hant)     │
+  │  (CoreML BERT)  │ │ (Post-Edit  │  │                    │
+  │  in-process     │ │  Revise)    │  │                    │
   └─────────────────┘ └─────────────┘  └──────────────────┘
 ```
 
@@ -141,7 +141,7 @@ Mic → AVAudioEngine → AVAudioConverter (16kHz mono) ─┬─→ Whisper inf
                                                       └─→ Apple Speech buffer → text
                                                                 │
                                                                 ▼
-                                              Punctuation Restore (optional, BERT, Chinese only)
+                                              Punctuation Restore (optional, CoreML BERT, Chinese only)
                                                                 │
                                                                 ▼
                                               Post-Edit Revise (optional, Claude API)
@@ -166,12 +166,12 @@ Both engines currently support mixed Chinese + English speech.
 
 Whisper supports [99 languages](https://github.com/openai/whisper#available-models-and-languages). **Voice2Text already works with all of them out of the box** — just speak in any language and Whisper's `language="auto"` will detect it.
 
-The only difference: punctuation restoration (BERT server) is Chinese-only. For non-Chinese speech, it is automatically skipped — your text will be transcribed without auto-punctuation, but everything else works.
+The only difference: punctuation restoration (CoreML BERT model) is Chinese-only. For non-Chinese speech, it is automatically skipped — your text will be transcribed without auto-punctuation, but everything else works.
 
 ### What works automatically
 
 - **Any Whisper-supported language** — transcription via `language="auto"`
-- **Punctuation auto-skip** — the Chinese BERT server is only used when Chinese text is detected
+- **Punctuation auto-skip** — the Chinese BERT model is only used when Chinese text is detected
 - **Chinese + English mixed speech** — fully optimized with retry logic and punctuation restore
 
 ### Optional: Fine-tune for a specific language
@@ -194,9 +194,9 @@ The `convertScript()` method in `AppState.swift` converts between Simplified and
 
 #### Add a punctuation model for your language (optional)
 
-The bundled punctuation server uses a Chinese-specific BERT model. To add punctuation for your language:
-- Replace the model in `scripts/punctuation_server.py` with one that supports your language
-- Or use a different punctuation restoration service
+The built-in punctuation model uses a Chinese-specific BERT model converted to CoreML. To add punctuation for your language:
+- Convert a suitable BERT token classification model using `scripts/convert_punctuation_model.py` as a template
+- Update the label mapping in `PunctuationRestorer.swift`
 
 Pull requests for multi-language improvements are welcome.
 
@@ -212,31 +212,26 @@ Pull requests for multi-language improvements are welcome.
 
 Models are downloaded from [ggerganov/whisper.cpp on HuggingFace](https://huggingface.co/ggerganov/whisper.cpp) to `~/Library/Application Support/Voice2Text/`.
 
-## Punctuation Server (Optional)
+## Punctuation Restoration (Optional)
 
-A standalone BERT-based server that adds punctuation to raw STT output (Chinese). Uses the [p208p2002/zh-wiki-punctuation-restore](https://huggingface.co/p208p2002/zh-wiki-punctuation-restore) model.
+Built-in CoreML BERT model that adds punctuation to raw STT output (Chinese only). Uses the [p208p2002/zh-wiki-punctuation-restore](https://huggingface.co/p208p2002/zh-wiki-punctuation-restore) model converted to CoreML format.
 
-### Run from source
+- **No external server needed** — inference runs in-process via CoreML
+- **Download from Settings** — Settings > Advanced > Download Punctuation Model (~179 MB)
+- **Auto-enabled** — once downloaded, punctuation restore is enabled by default
+- **Chinese only** — automatically skipped for non-Chinese text
+
+### Model Conversion (Developer)
+
+To regenerate the CoreML model from the PyTorch source:
 
 ```bash
-cd scripts
-pip install -r requirements.txt
-python punctuation_server.py
+pip install torch transformers coremltools
+python scripts/convert_punctuation_model.py
+# Output: scripts/zh-punctuation-bert.mlpackage.zip
 ```
 
-### Build standalone .app
-
-```bash
-cd scripts
-bash build_app.sh
-# Output: dist/PunctuationServer.app
-```
-
-The server listens on `http://127.0.0.1:18230`:
-- `GET /health` — health check
-- `POST /restore` — `{"text": "..."}` → `{"text": "punctuated...", "elapsed_ms": 42}`
-
-Voice2Text auto-launches the server app if found in `~/Library/Application Support/Voice2Text/`, `/Applications/`, `~/Applications/`, or alongside the Voice2Text.app bundle. You can also install it directly from **Settings > Advanced** with one click.
+Upload the zip to GitHub Releases for in-app download.
 
 ## Project Structure
 
@@ -259,7 +254,9 @@ Voice2Text/
 ├── AudioRecorder.swift          # AVAudioEngine + AVAudioConverter (16kHz mono Float32)
 ├── WhisperBridge.swift          # Swift wrapper around whisper.cpp C API
 ├── AppleSpeechRecognizer.swift  # Apple SFSpeechRecognizer wrapper
-├── PunctuationClient.swift      # HTTP client + auto-launcher for punctuation server
+├── WordPieceTokenizer.swift      # WordPiece tokenizer for BERT (loads vocab.txt from bundle)
+├── PunctuationRestorer.swift    # CoreML BERT inference for Chinese punctuation restoration
+├── vocab.txt                    # WordPiece vocabulary (21K tokens) bundled for tokenizer
 ├── AnthropicClient.swift        # Claude API client: API check, Post-Edit Revise, custom prompt
 ├── WhatsNewView.swift           # What's New overlay with 3s countdown auto-dismiss
 ├── WhatsNew.json                # Bundled changelog (bilingual en/zh)
@@ -275,23 +272,24 @@ Whisper/
 ├── lib/                         # Pre-built static libraries (whisper, ggml, metal, cpu, blas)
 └── include/                     # Header files (whisper.h, ggml*.h)
 scripts/
-├── punctuation_server.py        # Chinese punctuation restoration server
-├── PunctuationServer.spec       # PyInstaller spec for building .app
-├── build_app.sh                 # Build script for PunctuationServer.app
+├── convert_punctuation_model.py # Convert PyTorch BERT → CoreML .mlpackage
 ├── build_dmg.sh                 # Build Voice2Text.dmg for distribution
-└── requirements.txt             # Python dependencies
+└── requirements.txt             # Python dependencies for model conversion
 project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
 
+### v1.8.0 — Built-in CoreML Punctuation (No External Server)
+- **In-process BERT** — punctuation restoration runs natively via CoreML, no external PunctuationServer.app needed
+- **Smaller download** — ~179 MB CoreML model vs ~500 MB PyInstaller server
+- **Download/delete from Settings** — Settings > Advanced to manage the punctuation model
+- **Auto-migration** — legacy PunctuationServer.app in Application Support is automatically removed
+- **BERT & LLM status indicators** — status capsules in main window top bar
+
 ### v1.7.0 — In-App Punctuation Server Install + Service Status + AI Services Tab
 - **One-click install** — install PunctuationServer.app directly from Settings > Advanced (~500 MB download)
-- **Progress tracking** — download progress bar with percentage, extraction status indicator
-- **Auto-launch** — server auto-launches and health-checks after installation
-- **Uninstall** — remove the server with one click when no longer needed
-- **Sandbox-safe** — installed to `~/Library/Application Support/Voice2Text/` (no admin privileges needed)
-- **Service status indicators** — BERT and LLM status capsules in the main window top bar (green/red dot, shown only when enabled)
+- **Service status indicators** — BERT and LLM status capsules in the main window top bar
 - **AI Services tab** — renamed "Dangerous Zone" to "AI Services" with cloud icon
 
 ### v1.6.2 — ATS Exception + Copyright Fix
@@ -329,7 +327,7 @@ project.yml                      # XcodeGen spec
 
 ### v1.2.0 — 99 Language Support
 - **99 languages** — Whisper auto-detects language; all languages work out of the box
-- **Smart punctuation skip** — Chinese BERT server auto-skipped for non-Chinese speech
+- **Smart punctuation skip** — Chinese BERT model auto-skipped for non-Chinese speech
 - **Upgrade permission detection** — detects invalidated Accessibility after app upgrade, guides user to remove and re-add
 - **Microphone check on first launch** — prompts immediately after onboarding completes
 - **Default Simplified Chinese** — output script defaults to Simplified (persisted across launches)
@@ -359,7 +357,7 @@ project.yml                      # XcodeGen spec
 - Mixed Chinese + English recognition
 - Simplified/Traditional Chinese output toggle
 - Push-to-talk (Spacebar) in-app recording
-- Punctuation restoration (BERT server)
+- Punctuation restoration (BERT model)
 - Multiple whisper models (tiny → large-v3-turbo)
 - Menu bar + Dock presence
 - First-launch setup wizard
@@ -376,9 +374,6 @@ Full license texts are available in [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES).
 |-----------|---------|----------|
 | [whisper.cpp](https://github.com/ggerganov/whisper.cpp) | MIT | Yes (static lib) |
 | [OpenAI Whisper models](https://github.com/openai/whisper) | MIT | Downloaded at runtime |
-| [PyTorch](https://github.com/pytorch/pytorch) | BSD 3-Clause | In PunctuationServer.app |
-| [Hugging Face Transformers](https://github.com/huggingface/transformers) | Apache 2.0 | In PunctuationServer.app |
-| [PyInstaller](https://github.com/pyinstaller/pyinstaller) | GPL 2.0 (bootloader exception) | Bootloader only |
-| [zh-wiki-punctuation-restore](https://huggingface.co/p208p2002/zh-wiki-punctuation-restore) | Not specified | Downloaded at runtime (Chinese only, opt-in) |
+| [zh-wiki-punctuation-restore](https://huggingface.co/p208p2002/zh-wiki-punctuation-restore) | Not specified | Downloaded at runtime (CoreML, Chinese only, opt-in) |
 | [XcodeGen](https://github.com/yonaskolb/XcodeGen) | MIT | Build tool only |
-| Apple Frameworks (SwiftUI, AVFoundation, Speech, Carbon) | Apple SDK | OS-provided |
+| Apple Frameworks (SwiftUI, AVFoundation, Speech, Carbon, CoreML) | Apple SDK | OS-provided |

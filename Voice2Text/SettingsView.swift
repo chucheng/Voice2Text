@@ -264,7 +264,7 @@ private struct AdvancedTab: View {
         Form {
             Section(L.punctuationSection) {
                 Toggle(L.enablePunctuation, isOn: $appState.usePunctuationRestore)
-                    .disabled(!appState.isPunctuationServerAvailable || appState.usePostEditRevise)
+                    .disabled(!appState.isPunctuationModelLoaded || appState.usePostEditRevise)
 
                 if appState.usePostEditRevise {
                     Text(L.punctuationHandledByRevise)
@@ -276,68 +276,36 @@ private struct AdvancedTab: View {
                         .foregroundColor(.secondary)
                 }
 
-                HStack {
-                    Circle()
-                        .fill(appState.isPunctuationServerAvailable ? .green : .red)
-                        .frame(width: 8, height: 8)
-                    Text(appState.isPunctuationServerAvailable ? L.serverAvailable : L.serverUnavailable)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-
-                    if !appState.isPunctuationServerAvailable {
-                        Button(L.retry) {
-                            appState.checkPunctuationServer()
-                        }
-                        .controlSize(.small)
-                    }
-                }
-
-                // Install / Uninstall Punctuation Server
-                if appState.isDownloadingPunctuationServer {
+                // Download / Delete Punctuation Model
+                if appState.isDownloadingPunctuationModel {
                     VStack(alignment: .leading, spacing: 4) {
-                        if appState.isExtractingPunctuationServer {
-                            HStack(spacing: 6) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text(L.extracting)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        } else {
-                            ProgressView(value: appState.punctuationServerDownloadProgress)
-                            Text(L.downloadingPunctuationServer(Int(appState.punctuationServerDownloadProgress * 100)))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                } else if appState.isPunctuationServerInstalled {
-                    HStack {
-                        Label(L.punctuationServerInstalled, systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundColor(.green)
-                        Spacer()
-                        Button(L.uninstallPunctuationServer, role: .destructive) {
-                            appState.uninstallPunctuationServer()
-                        }
-                        .controlSize(.small)
-                    }
-                } else if !appState.isPunctuationServerAvailable {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Button(L.installPunctuationServer) {
-                            appState.installPunctuationServer()
-                        }
-                        .controlSize(.small)
-
-                        Text(L.punctuationServerSizeNote)
+                        ProgressView(value: appState.punctuationModelDownloadProgress)
+                        Text(L.downloadingProgress(Int(appState.punctuationModelDownloadProgress * 100)))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                }
+                } else if appState.isPunctuationModelDownloaded {
+                    HStack {
+                        Label(L.punctuationModelDownloaded, systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                        Spacer()
+                        Button(L.deletePunctuationModel, role: .destructive) {
+                            appState.deletePunctuationModel()
+                        }
+                        .controlSize(.small)
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Button(L.downloadPunctuationModel) {
+                            appState.downloadPunctuationModel()
+                        }
+                        .controlSize(.small)
 
-                if let error = appState.punctuationServerInstallError {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundColor(.red)
+                        Text(L.punctuationModelSizeNote)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
 

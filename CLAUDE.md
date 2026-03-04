@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.7.0** — In-app PunctuationServer install/uninstall from Settings.
+**Version: 1.8.0** — Built-in CoreML BERT punctuation restoration (no external server).
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -15,7 +15,7 @@ Shows in both the menu bar (MenuBarExtra) and the Dock.
 - **Requirements**: macOS 14+, Xcode 15+
 - **Sandbox**: App Sandbox enabled with audio-input + network-client entitlements
 
-## Current Status: v1.6.0 — Custom Revise Prompt + What's New + Debug Log Window + LLM/BERT Exclusivity
+## Current Status: v1.8.0 — In-Process CoreML BERT Punctuation + What's New + Debug Log Window + LLM/BERT Exclusivity
 Full voice-to-text pipeline with two recording modes:
 - **In-app**: Spacebar push-to-talk → transcribe → display
 - **Global hotkey (⌘;)**: Hold from any app → floating panel → release → transcribe → auto-paste at cursor
@@ -31,18 +31,18 @@ STT engines:
 **Debug Log Window**: separate resizable window (opened from Settings > Advanced > Dev Mode). Logs always collected (capped at 500 lines) so history is available when Dev Mode is toggled on. Copy All button for easy export.
 
 UI language switchable between English and Simplified Chinese (persisted via UserDefaults, default follows system locale).
-99 languages supported via Whisper `language="auto"`. Punctuation server auto-skipped for non-Chinese text.
+99 languages supported via Whisper `language="auto"`. Punctuation model auto-skipped for non-Chinese text.
 Models downloaded on-demand from HuggingFace to `~/Library/Application Support/Voice2Text/`.
 Upgrade installs auto-detect existing models (no re-download needed).
 
-### Punctuation Server
-- Standalone BERT-based server for Chinese punctuation restoration
-- Can run from source (`python scripts/punctuation_server.py`) or as packaged `.app`
-- PyInstaller spec + build script in `scripts/` for packaging as `PunctuationServer.app`
-- Models cached to `~/Library/Application Support/PunctuationServer/models/`
-- Voice2Text auto-launches the server app if found in known locations
-- In-app install/uninstall from Settings > Advanced (downloads zip from GitHub Releases, extracts to Application Support)
-- `PunctuationClient.swift` handles health checks, restoration requests, auto-launch, and install path
+### Punctuation Restoration (CoreML)
+- Built-in BERT-based Chinese punctuation restoration via CoreML (no external server)
+- Model: `p208p2002/zh-wiki-punctuation-restore` converted to `.mlpackage` (float16)
+- `WordPieceTokenizer.swift` loads `vocab.txt` from app bundle, implements subword tokenization with offset tracking
+- `PunctuationRestorer.swift` handles CoreML inference, chunking for long text, label-to-punctuation mapping
+- Model downloaded on-demand from GitHub Releases to `~/Library/Application Support/Voice2Text/zh-punctuation-bert.mlpackage`
+- Download/delete from Settings > Advanced
+- Legacy `PunctuationServer.app` auto-removed on first launch (migration)
 
 ### Known Bugs
 - None currently tracked
@@ -67,7 +67,9 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `Voice2Text/AudioRecorder.swift` | AVAudioEngine + AVAudioConverter (16kHz mono Float32), dual-purpose tap for whisper + Apple Speech |
 | `Voice2Text/WhisperBridge.swift` | Swift wrapper around whisper.cpp C API: load model, run inference, explicit freeModel() for clean shutdown |
 | `Voice2Text/AppleSpeechRecognizer.swift` | Apple SFSpeechRecognizer wrapper: streaming recognition with partial results |
-| `Voice2Text/PunctuationClient.swift` | HTTP client + auto-launcher for punctuation server |
+| `Voice2Text/WordPieceTokenizer.swift` | WordPiece tokenizer: loads vocab.txt from bundle, subword tokenization with offset tracking |
+| `Voice2Text/PunctuationRestorer.swift` | CoreML BERT inference for Chinese punctuation restoration, chunking for long text |
+| `Voice2Text/vocab.txt` | WordPiece vocabulary (21K tokens) bundled in app for tokenizer |
 | `Voice2Text/AnthropicClient.swift` | Claude API client: APICheckResult enum, checkAPI(), reviseText(prompt:), configurable base URL/model/token |
 | `Voice2Text/WhatsNewView.swift` | What's New overlay: version changelog display with 3s countdown auto-dismiss |
 | `Voice2Text/WhatsNew.json` | Bundled changelog data (bilingual en/zh, all versions) |
@@ -82,11 +84,8 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `Whisper/lib/` | Pre-built static libraries (libwhisper, libggml, libggml-base, libggml-cpu, libggml-metal, libggml-blas) |
 | `Whisper/include/` | Header files (whisper.h, ggml*.h) |
 | `project.yml` | xcodegen spec with bridging header, library paths, SDK dependencies (incl. Carbon.framework) |
-| `scripts/punctuation_server.py` | Chinese punctuation restoration server (Python) |
-| `scripts/PunctuationServer.spec` | PyInstaller spec for building .app |
-| `scripts/build_app.sh` | Build script for PunctuationServer.app |
+| `scripts/convert_punctuation_model.py` | Developer tool: convert PyTorch BERT → CoreML .mlpackage |
 | `scripts/build_dmg.sh` | Build Voice2Text.dmg for distribution |
-| `scripts/requirements.txt` | Python dependencies (torch, transformers, pyinstaller) |
 
 ## Architecture Notes
 - `AppState` is the single source of truth, shared via `@EnvironmentObject`
@@ -98,11 +97,11 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - Whisper uses `language="auto"` for mixed Chinese+English speech
 - If whisper outputs mixed Chinese + unexpected language text, auto-retries with `language="zh"` (only when Chinese chars present)
 - Non-Chinese languages accepted as-is (no retry) — enables 99-language support
-- `textContainsChinese()` helper gates both retry logic and punctuation server usage
+- `textContainsChinese()` helper gates both retry logic and punctuation model usage
 - Apple Speech uses `zh-Hant` locale which handles mixed Chinese+English natively
 - Apple Speech requires network — NWPathMonitor detects connectivity in real-time
-- Post-processing pipeline: when LLM enabled: STT output → Post-Edit Revise (LLM handles punctuation) → on failure: BERT fallback → script conversion. When LLM disabled: STT output → BERT punctuation (optional, Chinese) → script conversion
-- Punctuation server auto-launched from `/Applications/`, `~/Applications/`, or bundle-adjacent location
+- Post-processing pipeline: when LLM enabled: STT output → Post-Edit Revise (LLM handles punctuation) → on failure: BERT fallback → script conversion. When LLM disabled: STT output → BERT punctuation (optional, Chinese, CoreML) → script conversion
+- Punctuation model downloaded on-demand to `~/Library/Application Support/Voice2Text/zh-punctuation-bert.mlpackage`
 - Script conversion uses Foundation `StringTransform` (`Hans-Hant` / `Hant-Hans`) — zero dependencies
 - Model selection persisted via `UserDefaults`
 - Models stored in `~/Library/Application Support/Voice2Text/`
@@ -116,7 +115,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - Custom revise prompt: persisted in UserDefaults (key: `"customRevisePrompt"`). Empty = use default. Reset to Default button in UI
 - What's New: `lastSeenVersion` tracked via `@AppStorage`. `WhatsNew.json` loaded from bundle. WhatsNewView auto-dismisses after 3s countdown, tap to dismiss early
 - Keyboard shortcuts: Spacebar push-to-talk, Cmd+C copies full transcription (or selection if any)
-- Punctuation restore enabled by default when server is available; greyed out when unavailable; auto-skipped for non-Chinese text
+- Punctuation restore enabled by default when model is loaded; greyed out when model not downloaded; auto-skipped for non-Chinese text
 - Output script (Simplified/Traditional Chinese) persisted via UserDefaults, default: Simplified
 - App icon: blue gradient with microphone, sound waves, text lines, "V2T" label
 - UI language (English / 简体中文) persisted via UserDefaults (key: `"uiLanguage"`), default follows system locale
@@ -138,19 +137,17 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - `applicationShouldTerminate` in AppDelegate cleans up Carbon hotkey before exit
 
 ## Security
-- Punctuation server: body size limit (1MB), text length limit (50K chars), ThreadingHTTPServer
 - AnthropicClient: rejects non-localhost plaintext HTTP base URLs via `isValidBaseURL()`; localhost HTTP allowed for dev setups
 - API token stored in macOS Keychain with `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`; never in UserDefaults, logs, or error messages
 - WhisperBridge: language parameter validated against allowlist before passing to C layer
 - Clipboard auto-clear: after global hotkey auto-paste, clipboard is cleared after 30s (only if still contains our text)
-- PunctuationServer launch: code signature verified via `SecStaticCodeCheckValidity` before launching external .app
 - Debug logs redacted: only char counts logged, no transcription content
 - Hardened Runtime enabled; entitlements minimal (sandbox + audio-input + network-client)
 - No hardcoded secrets in source code
 - Accessibility permission: only used for CGEvent paste simulation, checked via `AXIsProcessTrusted()`
 - Upgrade detection: `@AppStorage("accessibilityWasGranted")` tracks prior grant; guides user to remove+re-add in System Settings after upgrade
 - Permission checks delayed 1s after init for SwiftUI alert readiness; also triggered after onboarding completion
-- Remaining accepted risks: localhost HTTP for punctuation IPC (no auth token), no model checksum verification, CGEvent paste targets frontmost app without verification
+- Remaining accepted risks: no model checksum verification, CGEvent paste targets frontmost app without verification
 
 ## TODO (Next Steps)
 1. **WAV Export** — write audio buffer to file for batch processing
