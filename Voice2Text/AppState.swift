@@ -93,6 +93,8 @@ class AppState: ObservableObject {
     @Published var dangerousZoneTokenIsSet = false
     @Published var apiCheckState: APICheckResult = .unchecked
     @Published var usePostEditRevise = false
+    /// When true, auto-enable revise after API check succeeds.
+    var pendingEnableRevise = false
     @Published var reviseFailed = false
     @Published var reviseFailedWithFallback = false
     @Published var customRevisePrompt: String = {
@@ -715,8 +717,14 @@ class AppState: ObservableObject {
             switch result {
             case .valid(let ms):
                 self.log("API credential check: passed, latency \(ms)ms")
+                if self.pendingEnableRevise {
+                    self.pendingEnableRevise = false
+                    self.usePostEditRevise = true
+                    self.log("Post-Edit Revise: auto-enabled after API check")
+                }
             case .invalid(let msg):
                 self.log("API credential check: failed — \(msg)")
+                self.pendingEnableRevise = false
                 self.usePostEditRevise = false
             default:
                 break

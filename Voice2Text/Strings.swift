@@ -128,6 +128,12 @@ enum L {
 
     // MARK: ContentView
 
+    static var autoPunctuation: String {
+        lang == .english ? "Auto-Punct" : "自动标点"
+    }
+    static var aiRevise: String {
+        lang == .english ? "AI Revise" : "AI 修正"
+    }
     static var reformatting: String {
         lang == .english ? "Reformatting..." : "正在重新格式化…"
     }
@@ -454,12 +460,12 @@ enum L {
         lang == .english ? "Saved" : "已保存"
     }
     static var punctuationHandledByRevise: String {
-        lang == .english ? "Handled by Post-Edit Revise" : "由后编辑修订处理"
+        lang == .english ? "Auto-punctuation is paused — AI Revise handles punctuation" : "自动标点已暂停 — 由 AI 修正处理标点"
     }
     static var reviseExclusivityNote: String {
         lang == .english
-            ? "When enabled, punctuation is handled by the LLM. On failure, falls back to BERT."
-            : "启用后，标点由 LLM 处理。失败时回退到 BERT。"
+            ? "When enabled, punctuation is handled by AI Revise. Auto-punctuation is paused. On failure, falls back to auto-punctuation."
+            : "启用后，标点由 AI 修正处理，自动标点暂停。失败时回退到自动标点。"
     }
     static var invalidBaseURL: String {
         lang == .english ? "Invalid URL (must start with http:// or https://)" : "无效 URL（必须以 http:// 或 https:// 开头）"
