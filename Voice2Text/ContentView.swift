@@ -229,7 +229,8 @@ struct ContentView: View {
                         }
                     }
             } else {
-                Text("\u{00A9} C. C. Hsieh")
+                let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+                Text("\u{00A9} C. C. Hsieh (v\(version))")
                     .font(.caption2)
                     .foregroundStyle(.quaternary)
             }
