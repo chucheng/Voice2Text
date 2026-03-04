@@ -701,6 +701,7 @@ class AppState: ObservableObject {
     func resetAPICheckState() {
         apiCheckState = .unchecked
         usePostEditRevise = false
+        pendingEnableRevise = false
     }
 
     func performAPICheck() {

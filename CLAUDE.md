@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.8.0** — Built-in CoreML BERT punctuation restoration (no external server).
+**Version: 1.8.1** — User-friendly capsule names, auto API check on revise toggle.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
