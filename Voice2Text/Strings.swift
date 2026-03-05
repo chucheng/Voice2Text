@@ -323,6 +323,9 @@ enum L {
     static var deleteTooltip: String {
         lang == .english ? "Delete model" : "删除模型"
     }
+    static var cancelButton: String {
+        lang == .english ? "Cancel" : "取消"
+    }
     static var loading: String {
         lang == .english ? "Loading..." : "加载中…"
     }

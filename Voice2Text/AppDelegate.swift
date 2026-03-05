@@ -21,6 +21,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // to avoid race with in-flight transcription
         appState.whisperBridge.freeModelSync()
 
+        // Free llama model synchronously on inference queue
+        appState.llamaBridge.freeModelSync()
+
         return .terminateNow
     }
 

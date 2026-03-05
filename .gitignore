@@ -45,3 +45,6 @@ scripts/zh-punctuation-bert.mlpackage.zip
 *.dSYM
 xcuserdata/
 Whisper/
+LlamaCpp/
+scripts/_build_llama/
+scripts/_build_whisper/

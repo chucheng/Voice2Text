@@ -170,9 +170,16 @@ struct ContentView: View {
 
             if appState.postEditProvider == .localLLM {
                 HStack(spacing: 4) {
-                    Circle()
-                        .fill(appState.isLocalLLMModelDownloaded(appState.selectedLocalLLMModel) ? .orange : .red)
-                        .frame(width: 6, height: 6)
+                    if appState.isLoadingLocalLLMModel {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .frame(width: 6, height: 6)
+                    } else {
+                        Circle()
+                            .fill(appState.isLocalLLMModelLoaded ? .green :
+                                  appState.isLocalLLMModelDownloaded(appState.selectedLocalLLMModel) ? .orange : .red)
+                            .frame(width: 6, height: 6)
+                    }
                     Text(L.localLLMBadge)
                         .font(.caption)
                         .fontWeight(.medium)
@@ -180,6 +187,15 @@ struct ContentView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(Capsule().fill(.quaternary))
+                .onTapGesture {
+                    // Click orange (downloaded but not loaded) → auto-load
+                    if !appState.isLocalLLMModelLoaded &&
+                       !appState.isLoadingLocalLLMModel &&
+                       appState.isLocalLLMModelDownloaded(appState.selectedLocalLLMModel) {
+                        appState.log("Local LLM: manual load from badge tap")
+                        appState.loadLocalLLMModel()
+                    }
+                }
             }
 
             if appState.postEditProvider == .cloudAPI {

@@ -1,5 +1,26 @@
 [
     {
+        "version": "1.10.0",
+        "changes": {
+            "en": [
+                "New: Local LLM inference powered by llama.cpp — on-device Qwen post-editing, no cloud needed",
+                "New: Three-state badge (green/orange/red) — tap to load model directly",
+                "Improved: Download protection — cancel button, progress locked during download",
+                "Improved: Corrupt model auto-detection — invalid files deleted on load failure",
+                "Improved: Stronger punctuation instructions in revise prompt",
+                "Improved: Dev mode shows full input/output text in debug logs"
+            ],
+            "zh": [
+                "新功能：基于 llama.cpp 的本地 LLM 推理 — 使用 Qwen 模型在设备上后编辑，无需云端",
+                "新功能：三色状态指示灯（绿/橙/红）— 点击即可加载模型",
+                "改进：下载保护 — 取消按钮，下载期间锁定切换",
+                "改进：损坏模型自动检测 — 加载失败时自动删除无效文件",
+                "改进：修订提示词强化标点符号指令",
+                "改进：开发模式在调试日志中显示完整输入/输出文本"
+            ]
+        }
+    },
+    {
         "version": "1.9.4",
         "changes": {
             "en": [

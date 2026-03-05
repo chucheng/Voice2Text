@@ -155,6 +155,7 @@ private struct ModelRow: View {
                 }
                 .buttonStyle(.borderless)
                 .help(L.deleteTooltip)
+                .disabled(appState.isDownloadingModel)
             } else {
                 Button(L.downloadButton) {
                     appState.switchModel(to: model)
@@ -363,6 +364,7 @@ private struct AIServicesTab: View {
                 }
                 .pickerStyle(.radioGroup)
                 .labelsHidden()
+                .disabled(appState.isDownloadingLocalLLM || appState.isLoadingLocalLLMModel)
 
                 Text(L.postEditProviderDescription)
                     .font(.caption)
@@ -395,15 +397,19 @@ private struct AIServicesTab: View {
                     if appState.isDownloadingLocalLLM {
                         VStack(spacing: 4) {
                             ProgressView(value: appState.localLLMDownloadProgress)
-                            Text(L.downloadingProgress(Int(appState.localLLMDownloadProgress * 100)))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            HStack {
+                                Text(L.downloadingProgress(Int(appState.localLLMDownloadProgress * 100)))
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Button(L.cancelButton) {
+                                    appState.cancelLocalLLMDownload()
+                                }
+                                .controlSize(.small)
+                            }
                         }
                     }
 
-                    Text(L.localLLMNotImplemented)
-                        .font(.caption)
-                        .foregroundColor(.orange)
                 }
             }
 
@@ -659,14 +665,20 @@ private struct LocalLLMModelRow: View {
 
             if isDownloaded {
                 if isSelected {
-                    Label(L.selectedLabel, systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundColor(.green)
+                    if appState.isLoadingLocalLLMModel {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Label(L.selectedLabel, systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                    }
                 } else {
                     Button(L.selectButton) {
                         appState.selectLocalLLMModel(model)
                     }
                     .controlSize(.small)
+                    .disabled(appState.isLoadingLocalLLMModel)
                 }
                 Button(role: .destructive) {
                     appState.deleteLocalLLMModel(model)
@@ -675,6 +687,8 @@ private struct LocalLLMModelRow: View {
                 }
                 .buttonStyle(.borderless)
                 .help(L.deleteTooltip)
+                .disabled(appState.isLoadingLocalLLMModel ||
+                          (appState.isDownloadingLocalLLM && appState.downloadingLocalLLMModel == model))
             } else {
                 Button(L.downloadButton) {
                     appState.selectLocalLLMModel(model)
