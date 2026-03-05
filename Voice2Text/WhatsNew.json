@@ -1,5 +1,16 @@
 [
     {
+        "version": "1.8.4",
+        "changes": {
+            "en": [
+                "Fix: API credentials (Base URL, Model) no longer auto-save on every keystroke — explicit Save/Revert buttons added"
+            ],
+            "zh": [
+                "修复：API 凭证（Base URL、Model）不再每次按键自动保存 — 新增保存/还原按钮"
+            ]
+        }
+    },
+    {
         "version": "1.8.3",
         "changes": {
             "en": [

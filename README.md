@@ -280,6 +280,10 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v1.8.4 — AI Services Credential Fix
+- **Fix** — Base URL and Model fields no longer auto-save on every keystroke; explicit Save Credentials / Revert buttons added
+- **Safer editing** — accidental edits are not persisted until you click Save; Check API disabled while unsaved changes exist
+
 ### v1.8.3 — Floating Panel Fix
 - **Fix** — floating recording panel now repositions to top-center of current screen on every hotkey press (handles screen/resolution changes)
 

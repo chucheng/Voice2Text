@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.8.3** — Fix floating panel positioning on screen change.
+**Version: 1.8.4** — Fix AI Services credential auto-save bug.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
