@@ -150,9 +150,6 @@ class AppState: ObservableObject {
     }
     @Published var dangerousZoneTokenIsSet = false
     @Published var apiCheckState: APICheckResult = .unchecked
-    @Published var usePostEditRevise = false
-    /// When true, auto-enable revise after API check succeeds.
-    var pendingEnableRevise = false
     @Published var reviseFailed = false
     @Published var reviseFailedWithFallback = false
     @Published var customRevisePrompt: String = {
@@ -179,12 +176,8 @@ class AppState: ObservableObject {
         didSet {
             UserDefaults.standard.set(postEditProvider.rawValue, forKey: "postEditProvider")
             if postEditProvider == .cloudAPI {
-                // Restore revise if API was already validated
-                if apiCheckState.isValid {
-                    usePostEditRevise = true
-                }
-            } else {
-                usePostEditRevise = false
+                // Auto-check API when switching to Cloud API if credentials exist
+                ensureCloudAPIReady()
             }
             // Unload Local LLM model when switching away from Local LLM provider
             if postEditProvider != .localLLM && (isLocalLLMModelLoaded || isLoadingLocalLLMModel) {
@@ -290,16 +283,8 @@ class AppState: ObservableObject {
         log("UI language: \(uiLanguage.rawValue)")
         log("Post-edit provider: \(postEditProvider.rawValue), local model: \(selectedLocalLLMModel.displayName)")
 
-        // Load Dangerous Zone token presence
-        dangerousZoneTokenIsSet = KeychainHelper.loadToken() != nil
-        rebuildAnthropicClient()
-        if let client = anthropicClient {
-            log("Post-Edit Revise: client ready (base: \(client.baseURL), model: \(client.model))")
-        } else {
-            log("Post-Edit Revise: disabled (no API key or base URL configured)")
-        }
         if customRevisePrompt != AnthropicClient.revisePrompt {
-            log("Post-Edit Revise: using custom prompt (\(customRevisePrompt.count) chars)")
+            log("Custom revise prompt: \(customRevisePrompt.count) chars")
         }
 
         // Wire audio level callback
@@ -327,9 +312,8 @@ class AppState: ObservableObject {
         migratePunctuationServer()
 
         // Auto-check API on launch if cloud API provider is selected
-        if postEditProvider == .cloudAPI && dangerousZoneTokenIsSet && !dangerousZoneBaseURL.isEmpty {
-            pendingEnableRevise = true
-            performAPICheck()
+        if postEditProvider == .cloudAPI {
+            ensureCloudAPIReady()
         }
 
         setupGlobalHotkey()
@@ -694,7 +678,7 @@ class AppState: ObservableObject {
         // When any post-edit provider is active, skip BERT — LLM handles punctuation
         if postEditProvider == .localLLM {
             applyLocalLLMAndConvert(text)
-        } else if usePostEditRevise, anthropicClient != nil {
+        } else if postEditProvider == .cloudAPI, anthropicClient != nil {
             applyLLMAndConvert(text)
         } else if usePunctuationRestore && isPunctuationModelLoaded && textContainsChinese(text) {
             log("BERT punctuation restore: sending \(text.count) chars to CoreML model...")
@@ -812,7 +796,7 @@ class AppState: ObservableObject {
     /// Apply Cloud API Post-Edit Revise (if enabled) then script conversion.
     /// On LLM failure, falls back to BERT punctuation model if loaded + Chinese text.
     private func applyLLMAndConvert(_ text: String) {
-        if usePostEditRevise, let client = anthropicClient {
+        if postEditProvider == .cloudAPI, let client = anthropicClient {
             let prompt = (customRevisePrompt == AnthropicClient.revisePrompt) ? nil : customRevisePrompt
             log("Post-Edit Revise: sending \(text.count) chars...")
             log("  → Input: \(text)")
@@ -915,10 +899,22 @@ class AppState: ObservableObject {
         )
     }
 
+    /// Called when switching to Cloud API or on launch with Cloud API selected.
+    /// Reads Keychain lazily, builds client, auto-checks if credentials exist.
+    func ensureCloudAPIReady() {
+        // Lazy Keychain read — only load token when Cloud API is actually selected
+        dangerousZoneTokenIsSet = KeychainHelper.loadToken() != nil
+        rebuildAnthropicClient()
+        if dangerousZoneTokenIsSet && !dangerousZoneBaseURL.isEmpty {
+            log("Cloud API: credentials found, auto-checking...")
+            performAPICheck()
+        } else {
+            log("Cloud API: no credentials configured")
+        }
+    }
+
     func resetAPICheckState() {
         apiCheckState = .unchecked
-        usePostEditRevise = false
-        pendingEnableRevise = false
     }
 
     func performAPICheck() {
@@ -934,16 +930,9 @@ class AppState: ObservableObject {
             self.apiCheckState = result
             switch result {
             case .valid(let ms):
-                self.log("API credential check: passed, latency \(ms)ms")
-                if self.pendingEnableRevise {
-                    self.pendingEnableRevise = false
-                    self.usePostEditRevise = true
-                    self.log("Post-Edit Revise: auto-enabled after API check")
-                }
+                self.log("API credential check: passed, latency \(ms)ms — Cloud API revise active")
             case .invalid(let msg):
                 self.log("API credential check: failed — \(msg)")
-                self.pendingEnableRevise = false
-                self.usePostEditRevise = false
             default:
                 break
             }

@@ -200,9 +200,15 @@ struct ContentView: View {
 
             if appState.postEditProvider == .cloudAPI {
                 HStack(spacing: 4) {
-                    Circle()
-                        .fill(appState.apiCheckState.isValid ? .green : .red)
-                        .frame(width: 6, height: 6)
+                    if appState.apiCheckState == .checking {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .frame(width: 6, height: 6)
+                    } else {
+                        Circle()
+                            .fill(appState.apiCheckState.isValid ? .green : .red)
+                            .frame(width: 6, height: 6)
+                    }
                     Text(L.aiRevise)
                         .font(.caption)
                         .fontWeight(.medium)
@@ -210,6 +216,12 @@ struct ContentView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(Capsule().fill(.quaternary))
+                .onTapGesture {
+                    // Click red badge → retry API check
+                    if !appState.apiCheckState.isValid && appState.apiCheckState != .checking {
+                        appState.ensureCloudAPIReady()
+                    }
+                }
             }
 
             // Warnings
