@@ -260,6 +260,7 @@ private struct ShortcutsTab: View {
 
 private struct AdvancedTab: View {
     @ObservedObject var appState: AppState
+    @State private var onboardingResetFeedback = false
 
     var body: some View {
         Form {
@@ -318,6 +319,21 @@ private struct AdvancedTab: View {
                         openDebugLog()
                     }
                     .controlSize(.small)
+
+                    Button(L.resetOnboarding) {
+                        appState.onboardingCompleted = false
+                        onboardingResetFeedback = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                            onboardingResetFeedback = false
+                        }
+                    }
+                    .controlSize(.small)
+
+                    if onboardingResetFeedback {
+                        Label(L.onboardingReset, systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                    }
                 }
             }
         }

@@ -386,6 +386,12 @@ enum L {
     static var debugLogTitle: String {
         lang == .english ? "Debug Log" : "调试日志"
     }
+    static var resetOnboarding: String {
+        lang == .english ? "Reset Onboarding" : "重置引导"
+    }
+    static var onboardingReset: String {
+        lang == .english ? "Onboarding will show on next launch" : "下次启动时将显示引导"
+    }
     static var clear: String {
         lang == .english ? "Clear" : "清除"
     }

@@ -15,8 +15,8 @@ targets:
       base:
         CODE_SIGN_ENTITLEMENTS: Voice2Text/Voice2Text.entitlements
         PRODUCT_BUNDLE_IDENTIFIER: com.voice2text.Voice2Text
-        MARKETING_VERSION: "1.10.1"
-        CURRENT_PROJECT_VERSION: "10"
+        MARKETING_VERSION: "1.10.2"
+        CURRENT_PROJECT_VERSION: "11"
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         ENABLE_HARDENED_RUNTIME: true
         SWIFT_OBJC_BRIDGING_HEADER: Voice2Text/Voice2Text-Bridging-Header.h
