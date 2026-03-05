@@ -295,155 +295,35 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
-### v1.10.3 — Engine Toggle + Qwen 7B Fix
-- **Engine toggle** — tap STT engine badge to switch Whisper ↔ Apple Speech
-- **Fix: Qwen 7B download** — Q4_K_M was split into 2 files; switched to single-file Q3_K_M (~3.5 GB)
-- **Menu bar icon** — filled waveform icon, no text label
-- **Getting Started guide** — HTML guide with screenshots included in DMG
+### v2.0.0 — What's New Since 1.0
 
-### v1.10.2 — Window Close + Onboarding Reset + Lazy Keychain
-- **Window close quits app** — clicking X now terminates the app instead of hiding
-- **Reset Onboarding** — button in Settings > Advanced > Dev Mode
-- **Accessibility upgrade detection** — onboarding detects stale permission after app upgrade, guides user to remove and re-add
-- **Lazy Keychain** — Keychain never read during app launch; only on first Cloud API use
+**On-Device AI Post-Editing**
+- Local LLM inference via [llama.cpp](https://github.com/ggerganov/llama.cpp) — Qwen 2.5 models (0.5B / 1.5B / 3B / 7B) run entirely on your Mac
+- Language-aware editing: adds punctuation for Chinese, fixes grammar for English
+- Built-in CoreML BERT punctuation restoration as fallback (no external server)
+- Optional Cloud API (Anthropic Claude) for users who prefer it
+- Custom revise prompt support
 
-### v1.10.1 — Cloud API Auto-Activate + Cleanup
-- **Cloud API auto-activate** — switching to Cloud API auto-reads Keychain and checks credentials
-- **Lazy Keychain loading** — only read when Cloud API is selected
-- **Cloud API badge** — spinner during check, tap red to retry
-- **Removed** — redundant Post-Edit Revise toggle (provider picker handles everything)
-- **Auto-punctuation standby** — shows "on standby" instead of "paused" when AI Revise active
+**Global Hotkey**
+- Hold ⌘; from any app → record → release → transcription auto-pasted at cursor
+- Floating recording panel (non-activating, doesn't steal focus)
+- Customizable shortcut, 30-second clipboard auto-clear
 
-### v1.10.0 — Local LLM Inference (llama.cpp + Qwen)
-- **Local LLM inference** — on-device Qwen 2.5 post-editing powered by llama.cpp, no cloud needed
-- **Three-state badge** — green (loaded) / orange (downloaded) / red (not downloaded); tap orange to load
-- **Download protection** — cancel button, progress locked during download, provider picker disabled
-- **Corrupt model auto-detection** — invalid files deleted on load failure (both Whisper and LLM)
-- **Stronger punctuation** — revise prompt emphasizes correct punctuation at every boundary
-- **Dev mode** — full input/output text in debug logs
+**99 Languages**
+- Whisper `language="auto"` detects any of 99 supported languages
+- Optimized for Chinese + English mixed speech with auto-retry logic
 
-### v1.9.4 — What's New Display Time
-- **Longer display** — What's New screen auto-dismiss extended from 3 seconds to 8 seconds
+**Bilingual UI**
+- English / 简体中文 — switchable in Settings or during onboarding
+- ~120 localized strings
 
-### v1.9.3 — Model Auto-Select + Debug Improvements
-- **Auto-select model** — when no saved preference exists (e.g. after settings reset), automatically picks the largest downloaded Whisper model instead of defaulting to Base
-- **Debug log** — post-process log now shows full transcription text for easier troubleshooting
-
-### v1.9.2 — Post-Edit Flow Fixes
-- **Fix: Local LLM routing** — post-edit flow now correctly routes through BERT fallback when Local LLM inference is not yet available
-- **Fix: Apple Speech post-process** — works with all providers; was silently skipping when Cloud API selected but not yet validated
-- **Fix: Badge accuracy** — main window Local LLM badge reflects the selected model's download status, not just any downloaded model
-- **Code cleanup** — extracted shared BERT fallback logic, redacted raw text from debug logs
-
-### v1.9.1 — Language-Aware Prompt + AI Service Badge
-- **Language-aware prompt** — non-English: focus on adding punctuation; English: detailed grammar/spelling/tense fixes; mixed: applies appropriate rules per segment
-- **AI service badge** — main window shows active provider status (Local LLM orange/red, AI Revise green/red)
-- **BERT auto-disable** — punctuation toggle disabled when any LLM provider is active (not just Cloud API)
-
-### v1.9.0 — Post-Edit Provider + Local LLM Model Selection
-- **Post-Edit Provider picker** — choose None, Local LLM (offline), or Cloud API (Anthropic Claude) in Settings > AI Services
-- **Local LLM model selection** — Qwen 2.5 models (0.5B/1.5B/3B/7B) with on-demand download, recommended model guidance
-- **Download prompt** — new users see a guided flow to download the recommended 1.5B model
-- **Credential fix** — Base URL and Model fields use explicit Save/Revert buttons (no more per-keystroke auto-save)
-- **Provider switching** — correctly preserves Cloud API validation state when switching between providers
-
-### v1.8.4 — AI Services Credential Fix
-- **Fix** — Base URL and Model fields no longer auto-save on every keystroke; explicit Save Credentials / Revert buttons added
-- **Safer editing** — accidental edits are not persisted until you click Save; Check API disabled while unsaved changes exist
-
-### v1.8.3 — Floating Panel Fix
-- **Fix** — floating recording panel now repositions to top-center of current screen on every hotkey press (handles screen/resolution changes)
-
-### v1.8.1 — UI Polish + Auto API Check
-- **User-friendly capsules** — renamed BERT → Auto-Punct, LLM → AI Revise in top bar
-- **Smart capsule visibility** — Auto-Punct capsule hidden when AI Revise is active (avoids confusion)
-- **Auto API check** — enabling AI Revise now auto-triggers API credential check
-- **Bug fix** — credential changes correctly cancel pending auto-enable
-
-### v1.8.2 — Version Display
-- **Version in toolbar** — app version now shown in bottom toolbar copyright text
-
-### v1.8.0 — Built-in CoreML Punctuation (No External Server)
-- **In-process BERT** — punctuation restoration runs natively via CoreML, no external PunctuationServer.app needed
-- **Smaller download** — ~179 MB CoreML model vs ~500 MB PyInstaller server
-- **Download/delete from Settings** — Settings > Advanced to manage the punctuation model
-- **Auto-migration** — legacy PunctuationServer.app in Application Support is automatically removed
-- **BERT & LLM status indicators** — status capsules in main window top bar
-
-### v1.7.0 — In-App Punctuation Server Install + Service Status + AI Services Tab
-- **One-click install** — install PunctuationServer.app directly from Settings > Advanced (~500 MB download)
-- **Service status indicators** — BERT and LLM status capsules in the main window top bar
-- **AI Services tab** — renamed "Dangerous Zone" to "AI Services" with cloud icon
-
-### v1.6.2 — ATS Exception + Copyright Fix
-- **ATS exception** — allow HTTP for `sheincorp.cn` domain (internal proxy support)
-- **Copyright fix** — corrected to GPL v3.0 license, author C. C. Hsieh, year 2025-2026
-
-### v1.6.1 — UI Label Update
-- **API Key label** — renamed AUTH_TOKEN to API_KEY in Settings > Dangerous Zone
-
-### v1.6.0 — Custom Revise Prompt + What's New + Debug Log Window
-- **Custom Revise Prompt** — customize the LLM prompt in Settings > Dangerous Zone; Reset to Default button
-- **LLM/BERT mutual exclusivity** — when Post-Edit Revise is enabled, BERT punctuation is skipped (LLM handles it). On LLM failure, falls back to BERT if available
-- **What's New screen** — shown once after version update, 3-second countdown auto-dismiss, reads from bundled WhatsNew.json
-- **Debug log window** — separate resizable window with Copy All button; logs always collected (500 line cap)
-- **Resizable Settings window** — Settings window can now be resized
-- **Updated default revise prompt** — focused on transcript correction (error fixing, punctuation, minimal rewrites)
-
-### v1.5.0 — HTTP URL Support + UI Polish
-- Allow HTTP URLs for internal proxies
-- Improved Dangerous Zone tab labels
-
-### v1.4.0 — Dangerous Zone + Post-Edit Revise
-- **Post-Edit Revise** — optional Claude API integration that improves transcription clarity and flow after STT
-- **Dangerous Zone tab** — new Settings tab for configuring Anthropic API credentials (base URL, model, token)
-- **Keychain token storage** — API token stored securely in macOS Keychain, never in UserDefaults or logs
-- **API check** — validate credentials with latency measurement before enabling revise
-- **Graceful fallback** — on revise failure, falls back to original text with transient orange banner (4s)
-- **State machine** — API check state (Unchecked → Checking → Valid/Invalid), auto-resets on credential changes
-
-### v1.3.0 — In-App Language Switching
-- **UI language switching** — English / 简体中文, with segmented picker on onboarding welcome step and Settings > General
-- **Localized strings** — ~85 UI strings across all views, powered by `Strings.swift` `L` enum
-- **System language detection** — defaults to Chinese if macOS locale contains "zh", otherwise English
-- **Copyright notice** — "© C. C. Hsieh" appears in ContentView bottom toolbar after first-use tooltip disappears
-
-### v1.2.0 — 99 Language Support
-- **99 languages** — Whisper auto-detects language; all languages work out of the box
-- **Smart punctuation skip** — Chinese BERT model auto-skipped for non-Chinese speech
-- **Upgrade permission detection** — detects invalidated Accessibility after app upgrade, guides user to remove and re-add
-- **Microphone check on first launch** — prompts immediately after onboarding completes
-- **Default Simplified Chinese** — output script defaults to Simplified (persisted across launches)
-- **UI clarity** — Punctuation option labeled "Chinese + English only" with license note
-
-### v1.1.1 — Bug Fixes & Polish
-- **Launch permission checks** — proactively prompts for Microphone and Accessibility on startup
-- **"Disable Global Hotkey" option** — users who don't want auto-paste can disable to suppress Accessibility prompts
-- **Fix quit crash** — thread-safe whisper model cleanup (`freeModelSync` on inference queue)
-- **Fix terminate race** — stop audio engine directly on quit instead of triggering async transcription
-- **Fix accessibility polling** — stops when permission is granted instead of running indefinitely
-- **Fix hotkey recorder leak** — event monitor cleaned up on view disappear
-- **Code cleanup** — removed dead code, unused imports, duplicate WindowAccessor
-
-### v1.1.0 — Global Push-to-Talk Hotkey
-- **Global hotkey (⌘;)** — hold from any app to record, release to transcribe and auto-paste at cursor
-- **Floating recording panel** — non-intrusive indicator shows recording/transcribing/done status
-- **Auto-paste** — transcription is copied to clipboard and pasted via simulated ⌘V (requires Accessibility permission)
-- **Customizable shortcut** — change the hotkey in Settings > Shortcuts
-- **Onboarding: permissions step** — guides new users through Accessibility setup with clear explanation
-- **Onboarding: upgrade detection** — detects existing downloaded models, shows "Downloaded" badge, no re-download needed
-- **Settings: Shortcuts tab** — enable/disable global hotkey, record custom shortcut, Accessibility status
-- **Graceful quit** — fixed SIGABRT crash on quit by properly cleaning up Carbon hotkey and whisper model before exit
-
-### v1.0.0 — Initial Release
-- Dual STT engines (whisper.cpp offline + Apple Speech online)
-- Mixed Chinese + English recognition
-- Simplified/Traditional Chinese output toggle
-- Push-to-talk (Spacebar) in-app recording
-- Punctuation restoration (BERT model)
-- Multiple whisper models (tiny → large-v3-turbo)
-- Menu bar + Dock presence
-- First-launch setup wizard
+**Polish**
+- Three-state status badges (tap to activate/retry)
+- Setup wizard with model download + accessibility guidance
+- What's New screen on version update
+- Debug log window with full input/output in dev mode
+- Download protection with cancel, corrupt model auto-detection
+- Lazy Keychain access (never read during app launch)
 
 ## License
 
