@@ -44,6 +44,56 @@ enum STTEngine: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum PostEditProvider: String, CaseIterable, Identifiable {
+    case none = "none"
+    case localLLM = "localLLM"
+    case cloudAPI = "cloudAPI"
+
+    var id: String { rawValue }
+}
+
+enum LocalLLMModel: String, CaseIterable, Identifiable {
+    case qwen05B = "qwen2.5-0.5b"
+    case qwen15B = "qwen2.5-1.5b"
+    case qwen3B  = "qwen2.5-3b"
+    case qwen7B  = "qwen2.5-7b"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .qwen05B: return "Qwen 2.5 0.5B (~400 MB)"
+        case .qwen15B: return "Qwen 2.5 1.5B (~1.0 GB)"
+        case .qwen3B:  return "Qwen 2.5 3B (~2.0 GB)"
+        case .qwen7B:  return "Qwen 2.5 7B (~4.5 GB)"
+        }
+    }
+
+    var isRecommended: Bool { self == .qwen15B }
+
+    var fileName: String {
+        switch self {
+        case .qwen05B: return "qwen2.5-0.5b-instruct-q4_k_m.gguf"
+        case .qwen15B: return "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+        case .qwen3B:  return "qwen2.5-3b-instruct-q4_k_m.gguf"
+        case .qwen7B:  return "qwen2.5-7b-instruct-q4_k_m.gguf"
+        }
+    }
+
+    var repoName: String {
+        switch self {
+        case .qwen05B: return "Qwen2.5-0.5B-Instruct-GGUF"
+        case .qwen15B: return "Qwen2.5-1.5B-Instruct-GGUF"
+        case .qwen3B:  return "Qwen2.5-3B-Instruct-GGUF"
+        case .qwen7B:  return "Qwen2.5-7B-Instruct-GGUF"
+        }
+    }
+
+    var downloadURL: URL {
+        URL(string: "https://huggingface.co/Qwen/\(repoName)/resolve/main/\(fileName)")!
+    }
+}
+
 class AppState: ObservableObject {
     static let shared = AppState()
 
@@ -104,6 +154,39 @@ class AppState: ObservableObject {
     }() {
         didSet { UserDefaults.standard.set(customRevisePrompt, forKey: "customRevisePrompt") }
     }
+
+    // MARK: - Post-Edit Provider & Local LLM
+    @Published var postEditProvider: PostEditProvider = {
+        if let saved = UserDefaults.standard.string(forKey: "postEditProvider"),
+           let provider = PostEditProvider(rawValue: saved) {
+            return provider
+        }
+        return .localLLM
+    }() {
+        didSet {
+            UserDefaults.standard.set(postEditProvider.rawValue, forKey: "postEditProvider")
+            if postEditProvider == .cloudAPI {
+                // Restore revise if API was already validated
+                if apiCheckState.isValid {
+                    usePostEditRevise = true
+                }
+            } else {
+                usePostEditRevise = false
+            }
+        }
+    }
+    @Published var selectedLocalLLMModel: LocalLLMModel = {
+        if let saved = UserDefaults.standard.string(forKey: "selectedLocalLLMModel"),
+           let model = LocalLLMModel(rawValue: saved) {
+            return model
+        }
+        return .qwen15B
+    }() {
+        didSet { UserDefaults.standard.set(selectedLocalLLMModel.rawValue, forKey: "selectedLocalLLMModel") }
+    }
+    @Published var isDownloadingLocalLLM = false
+    @Published var localLLMDownloadProgress: Double = 0
+    @Published var isLocalLLMModelLoaded = false
 
     @Published var usePunctuationRestore = false
 
@@ -216,6 +299,13 @@ class AppState: ObservableObject {
         setupKeyboardShortcuts()
         loadPunctuationModelIfAvailable()
         migratePunctuationServer()
+
+        // Auto-check API on launch if cloud API provider is selected
+        if postEditProvider == .cloudAPI && dangerousZoneTokenIsSet && !dangerousZoneBaseURL.isEmpty {
+            pendingEnableRevise = true
+            performAPICheck()
+        }
+
         setupGlobalHotkey()
         refreshAccessibilityStatus()
         // Delay permission checks to allow SwiftUI view to be ready for alerts
@@ -948,6 +1038,88 @@ class AppState: ObservableObject {
         let observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
             DispatchQueue.main.async {
                 self?.downloadProgress = progress.fractionCompleted
+            }
+        }
+        objc_setAssociatedObject(task, "progressObservation", observation, .OBJC_ASSOCIATION_RETAIN)
+
+        task.resume()
+    }
+
+    // MARK: - Local LLM Model Management
+
+    func localLLMModelPath(for model: LocalLLMModel) -> URL {
+        Self.modelDirectory.appendingPathComponent(model.fileName)
+    }
+
+    func isLocalLLMModelDownloaded(_ model: LocalLLMModel) -> Bool {
+        FileManager.default.fileExists(atPath: localLLMModelPath(for: model).path)
+    }
+
+    var isAnyLocalLLMModelDownloaded: Bool {
+        LocalLLMModel.allCases.contains { isLocalLLMModelDownloaded($0) }
+    }
+
+    func deleteLocalLLMModel(_ model: LocalLLMModel) {
+        guard !isDownloadingLocalLLM else { return }
+        let path = localLLMModelPath(for: model)
+        do {
+            try FileManager.default.removeItem(at: path)
+            log("Local LLM: deleted \(model.displayName) from \(path.path)")
+        } catch {
+            log("Local LLM: delete error — \(error.localizedDescription)")
+        }
+        if model == selectedLocalLLMModel {
+            isLocalLLMModelLoaded = false
+        }
+    }
+
+    func selectLocalLLMModel(_ model: LocalLLMModel) {
+        selectedLocalLLMModel = model
+        isLocalLLMModelLoaded = false
+        // TODO: load model via llama.cpp when implemented
+    }
+
+    func downloadLocalLLMModel(_ model: LocalLLMModel) {
+        guard !isDownloadingLocalLLM else { return }
+        isDownloadingLocalLLM = true
+        localLLMDownloadProgress = 0
+        log("Local LLM: starting download of \(model.displayName) from \(model.downloadURL)")
+
+        let destDir = Self.modelDirectory
+        let destPath = localLLMModelPath(for: model)
+
+        try? FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
+
+        let session = URLSession(configuration: .default, delegate: nil, delegateQueue: nil)
+        let task = session.downloadTask(with: model.downloadURL) { [weak self] tmpURL, _, error in
+            session.finishTasksAndInvalidate()
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.isDownloadingLocalLLM = false
+
+                guard let tmpURL, error == nil else {
+                    self.log("Local LLM: download failed — \(error?.localizedDescription ?? "unknown")")
+                    return
+                }
+
+                do {
+                    if FileManager.default.fileExists(atPath: destPath.path) {
+                        try FileManager.default.removeItem(at: destPath)
+                    }
+                    try FileManager.default.moveItem(at: tmpURL, to: destPath)
+                    self.log("Local LLM: \(model.displayName) downloaded successfully")
+                    if self.selectedLocalLLMModel == model {
+                        // TODO: load model via llama.cpp when implemented
+                    }
+                } catch {
+                    self.log("Local LLM: failed to save model — \(error.localizedDescription)")
+                }
+            }
+        }
+
+        let observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+            DispatchQueue.main.async {
+                self?.localLLMDownloadProgress = progress.fractionCompleted
             }
         }
         objc_setAssociatedObject(task, "progressObservation", observation, .OBJC_ASSOCIATION_RETAIN)

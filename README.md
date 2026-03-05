@@ -280,6 +280,13 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v1.9.0 — Post-Edit Provider + Local LLM Model Selection
+- **Post-Edit Provider picker** — choose None, Local LLM (offline), or Cloud API (Anthropic Claude) in Settings > AI Services
+- **Local LLM model selection** — Qwen 2.5 models (0.5B/1.5B/3B/7B) with on-demand download, recommended model guidance
+- **Download prompt** — new users see a guided flow to download the recommended 1.5B model
+- **Credential fix** — Base URL and Model fields use explicit Save/Revert buttons (no more per-keystroke auto-save)
+- **Provider switching** — correctly preserves Cloud API validation state when switching between providers
+
 ### v1.8.4 — AI Services Credential Fix
 - **Fix** — Base URL and Model fields no longer auto-save on every keystroke; explicit Save Credentials / Revert buttons added
 - **Safer editing** — accidental edits are not persisted until you click Save; Check API disabled while unsaved changes exist
