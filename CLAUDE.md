@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.0.2** — Update author name to Chucheng Hsieh.
+**Version: 2.0.2** — Gitignore .pbxproj, fix CJK detokenization.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
