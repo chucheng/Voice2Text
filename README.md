@@ -1,14 +1,18 @@
-# Voice2Text — Open-Source Whisper Voice Input for macOS
+# Voice2Text — 100% Local Voice Input for macOS
 
-**Free, open-source voice-to-text for macOS — powered by OpenAI's Whisper model running locally on your Mac.** Hold a hotkey, speak, and your words appear at the cursor — in any app. Built-in punctuation restoration via CoreML BERT and optional AI post-editing via Claude API.
+**Free, open-source voice-to-text for macOS — everything runs locally on your Mac, no cloud services, no API fees, no subscription.**
 
-**免費、開源的 macOS 語音輸入工具 — 採用 OpenAI Whisper 模型，完全在本機運行。** 按住快捷鍵說話，文字自動出現在游標位置 — 在任何應用程式中都能使用。內建 CoreML BERT 自動標點，可選搭配 Claude API 進行 AI 潤稿。
+Powered by OpenAI Whisper for speech recognition and Qwen LLM for intelligent post-editing — both running entirely on-device. Hold a hotkey, speak, and your words appear at the cursor in any app.
+
+**免費、開源的 macOS 語音輸入工具 — 所有功能皆在本機運行，無需雲端服務、無需 API 費用、無需訂閱。**
+
+採用 OpenAI Whisper 語音辨識 + Qwen LLM 智慧潤稿，全部在設備端執行。按住快捷鍵說話，文字自動出現在任何應用程式的游標位置。
 
 ---
 
-> **Supports 99 languages via Whisper.** Optimized for Chinese + English mixed input with automatic punctuation restoration. Optional Claude LLM integration polishes transcription for better clarity and flow.
+> **Supports 99 languages via Whisper.** Optimized for Chinese + English mixed input. On-device Qwen LLM adds punctuation and polishes transcription — no internet needed. Optional Cloud API (Anthropic Claude) also available for users who prefer it.
 >
-> **支援 99 種語言。** 針對中英文混合輸入特別優化，含自動標點還原。可選搭配 Claude LLM 潤稿，讓語音轉文字更通順自然。
+> **支援 99 種語言。** 針對中英文混合輸入特別優化。設備端 Qwen LLM 自動加標點、潤稿 — 無需聯網。也可選用雲端 API（Anthropic Claude）。
 
 ---
 
@@ -18,7 +22,7 @@
 2. **Speak** in Chinese, English, or both
 3. **Release** — text is transcribed and pasted at your cursor
 
-That's it. No window switching, no copy-paste. Core transcription powered by [whisper.cpp](https://github.com/ggerganov/whisper.cpp) running entirely on your Mac — no cloud required. Optionally connect a Claude API for AI-powered post-editing.
+That's it. No window switching, no copy-paste. Transcription powered by [whisper.cpp](https://github.com/ggerganov/whisper.cpp) and post-editing by [Qwen LLM](https://huggingface.co/Qwen) — both running entirely on your Mac, no cloud required. Optional Cloud API (Anthropic Claude) also available.
 
 ## Features
 
@@ -30,13 +34,15 @@ That's it. No window switching, no copy-paste. Core transcription powered by [wh
 - **Multiple whisper models** — tiny, base, small, medium, large-v3-turbo (downloaded on-demand)
 - **Push-to-talk** — hold Spacebar to record in-app, release to transcribe
 - **Floating indicator** — compact pill shows recording/transcribing/done status
-- **Punctuation restoration** — built-in CoreML BERT model adds punctuation for Chinese text (auto-skipped for other languages)
+- **Local LLM post-editing** — on-device Qwen 2.5 models (0.5B/1.5B/3B/7B) add punctuation and polish transcription — no internet needed
+- **Cloud API option** — optional Anthropic Claude integration for users who prefer cloud-based post-editing
+- **Language-aware editing** — non-English: focus on adding punctuation; English: detailed grammar/spelling fixes; mixed: per-segment rules
+- **Punctuation restoration** — built-in CoreML BERT model adds punctuation for Chinese text (fallback when no LLM active)
 - **Customizable shortcut** — change the global hotkey in Settings
 - **Editable transcription** — edit text inline after transcription
 - **Cmd+C smart copy** — copies full transcription when nothing selected
-- **Post-Edit Revise** — optional Claude API integration to improve transcription clarity and flow (Settings > AI Services)
-- **Secure API Key storage** — API Key stored in macOS Keychain, never in plaintext
 - **Custom Revise Prompt** — customize what the LLM does with your transcript
+- **Secure API Key storage** — API Key stored in macOS Keychain, never in plaintext
 - **What's New screen** — shows changes after version update, auto-dismisses in 3 seconds
 - **Debug log window** — separate resizable window with Copy All for troubleshooting
 - **Dev mode** — always-on logging (capped at 500 lines), viewable in debug log window
@@ -126,12 +132,12 @@ This will regenerate the Xcode project, build a Release archive, ad-hoc sign it,
                               │
            ┌──────────────────┼──────────────────┐
            ▼                  ▼                  ▼
-  ┌─────────────────┐ ┌─────────────┐  ┌──────────────────┐
-  │  Punctuation    │ │  Anthropic  │  │   StringTransform │
-  │  Restorer       │ │  Client     │  │   (Hans↔Hant)     │
-  │  (CoreML BERT)  │ │ (Post-Edit  │  │                    │
-  │  in-process     │ │  Revise)    │  │                    │
-  └─────────────────┘ └─────────────┘  └──────────────────┘
+  ┌─────────────────┐ ┌─────────────┐ ┌─────────────┐ ┌──────────────────┐
+  │  Punctuation    │ │  Local LLM  │ │  Anthropic  │ │   StringTransform │
+  │  Restorer       │ │  (Qwen 2.5  │ │  Client     │ │   (Hans↔Hant)     │
+  │  (CoreML BERT)  │ │  on-device) │ │ (Cloud API) │ │                    │
+  │  in-process     │ │             │ │             │ │                    │
+  └─────────────────┘ └─────────────┘ └─────────────┘ └──────────────────┘
 ```
 
 ### Data Flow
@@ -141,10 +147,10 @@ Mic → AVAudioEngine → AVAudioConverter (16kHz mono) ─┬─→ Whisper inf
                                                       └─→ Apple Speech buffer → text
                                                                 │
                                                                 ▼
-                                              Punctuation Restore (optional, CoreML BERT, Chinese only)
+                                              Punctuation Restore (fallback, CoreML BERT, Chinese only)
                                                                 │
                                                                 ▼
-                                              Post-Edit Revise (optional, Claude API)
+                                              Post-Edit (Local Qwen LLM or Cloud Claude API)
                                                                 │
                                                                 ▼
                                               Script Conversion (Hans ↔ Hant)
