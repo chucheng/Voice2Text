@@ -50,8 +50,6 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 
 ## Installation (Non-Developer)
 
-> **New to Voice2Text?** See the [Getting Started Guide](docs/Getting%20Started.html) for a step-by-step walkthrough with screenshots.
-
 1. Download `Voice2Text.dmg` from the [Releases](../../releases) page
 2. Open the DMG and drag **Voice2Text** to the **Applications** folder
 3. Eject the DMG
