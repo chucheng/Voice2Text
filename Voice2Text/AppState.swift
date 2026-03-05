@@ -186,6 +186,13 @@ class AppState: ObservableObject {
             } else {
                 usePostEditRevise = false
             }
+            // Unload Local LLM model when switching away from Local LLM provider
+            if postEditProvider != .localLLM && (isLocalLLMModelLoaded || isLoadingLocalLLMModel) {
+                log("Local LLM: unloading model (switched away from Local LLM provider)")
+                isLocalLLMModelLoaded = false
+                isLoadingLocalLLMModel = false
+                llamaBridge.freeModelAsync()
+            }
         }
     }
     @Published var selectedLocalLLMModel: LocalLLMModel = {
@@ -199,7 +206,10 @@ class AppState: ObservableObject {
     }
     @Published var isDownloadingLocalLLM = false
     @Published var localLLMDownloadProgress: Double = 0
+    @Published var downloadingLocalLLMModel: LocalLLMModel?  // which model is downloading
+    private var localLLMDownloadTask: URLSessionDownloadTask?
     @Published var isLocalLLMModelLoaded = false
+    @Published var isLoadingLocalLLMModel = false  // model load in progress
 
     @Published var usePunctuationRestore = false
 
@@ -245,6 +255,7 @@ class AppState: ObservableObject {
 
     let audioRecorder = AudioRecorder()
     let whisperBridge = WhisperBridge()
+    let llamaBridge = LlamaBridge()
     let appleSpeech = AppleSpeechRecognizer()
     private(set) var anthropicClient: AnthropicClient?
     private var appleSpeechRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -310,6 +321,7 @@ class AppState: ObservableObject {
         networkMonitor.start(queue: DispatchQueue(label: "com.voice2text.network"))
 
         loadModelIfAvailable()
+        loadLocalLLMModelIfAvailable()
         setupKeyboardShortcuts()
         loadPunctuationModelIfAvailable()
         migratePunctuationServer()
@@ -674,7 +686,10 @@ class AppState: ObservableObject {
     /// On LLM failure, falls back to BERT if available.
     private func postProcess(_ text: String) {
         isReformatting = true
-        log("Post-process: provider=\(postEditProvider.rawValue), input=\(text.count) chars, text=\(text)")
+        log("Post-process: provider=\(postEditProvider.rawValue), input=\(text.count) chars")
+        if devMode {
+            log("  → Raw input: \(text)")
+        }
 
         // When any post-edit provider is active, skip BERT — LLM handles punctuation
         if postEditProvider == .localLLM {
@@ -700,7 +715,7 @@ class AppState: ObservableObject {
     }
 
     /// Apply Local LLM post-edit (Qwen) then script conversion.
-    /// Falls back to BERT if model not downloaded or inference not yet implemented.
+    /// Falls back to BERT if model not downloaded or inference fails.
     private func applyLocalLLMAndConvert(_ text: String) {
         if !isLocalLLMModelDownloaded(selectedLocalLLMModel) {
             log("Local LLM: model \(selectedLocalLLMModel.displayName) not downloaded, skipping post-edit")
@@ -708,9 +723,66 @@ class AppState: ObservableObject {
             return
         }
 
-        // TODO: llama.cpp inference — for now log and fall back to BERT
-        log("Local LLM: inference not yet implemented for \(selectedLocalLLMModel.displayName), falling back")
-        applyBERTFallbackAndConvert(text)
+        if !isLocalLLMModelLoaded {
+            if isLoadingLocalLLMModel {
+                log("Local LLM: model load in progress, falling back to BERT")
+                applyBERTFallbackAndConvert(text)
+                return
+            }
+            log("Local LLM: loading \(selectedLocalLLMModel.displayName)...")
+            isLoadingLocalLLMModel = true
+            let model = selectedLocalLLMModel
+            let modelPath = localLLMModelPath(for: model).path
+            llamaBridge.loadModel(path: modelPath) { [weak self] success in
+                guard let self else { return }
+                self.isLoadingLocalLLMModel = false
+                // Check that provider/model hasn't changed while loading
+                guard self.postEditProvider == .localLLM,
+                      self.selectedLocalLLMModel == model else {
+                    self.log("Local LLM: provider or model changed during load, discarding")
+                    if success { self.llamaBridge.freeModelAsync() }
+                    self.isReformatting = false
+                    return
+                }
+                if success {
+                    self.isLocalLLMModelLoaded = true
+                    self.log("Local LLM: model loaded successfully")
+                    self.runLocalLLMInference(text)
+                } else {
+                    self.log("Local LLM: failed to load model — deleting corrupt file, falling back to BERT")
+                    try? FileManager.default.removeItem(atPath: modelPath)
+                    self.applyBERTFallbackAndConvert(text)
+                }
+            }
+            return
+        }
+
+        runLocalLLMInference(text)
+    }
+
+    /// Run inference on the loaded Local LLM model.
+    private func runLocalLLMInference(_ text: String) {
+        let prompt = customRevisePrompt
+        log("Local LLM: sending \(text.count) chars for revision")
+        if devMode {
+            log("  → Input: \(text)")
+        }
+        llamaBridge.generate(text: text, systemPrompt: prompt) { [weak self] result in
+            guard let self else { return }
+            if let result, !result.isEmpty {
+                self.log("Local LLM: success (\(result.count) chars)")
+                if self.devMode {
+                    self.log("  ← Output: \(result)")
+                }
+                self.rawTranscription = result
+                self.transcriptionText = self.convertScript(result)
+                self.isReformatting = false
+                self.performAutoPaste(self.transcriptionText)
+            } else {
+                self.log("Local LLM: inference returned empty, falling back to BERT")
+                self.applyBERTFallbackAndConvert(text)
+            }
+        }
     }
 
     /// Try BERT punctuation as best-effort, then script-convert and finish.
@@ -1013,6 +1085,8 @@ class AppState: ObservableObject {
     }
 
     func deleteModel(_ model: WhisperModel) {
+        // Block delete if this model is being downloaded
+        guard !isDownloadingModel else { return }
         let path = modelPath(for: model)
         try? FileManager.default.removeItem(at: path)
         if model == selectedModel {
@@ -1032,13 +1106,19 @@ class AppState: ObservableObject {
         isModelLoaded = false
         loadedModelName = ""
         log("Whisper: loading model \(selectedModel.rawValue) from disk...")
+        let model = selectedModel
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
             let success = self.whisperBridge.loadModel(path: path.path)
             DispatchQueue.main.async {
                 self.isModelLoaded = success
-                self.loadedModelName = success ? self.selectedModel.displayName : ""
-                self.log(success ? "Whisper: model \(self.selectedModel.rawValue) loaded successfully" : "Whisper: model \(self.selectedModel.rawValue) failed to load")
+                self.loadedModelName = success ? model.displayName : ""
+                if success {
+                    self.log("Whisper: model \(model.rawValue) loaded successfully")
+                } else {
+                    self.log("Whisper: model \(model.rawValue) failed to load — deleting corrupt file")
+                    try? FileManager.default.removeItem(at: path)
+                }
             }
         }
     }
@@ -1102,6 +1182,14 @@ class AppState: ObservableObject {
 
     // MARK: - Local LLM Model Management
 
+    /// Load the selected Local LLM model on startup if downloaded and Local LLM provider is selected.
+    private func loadLocalLLMModelIfAvailable() {
+        guard postEditProvider == .localLLM,
+              isLocalLLMModelDownloaded(selectedLocalLLMModel) else { return }
+        log("Local LLM: auto-loading \(selectedLocalLLMModel.displayName) on startup")
+        validateAndLoadLocalLLMModel(selectedLocalLLMModel)
+    }
+
     func localLLMModelPath(for model: LocalLLMModel) -> URL {
         Self.modelDirectory.appendingPathComponent(model.fileName)
     }
@@ -1115,28 +1203,55 @@ class AppState: ObservableObject {
     }
 
     func deleteLocalLLMModel(_ model: LocalLLMModel) {
-        guard !isDownloadingLocalLLM else { return }
+        // Block delete if this model is being downloaded or loaded
+        if isDownloadingLocalLLM && downloadingLocalLLMModel == model { return }
+        if model == selectedLocalLLMModel && isLoadingLocalLLMModel { return }
         let path = localLLMModelPath(for: model)
-        do {
-            try FileManager.default.removeItem(at: path)
-            log("Local LLM: deleted \(model.displayName) from \(path.path)")
-        } catch {
-            log("Local LLM: delete error — \(error.localizedDescription)")
-        }
-        if model == selectedLocalLLMModel {
+        if model == selectedLocalLLMModel && isLocalLLMModelLoaded {
+            log("Local LLM: unloading \(model.displayName) before delete")
             isLocalLLMModelLoaded = false
+            llamaBridge.freeModelAsync { [weak self] in
+                do {
+                    try FileManager.default.removeItem(at: path)
+                    self?.log("Local LLM: deleted \(model.displayName)")
+                } catch {
+                    self?.log("Local LLM: delete error — \(error.localizedDescription)")
+                }
+            }
+        } else {
+            do {
+                try FileManager.default.removeItem(at: path)
+                log("Local LLM: deleted \(model.displayName) from \(path.path)")
+            } catch {
+                log("Local LLM: delete error — \(error.localizedDescription)")
+            }
         }
     }
 
+    /// Public entry point to load the currently selected Local LLM model (e.g., from badge tap).
+    func loadLocalLLMModel() {
+        guard isLocalLLMModelDownloaded(selectedLocalLLMModel) else { return }
+        validateAndLoadLocalLLMModel(selectedLocalLLMModel)
+    }
+
     func selectLocalLLMModel(_ model: LocalLLMModel) {
+        guard !isLoadingLocalLLMModel else {
+            log("Local LLM: model load in progress, cannot switch now")
+            return
+        }
+        let oldModel = selectedLocalLLMModel
         selectedLocalLLMModel = model
-        isLocalLLMModelLoaded = false
-        // TODO: load model via llama.cpp when implemented
+        if oldModel != model && isLocalLLMModelLoaded {
+            log("Local LLM: unloading \(oldModel.displayName), switching to \(model.displayName)")
+            isLocalLLMModelLoaded = false
+            llamaBridge.freeModelAsync()
+        }
     }
 
     func downloadLocalLLMModel(_ model: LocalLLMModel) {
         guard !isDownloadingLocalLLM else { return }
         isDownloadingLocalLLM = true
+        downloadingLocalLLMModel = model
         localLLMDownloadProgress = 0
         log("Local LLM: starting download of \(model.displayName) from \(model.downloadURL)")
 
@@ -1151,9 +1266,16 @@ class AppState: ObservableObject {
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.isDownloadingLocalLLM = false
+                self.downloadingLocalLLMModel = nil
+                self.localLLMDownloadTask = nil
 
                 guard let tmpURL, error == nil else {
-                    self.log("Local LLM: download failed — \(error?.localizedDescription ?? "unknown")")
+                    let isCancelled = (error as? URLError)?.code == .cancelled
+                    if isCancelled {
+                        self.log("Local LLM: download cancelled")
+                    } else {
+                        self.log("Local LLM: download failed — \(error?.localizedDescription ?? "unknown")")
+                    }
                     return
                 }
 
@@ -1163,8 +1285,10 @@ class AppState: ObservableObject {
                     }
                     try FileManager.default.moveItem(at: tmpURL, to: destPath)
                     self.log("Local LLM: \(model.displayName) downloaded successfully")
-                    if self.selectedLocalLLMModel == model {
-                        // TODO: load model via llama.cpp when implemented
+                    // Only auto-load if still on Local LLM provider and this is the selected model
+                    if self.postEditProvider == .localLLM && self.selectedLocalLLMModel == model {
+                        self.log("Local LLM: auto-loading \(model.displayName) after download")
+                        self.validateAndLoadLocalLLMModel(model)
                     }
                 } catch {
                     self.log("Local LLM: failed to save model — \(error.localizedDescription)")
@@ -1179,7 +1303,43 @@ class AppState: ObservableObject {
         }
         objc_setAssociatedObject(task, "progressObservation", observation, .OBJC_ASSOCIATION_RETAIN)
 
+        localLLMDownloadTask = task
         task.resume()
+    }
+
+    func cancelLocalLLMDownload() {
+        guard isDownloadingLocalLLM else { return }
+        log("Local LLM: cancelling download of \(downloadingLocalLLMModel?.displayName ?? "unknown")")
+        localLLMDownloadTask?.cancel()
+    }
+
+    /// Attempt to load a Local LLM model; if load fails, delete the corrupt file.
+    private func validateAndLoadLocalLLMModel(_ model: LocalLLMModel) {
+        guard !isLoadingLocalLLMModel else {
+            log("Local LLM: load already in progress, ignoring")
+            return
+        }
+        isLoadingLocalLLMModel = true
+        let path = localLLMModelPath(for: model).path
+        llamaBridge.loadModel(path: path) { [weak self] success in
+            guard let self else { return }
+            self.isLoadingLocalLLMModel = false
+            // Check that provider/model hasn't changed while loading
+            guard self.postEditProvider == .localLLM,
+                  self.selectedLocalLLMModel == model else {
+                self.log("Local LLM: provider or model changed during load, discarding result")
+                if success { self.llamaBridge.freeModelAsync() }
+                return
+            }
+            if success {
+                self.isLocalLLMModelLoaded = true
+                self.log("Local LLM: \(model.displayName) loaded and validated")
+            } else {
+                self.log("Local LLM: \(model.displayName) failed to load — deleting corrupt file")
+                self.isLocalLLMModelLoaded = false
+                try? FileManager.default.removeItem(atPath: path)
+            }
+        }
     }
 
     // MARK: - Global Hotkey

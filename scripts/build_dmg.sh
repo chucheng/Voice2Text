@@ -59,6 +59,17 @@ mkdir -p "$DMG_STAGING"
 cp -R "$EXPORT_DIR/$APP_NAME.app" "$DMG_STAGING/"
 ln -s /Applications "$DMG_STAGING/Applications"
 
+# Include Getting Started guide if docs exist
+DOCS_DIR="$PROJECT_DIR/docs"
+if [ -d "$DOCS_DIR" ] && [ -f "$DOCS_DIR/Getting Started.html" ]; then
+    echo "==> Including Getting Started guide..."
+    cp "$DOCS_DIR/Getting Started.html" "$DMG_STAGING/"
+    if [ -d "$DOCS_DIR/images" ] && [ "$(ls -A "$DOCS_DIR/images" 2>/dev/null)" ]; then
+        mkdir -p "$DMG_STAGING/images"
+        cp -R "$DOCS_DIR/images/"* "$DMG_STAGING/images/"
+    fi
+fi
+
 # Remove old DMG if exists
 rm -f "$DMG_PATH"
 

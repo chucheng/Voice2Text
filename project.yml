@@ -15,17 +15,20 @@ targets:
       base:
         CODE_SIGN_ENTITLEMENTS: Voice2Text/Voice2Text.entitlements
         PRODUCT_BUNDLE_IDENTIFIER: com.voice2text.Voice2Text
-        MARKETING_VERSION: "1.9.4"
-        CURRENT_PROJECT_VERSION: "8"
+        MARKETING_VERSION: "1.10.0"
+        CURRENT_PROJECT_VERSION: "9"
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         ENABLE_HARDENED_RUNTIME: true
         SWIFT_OBJC_BRIDGING_HEADER: Voice2Text/Voice2Text-Bridging-Header.h
         HEADER_SEARCH_PATHS:
           - "$(PROJECT_DIR)/Whisper/include"
+          - "$(PROJECT_DIR)/LlamaCpp/include"
         LIBRARY_SEARCH_PATHS:
           - "$(PROJECT_DIR)/Whisper/lib"
+          - "$(PROJECT_DIR)/LlamaCpp/lib"
         OTHER_LDFLAGS:
           - "-lwhisper"
+          - "-lllama"
           - "-lggml"
           - "-lggml-base"
           - "-lggml-cpu"

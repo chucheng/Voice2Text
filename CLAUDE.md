@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.9.4** — What's New auto-dismiss extended to 8 seconds.
+**Version: 1.10.0** — Local LLM inference via llama.cpp (Qwen), three-state badge, download protection, corrupt model auto-delete.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -66,6 +66,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `Voice2Text/CopyButton.swift` | Copy-to-clipboard button with animation |
 | `Voice2Text/AudioRecorder.swift` | AVAudioEngine + AVAudioConverter (16kHz mono Float32), dual-purpose tap for whisper + Apple Speech |
 | `Voice2Text/WhisperBridge.swift` | Swift wrapper around whisper.cpp C API: load model, run inference, explicit freeModel() for clean shutdown |
+| `Voice2Text/LlamaBridge.swift` | Swift wrapper around llama.cpp C API: load GGUF model, chat prompt template, sampler chain, generate text, freeModel for clean shutdown |
 | `Voice2Text/AppleSpeechRecognizer.swift` | Apple SFSpeechRecognizer wrapper: streaming recognition with partial results |
 | `Voice2Text/WordPieceTokenizer.swift` | WordPiece tokenizer: loads vocab.txt from bundle, subword tokenization with offset tracking |
 | `Voice2Text/PunctuationRestorer.swift` | CoreML BERT inference for Chinese punctuation restoration, chunking for long text |
@@ -75,7 +76,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `Voice2Text/WhatsNew.json` | Bundled changelog data (bilingual en/zh, all versions) |
 | `Voice2Text/DebugLogWindow.swift` | Separate debug log window with Copy All, text selection |
 | `Voice2Text/KeychainHelper.swift` | Minimal macOS Keychain wrapper: saveToken, loadToken, deleteToken |
-| `Voice2Text/Voice2Text-Bridging-Header.h` | `#include "whisper.h"` for Swift-C interop |
+| `Voice2Text/Voice2Text-Bridging-Header.h` | `#include "whisper.h"` + `#include "llama.h"` for Swift-C interop |
 | `Voice2Text/AppDelegate.swift` | Dock icon reopen + graceful shutdown (unregister hotkey, free model, stop recording) |
 | `Voice2Text/WindowAccessor.swift` | Captures NSWindow reference for AppDelegate |
 | `Voice2Text/Info.plist` | NSMicrophoneUsageDescription, NSSpeechRecognitionUsageDescription |
@@ -83,8 +84,12 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `Voice2Text/Assets.xcassets/` | Asset catalog with app icon (all macOS sizes) |
 | `Whisper/lib/` | Pre-built static libraries (libwhisper, libggml, libggml-base, libggml-cpu, libggml-metal, libggml-blas) |
 | `Whisper/include/` | Header files (whisper.h, ggml*.h) |
+| `LlamaCpp/lib/` | Pre-built static library (libllama.a) for llama.cpp |
+| `LlamaCpp/include/` | Header file (llama.h) |
 | `project.yml` | xcodegen spec with bridging header, library paths, SDK dependencies (incl. Carbon.framework) |
 | `scripts/convert_punctuation_model.py` | Developer tool: convert PyTorch BERT → CoreML .mlpackage |
+| `scripts/build_llama.sh` | Build llama.cpp (tag b8200) for macOS arm64 with Metal + BLAS |
+| `scripts/build_whisper.sh` | Rebuild whisper.cpp (v1.8.3) against llama.cpp's ggml for ABI compatibility |
 | `scripts/build_dmg.sh` | Build Voice2Text.dmg for distribution |
 
 ## Architecture Notes
@@ -94,6 +99,10 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - `AudioRecorder` supports an optional `tapHandler` to forward raw buffers to Apple Speech
 - `WhisperBridge` runs inference on a dedicated background `DispatchQueue`
 - `WhisperBridge.freeModel()` must be called before app termination to avoid C++ static destructor crash
+- `LlamaBridge` runs inference on a dedicated serial `DispatchQueue`; uses `freeModelSync()` at termination
+- `LlamaBridge` and whisper.cpp share the same ggml static libraries (built from llama.cpp's ggml to avoid symbol conflicts)
+- Local LLM model load is guarded by `isLoadingLocalLLMModel` to prevent double-load from rapid clicks
+- Model file validation: load failure auto-deletes corrupt files (both Whisper and Local LLM)
 - Whisper uses `language="auto"` for mixed Chinese+English speech
 - If whisper outputs mixed Chinese + unexpected language text, auto-retries with `language="zh"` (only when Chinese chars present)
 - Non-Chinese languages accepted as-is (no retry) — enables 99-language support
