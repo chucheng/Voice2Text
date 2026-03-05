@@ -286,6 +286,10 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v1.9.3 — Model Auto-Select + Debug Improvements
+- **Auto-select model** — when no saved preference exists (e.g. after settings reset), automatically picks the largest downloaded Whisper model instead of defaulting to Base
+- **Debug log** — post-process log now shows full transcription text for easier troubleshooting
+
 ### v1.9.2 — Post-Edit Flow Fixes
 - **Fix: Local LLM routing** — post-edit flow now correctly routes through BERT fallback when Local LLM inference is not yet available
 - **Fix: Apple Speech post-process** — works with all providers; was silently skipping when Cloud API selected but not yet validated

@@ -1,5 +1,18 @@
 [
     {
+        "version": "1.9.3",
+        "changes": {
+            "en": [
+                "Fix: Auto-select largest downloaded Whisper model when no saved preference (e.g. after settings reset)",
+                "Improved: Debug log now shows full transcription text for easier troubleshooting"
+            ],
+            "zh": [
+                "修复：无保存设置时自动选择已下载的最大 Whisper 模型（如设置重置后）",
+                "改进：调试日志显示完整转录文字，便于排查问题"
+            ]
+        }
+    },
+    {
         "version": "1.9.2",
         "changes": {
             "en": [
