@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.9.2** — Fix Local LLM post-edit flow + Apple Speech post-process + badge accuracy.
+**Version: 1.9.3** — Auto-select largest downloaded Whisper model when no saved default + debug log shows full text.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)

@@ -116,6 +116,14 @@ class AppState: ObservableObject {
            let model = WhisperModel(rawValue: saved) {
             return model
         }
+        // No saved default: pick the largest downloaded model, or fall back to .base
+        let dir = AppState.modelDirectory
+        for model in WhisperModel.allCases.reversed() {
+            let path = dir.appendingPathComponent(model.fileName)
+            if FileManager.default.fileExists(atPath: path.path) {
+                return model
+            }
+        }
         return .base
     }()
     @Published var isModelLoaded = false
@@ -666,7 +674,7 @@ class AppState: ObservableObject {
     /// On LLM failure, falls back to BERT if available.
     private func postProcess(_ text: String) {
         isReformatting = true
-        log("Post-process: provider=\(postEditProvider.rawValue), input=\(text.count) chars")
+        log("Post-process: provider=\(postEditProvider.rawValue), input=\(text.count) chars, text=\(text)")
 
         // When any post-edit provider is active, skip BERT — LLM handles punctuation
         if postEditProvider == .localLLM {
