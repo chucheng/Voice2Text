@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice2Text — Getting Started</title>
+<style>
+  :root {
+    --blue: #007AFF;
+    --blue-light: #E8F2FF;
+    --gray-bg: #F5F5F7;
+    --gray-border: #D2D2D7;
+    --gray-text: #6E6E73;
+    --dark: #1D1D1F;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    color: var(--dark);
+    background: #FFFFFF;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 32px 60px;
+  }
+  /* Language toggle */
+  body.lang-en .zh { display: none !important; }
+  body.lang-zh .en { display: none !important; }
+  .lang-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 100;
+    display: flex;
+    border: 1px solid var(--gray-border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .lang-toggle button {
+    border: none;
+    background: white;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--gray-text);
+    transition: all 0.2s;
+  }
+  .lang-toggle button.active {
+    background: var(--blue);
+    color: white;
+  }
+  .lang-toggle button:not(:last-child) {
+    border-right: 1px solid var(--gray-border);
+  }
+  /* Header */
+  .hero {
+    text-align: center;
+    padding: 40px 0 32px;
+    border-bottom: 1px solid var(--gray-border);
+    margin-bottom: 40px;
+  }
+  .hero h1 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .hero .subtitle {
+    font-size: 18px;
+    color: var(--gray-text);
+  }
+  .hero .version {
+    display: inline-block;
+    margin-top: 12px;
+    background: var(--blue-light);
+    color: var(--blue);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+  /* Sections */
+  section { margin-bottom: 48px; }
+  h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--blue);
+    display: inline-block;
+  }
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 20px 0 10px;
+  }
+  p { margin-bottom: 12px; font-size: 15px; }
+  /* Steps */
+  .step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: var(--gray-bg);
+    border-radius: var(--radius);
+  }
+  .step-number {
+    flex-shrink: 0;
+    width: 36px; height: 36px;
+    background: var(--blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .step-content { flex: 1; }
+  .step-content h3 { margin-top: 0; margin-bottom: 6px; }
+  .step-content p { margin-bottom: 0; color: var(--gray-text); }
+  /* Screenshots */
+  .screenshot { margin: 16px 0 24px; text-align: center; }
+  .screenshot img {
+    max-width: 100%;
+    border-radius: var(--radius);
+    border: 1px solid var(--gray-border);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  .screenshot .caption {
+    font-size: 13px;
+    color: var(--gray-text);
+    margin-top: 8px;
+  }
+  /* Keyboard badges */
+  kbd {
+    display: inline-block;
+    background: var(--gray-bg);
+    border: 1px solid var(--gray-border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-family: -apple-system, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  /* Tip / Note boxes */
+  .tip {
+    background: #FFF9E6;
+    border-left: 4px solid #FFBF00;
+    padding: 14px 18px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .tip strong { color: #B38600; }
+  .note {
+    background: var(--blue-light);
+    border-left: 4px solid var(--blue);
+    padding: 14px 18px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .note strong { color: var(--blue); }
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--gray-border);
+  }
+  th { background: var(--gray-bg); font-weight: 600; }
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding-top: 32px;
+    border-top: 1px solid var(--gray-border);
+    color: var(--gray-text);
+    font-size: 13px;
+  }
+</style>
+</head>
+<body class="lang-en">
+
+<!-- Language Toggle -->
+<div class="lang-toggle">
+  <button id="btn-en" class="active" onclick="switchLang('en')">English</button>
+  <button id="btn-zh" onclick="switchLang('zh')">简体中文</button>
+</div>
+
+<!-- ============ HERO ============ -->
+<div class="hero">
+  <h1>Voice2Text</h1>
+  <p class="subtitle">
+    <span class="en">Voice to text, right from your menu bar.</span>
+    <span class="zh">从菜单栏直接语音转文字。</span>
+  </p>
+  <span class="version">v1.9.0</span>
+</div>
+
+<!-- ============ 1. INSTALLATION ============ -->
+<section id="installation">
+  <h2>
+    <span class="en">1. Installation</span>
+    <span class="zh">1. 安装</span>
+  </h2>
+
+  <div class="step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <h3>
+        <span class="en">Drag to Applications</span>
+        <span class="zh">拖到「应用程序」文件夹</span>
+      </h3>
+      <p>
+        <span class="en">Drag <strong>Voice2Text.app</strong> into the <strong>Applications</strong> folder.</span>
+        <span class="zh">将 <strong>Voice2Text.app</strong> 拖入 <strong>Applications</strong> 文件夹。</span>
+      </p>
+    </div>
+  </div>
+  <div class="screenshot">
+    <img src="images/install-drag.png" alt="Drag Voice2Text to Applications">
+    <div class="caption">
+      <span class="en">Drag the app to install</span>
+      <span class="zh">拖拽安装</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <h3>
+        <span class="en">First Launch</span>
+        <span class="zh">首次启动</span>
+      </h3>
+      <p>
+        <span class="en">macOS will show a security warning when you first open the app. This is expected — Voice2Text is a free, open-source project distributed outside the App Store, so it does not carry Apple's paid developer signature ($99/year). Rest assured, the app is safe and the source code is publicly available for review.</span>
+        <span class="zh">首次打开应用时，macOS 会弹出安全警告。这是正常现象——Voice2Text 是免费开源项目，未通过 App Store 分发，因此没有 Apple 的付费开发者签名（$99/年）。请放心使用，源代码完全公开，欢迎审阅。</span>
+      </p>
+    </div>
+  </div>
+  <div class="screenshot">
+    <img src="images/gatekeeper-blocked.png" alt="macOS Gatekeeper blocked dialog">
+    <div class="caption">
+      <span class="en">macOS blocks the app on first launch</span>
+      <span class="zh">macOS 首次启动时阻止打开</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="en"><strong>How to fix:</strong> Go to <strong>System Settings &rarr; Privacy &amp; Security</strong>, scroll down to find the message about Voice2Text being blocked, and click <strong>Open Anyway</strong>.</span>
+    <span class="zh"><strong>解决方法：</strong>前往 <strong>系统设置 &rarr; 隐私与安全性</strong>，向下滚动找到 Voice2Text 被阻止的提示，点击<strong>「仍要打开」</strong>。</span>
+  </div>
+  <div class="screenshot">
+    <img src="images/gatekeeper-allow.png" alt="System Settings Open Anyway">
+    <div class="caption">
+      <span class="en">System Settings &rarr; Privacy &amp; Security &rarr; Open Anyway</span>
+      <span class="zh">系统设置 &rarr; 隐私与安全性 &rarr; 仍要打开</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. ONBOARDING ============ -->
+<section id="onboarding">
+  <h2>
+    <span class="en">2. First-Time Setup</span>
+    <span class="zh">2. 初次设置</span>
+  </h2>
+  <p>
+    <span class="en">When you launch Voice2Text for the first time, a setup wizard will guide you through:</span>
+    <span class="zh">首次启动 Voice2Text 时，设置向导将引导你完成以下步骤：</span>
+  </p>
+
+  <div class="note">
+    <span class="en"><strong>Upgrading from a previous version?</strong> The setup wizard only appears on a fresh install. If you installed over an older version, the wizard won't show again — your previous settings are preserved. You can configure everything manually in Settings (<kbd>&#8984;</kbd> + <kbd>,</kbd>).</span>
+    <span class="zh"><strong>从旧版本升级？</strong>设置向导仅在全新安装时出现。如果你是覆盖旧版安装，向导不会再次显示——之前的设置会保留。你可以在设置（<kbd>&#8984;</kbd> + <kbd>,</kbd>）中手动配置所有选项。</span>
+  </div>
+
+  <!-- 2-1 Language -->
+  <div class="step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <h3>
+        <span class="en">Choose Language</span>
+        <span class="zh">选择语言</span>
+      </h3>
+      <p>
+        <span class="en">Pick your preferred UI language: English or Simplified Chinese.</span>
+        <span class="zh">选择界面语言：English 或 简体中文。</span>
+      </p>
+    </div>
+  </div>
+  <div class="screenshot">
+    <img src="images/onboarding-language.png" alt="Language selection">
+    <div class="caption">
+      <span class="en">Select your preferred language</span>
+      <span class="zh">选择偏好语言</span>
+    </div>
+  </div>
+
+  <!-- 2-2 Model -->
+  <div class="step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <h3>
+        <span class="en">Download a Whisper Model</span>
+        <span class="zh">下载 Whisper 模型</span>
+      </h3>
+      <p>
+        <span class="en">Choose a speech recognition model. <strong>Base</strong> is recommended for most users (fast + good accuracy). Larger models are more accurate but slower.</span>
+        <span class="zh">选择语音识别模型。推荐大多数用户使用 <strong>Base</strong>（速度快且准确度好）。更大的模型更准确但更慢。</span>
+      </p>
+    </div>
+  </div>
+  <div class="screenshot">
+    <img src="images/onboarding-model.png" alt="Model selection">
+    <div class="caption">
+      <span class="en">Choose and download a Whisper model</span>
+      <span class="zh">选择并下载 Whisper 模型</span>
+    </div>
+  </div>
+
+  <!-- 2-3 Microphone -->
+  <div class="step">
+    <div class="step-number">3</div>
+    <div class="step-content">
+      <h3>
+        <span class="en">Allow Microphone Access</span>
+        <span class="zh">允许麦克风权限</span>
+      </h3>
+      <p>
+        <span class="en">When you first try to record, macOS will show a system dialog: <strong>"Voice2Text" would like to access the microphone</strong>. You <strong>must click Allow</strong> — the app cannot function without microphone access.</span>
+        <span class="zh">首次录音时，macOS 会弹出系统对话框：<strong>「Voice2Text 想要访问麦克风」</strong>。你<strong>必须点击「允许」</strong>——没有麦克风权限，应用无法工作。</span>
+      </p>
+    </div>
+  </div>
+  <div class="screenshot">
+    <img src="images/mic-permission-dialog.png" alt="macOS microphone permission dialog">
+    <div class="caption">
+      <span class="en">Click "Allow" when macOS asks for microphone access</span>
+      <span class="zh">macOS 弹出麦克风权限请求时，点击「允许」</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="en"><strong>Accidentally clicked "Don't Allow"?</strong> Go to <strong>System Settings &rarr; Privacy &amp; Security &rarr; Microphone</strong>, find Voice2Text in the list, and toggle it <strong>ON</strong>.</span>
+    <span class="zh"><strong>不小心点了「不允许」？</strong>前往 <strong>系统设置 &rarr; 隐私与安全性 &rarr; 麦克风</strong>，在列表中找到 Voice2Text，将开关打开。</span>
+  </div>
+  <div class="screenshot">
+    <img src="images/mic-system-settings.png" alt="Microphone in System Settings">
+    <div class="caption">
+      <span class="en">System Settings &rarr; Privacy &amp; Security &rarr; Microphone</span>
+      <span class="zh">系统设置 &rarr; 隐私与安全性 &rarr; 麦克风</span>
+    </div>
+  </div>
+
+  <!-- 2-4 Accessibility -->
+  <div class="step">
+    <div class="step-number">4</div>
+    <div class="step-content">
+      <h3>
+        <span class="en">Grant Accessibility Permission</span>
+        <span class="zh">授予辅助功能权限</span>
+      </h3>
+      <p>
+        <span class="en">Required for the global hotkey auto-paste feature. Open <strong>System Settings &rarr; Privacy &amp; Security &rarr; Accessibility</strong>.</span>
+        <span class="zh">全局快捷键自动粘贴功能需要此权限。打开 <strong>系统设置 &rarr; 隐私与安全性 &rarr; 辅助功能</strong>。</span>
+      </p>
+    </div>
+  </div>
+  <div class="screenshot">
+    <img src="images/accessibility-open.png" alt="Open Accessibility settings">
+    <div class="caption">
+      <span class="en">Step 1: Open System Settings &rarr; Privacy &amp; Security &rarr; Accessibility</span>
+      <span class="zh">第 1 步：打开系统设置 &rarr; 隐私与安全性 &rarr; 辅助功能</span>
+    </div>
+  </div>
+  <div class="screenshot">
+    <img src="images/accessibility-enable.png" alt="Enable Voice2Text in Accessibility">
+    <div class="caption">
+      <span class="en">Step 2: Find Voice2Text in the list and toggle it ON</span>
+      <span class="zh">第 2 步：在列表中找到 Voice2Text，打开开关</span>
+    </div>
+  </div>
+
+  <div class="tip">
+    <span class="en"><strong>Tip:</strong> If you skip Accessibility permission, the app still works for in-app recording — you just won't get auto-paste with the global hotkey.</span>
+    <span class="zh"><strong>提示：</strong>如果跳过辅助功能权限，应用内录音仍可正常使用——只是全局快捷键无法自动粘贴。</span>
+  </div>
+
+  <div class="tip">
+    <span class="en"><strong>After app updates:</strong> macOS may revoke Accessibility permission. If the global hotkey stops pasting, go to System Settings &rarr; Accessibility, <strong>remove</strong> Voice2Text, then <strong>re-add</strong> it.</span>
+    <span class="zh"><strong>应用更新后：</strong>macOS 可能会撤销辅助功能权限。如果全局快捷键无法粘贴，请前往系统设置 &rarr; 辅助功能，先<strong>移除</strong> Voice2Text，再<strong>重新添加</strong>。</span>
+  </div>
+</section>
+
+<!-- ============ 3. BASIC USAGE ============ -->
+<section id="basic-usage">
+  <h2>
+    <span class="en">3. Basic Usage</span>
+    <span class="zh">3. 基本使用</span>
+  </h2>
+
+  <h3>
+    <span class="en">In-App Recording</span>
+    <span class="zh">应用内录音</span>
+  </h3>
+  <p>
+    <span class="en">Open the main window and press &amp; hold <kbd>Space</kbd> to record. Release to stop — the app will transcribe your speech automatically.</span>
+    <span class="zh">打开主窗口，按住 <kbd>Space</kbd> 开始录音。松开即停止——应用会自动转录你的语音。</span>
+  </p>
+  <div class="screenshot">
+    <img src="images/main-window-recording.png" alt="Main window recording">
+    <div class="caption">
+      <span class="en">Hold Space to record, release to transcribe</span>
+      <span class="zh">按住空格录音，松开即转录</span>
+    </div>
+  </div>
+  <div class="screenshot">
+    <img src="images/main-window-result.png" alt="Transcription result">
+    <div class="caption">
+      <span class="en">Transcription result — editable and ready to copy</span>
+      <span class="zh">转录结果——可编辑，可复制</span>
+    </div>
+  </div>
+
+  <h3>
+    <span class="en">Menu Bar</span>
+    <span class="zh">菜单栏</span>
+  </h3>
+  <p>
+    <span class="en">Voice2Text lives in your menu bar. Click the icon to access quick actions: start/stop recording, switch models, toggle settings.</span>
+    <span class="zh">Voice2Text 常驻菜单栏。点击图标可快速操作：开始/停止录音、切换模型、打开设置。</span>
+  </p>
+  <div class="screenshot">
+    <img src="images/menu-bar.png" alt="Menu bar dropdown">
+    <div class="caption">
+      <span class="en">Menu bar quick access</span>
+      <span class="zh">菜单栏快捷入口</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. GLOBAL HOTKEY ============ -->
+<section id="global-hotkey">
+  <h2>
+    <span class="en">4. Global Hotkey</span>
+    <span class="zh">4. 全局快捷键</span>
+  </h2>
+  <p>
+    <span class="en">The killer feature — record from <strong>any app</strong> and auto-paste the result.</span>
+    <span class="zh">核心功能——在<strong>任何应用</strong>中录音，自动粘贴结果。</span>
+  </p>
+
+  <div class="step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <h3>
+        <span class="en">Hold <kbd>&#8984;</kbd> + <kbd>;</kbd></span>
+        <span class="zh">按住 <kbd>&#8984;</kbd> + <kbd>;</kbd></span>
+      </h3>
+      <p>
+        <span class="en">A floating panel appears. Speak while holding the keys.</span>
+        <span class="zh">浮动面板出现，按住按键的同时说话。</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <h3>
+        <span class="en">Release to Transcribe</span>
+        <span class="zh">松开即转录</span>
+      </h3>
+      <p>
+        <span class="en">The panel shows a progress indicator while transcribing.</span>
+        <span class="zh">面板显示转录进度。</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-number">3</div>
+    <div class="step-content">
+      <h3>
+        <span class="en">Auto-Paste</span>
+        <span class="zh">自动粘贴</span>
+      </h3>
+      <p>
+        <span class="en">The transcribed text is automatically pasted at your cursor position.</span>
+        <span class="zh">转录文本自动粘贴到你的光标位置。</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="screenshot">
+    <img src="images/global-hotkey-panel.png" alt="Floating recording panel">
+    <div class="caption">
+      <span class="en">Floating panel during global hotkey recording</span>
+      <span class="zh">全局快捷键录音时的浮动面板</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="en"><strong>Note:</strong> Auto-paste requires Accessibility permission. You can customize the hotkey in Settings &rarr; Shortcuts.</span>
+    <span class="zh"><strong>注意：</strong>自动粘贴需要辅助功能权限。你可以在设置 &rarr; 快捷键中自定义快捷键。</span>
+  </div>
+</section>
+
+<!-- ============ 5. SETTINGS ============ -->
+<section id="settings">
+  <h2>
+    <span class="en">5. Settings</span>
+    <span class="zh">5. 设置</span>
+  </h2>
+  <p>
+    <span class="en">Access Settings from the menu bar or by pressing <kbd>&#8984;</kbd> + <kbd>,</kbd> in the main window.</span>
+    <span class="zh">从菜单栏打开设置，或在主窗口中按 <kbd>&#8984;</kbd> + <kbd>,</kbd>。</span>
+  </p>
+
+  <table>
+    <tr>
+      <th>
+        <span class="en">Tab</span>
+        <span class="zh">标签页</span>
+      </th>
+      <th>
+        <span class="en">What You Can Configure</span>
+        <span class="zh">可配置项</span>
+      </th>
+    </tr>
+    <tr>
+      <td><strong>General</strong></td>
+      <td>
+        <span class="en">UI language, STT engine (Whisper / Apple Speech), output script (Simplified / Traditional Chinese)</span>
+        <span class="zh">界面语言、语音引擎（Whisper / Apple 语音识别）、输出字体（简体/繁体中文）</span>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Models</strong></td>
+      <td>
+        <span class="en">Download, switch, or delete Whisper models</span>
+        <span class="zh">下载、切换或删除 Whisper 模型</span>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Shortcuts</strong></td>
+      <td>
+        <span class="en">Customize global hotkey, check Accessibility permission</span>
+        <span class="zh">自定义全局快捷键、检查辅助功能权限</span>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>AI Services</strong></td>
+      <td>
+        <span class="en">Configure LLM API for post-edit text improvement</span>
+        <span class="zh">配置 LLM API 进行转录后文本润色</span>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Advanced</strong></td>
+      <td>
+        <span class="en">Punctuation restoration model, developer mode</span>
+        <span class="zh">标点还原模型、开发者模式</span>
+      </td>
+    </tr>
+  </table>
+
+  <div class="screenshot">
+    <img src="images/settings.png" alt="Settings window">
+    <div class="caption">
+      <span class="en">Settings — General tab</span>
+      <span class="zh">设置 — 通用标签页</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. FEATURES ============ -->
+<section id="features">
+  <h2>
+    <span class="en">6. Key Features</span>
+    <span class="zh">6. 主要功能</span>
+  </h2>
+
+  <h3>
+    <span class="en">Punctuation Restoration</span>
+    <span class="zh">标点还原</span>
+  </h3>
+  <p>
+    <span class="en">Chinese transcriptions automatically get punctuation added via an on-device BERT model. Download it from Settings &rarr; Advanced. No internet required.</span>
+    <span class="zh">中文转录自动通过设备端 BERT 模型添加标点。在设置 &rarr; 高级中下载模型，无需联网。</span>
+  </p>
+
+  <h3>
+    <span class="en">Post-Edit Revise (AI)</span>
+    <span class="zh">AI 润色</span>
+  </h3>
+  <p>
+    <span class="en">Optionally send transcriptions through an LLM for improved clarity and flow. Configure your API key in Settings &rarr; AI Services.</span>
+    <span class="zh">可选将转录文本通过 LLM 润色，提升表达流畅度。在设置 &rarr; AI 服务中配置 API 密钥。</span>
+  </p>
+
+  <h3>
+    <span class="en">99 Languages</span>
+    <span class="zh">99 种语言</span>
+  </h3>
+  <p>
+    <span class="en">Whisper supports automatic language detection. Speak in any language and it will be recognized.</span>
+    <span class="zh">Whisper 支持自动语言检测，说任何语言都能识别。</span>
+  </p>
+
+  <h3>
+    <span class="en">Script Conversion</span>
+    <span class="zh">简繁转换</span>
+  </h3>
+  <p>
+    <span class="en">Seamlessly convert between Simplified and Traditional Chinese output.</span>
+    <span class="zh">在简体和繁体中文输出之间无缝切换。</span>
+  </p>
+</section>
+
+<!-- ============ 7. TROUBLESHOOTING ============ -->
+<section id="troubleshooting">
+  <h2>
+    <span class="en">7. Troubleshooting</span>
+    <span class="zh">7. 常见问题</span>
+  </h2>
+
+  <table>
+    <tr>
+      <th>
+        <span class="en">Problem</span>
+        <span class="zh">问题</span>
+      </th>
+      <th>
+        <span class="en">Solution</span>
+        <span class="zh">解决方案</span>
+      </th>
+    </tr>
+    <tr>
+      <td>
+        <span class="en">App won't open (security warning)</span>
+        <span class="zh">无法打开应用（安全警告）</span>
+      </td>
+      <td>
+        <span class="en">Right-click &rarr; Open &rarr; Open. Or: System Settings &rarr; Privacy &amp; Security &rarr; Open Anyway.</span>
+        <span class="zh">右键 &rarr; 打开 &rarr; 打开。或者：系统设置 &rarr; 隐私与安全性 &rarr; 仍要打开。</span>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <span class="en">No audio / microphone not working</span>
+        <span class="zh">没有声音 / 麦克风不工作</span>
+      </td>
+      <td>
+        <span class="en">
+          <strong>1.</strong> System Settings &rarr; Privacy &amp; Security &rarr; Microphone &rarr; make sure Voice2Text is toggled <strong>ON</strong>.<br>
+          <strong>2.</strong> If Voice2Text is not in the list, try recording once — macOS should prompt you. If it still doesn't appear, restart the app.<br>
+          <strong>3.</strong> Check that your Mac's input device is set correctly in System Settings &rarr; Sound &rarr; Input.
+        </span>
+        <span class="zh">
+          <strong>1.</strong> 系统设置 &rarr; 隐私与安全性 &rarr; 麦克风 &rarr; 确认 Voice2Text 的开关已打开。<br>
+          <strong>2.</strong> 如果列表中没有 Voice2Text，尝试录音一次——macOS 应会弹出提示。若仍未出现，请重启应用。<br>
+          <strong>3.</strong> 检查系统设置 &rarr; 声音 &rarr; 输入中的输入设备是否正确。
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <span class="en">Global hotkey not pasting</span>
+        <span class="zh">全局快捷键无法粘贴</span>
+      </td>
+      <td>
+        <span class="en">System Settings &rarr; Privacy &amp; Security &rarr; Accessibility &rarr; add Voice2Text. After app updates, you may need to remove and re-add it.</span>
+        <span class="zh">系统设置 &rarr; 隐私与安全性 &rarr; 辅助功能 &rarr; 添加 Voice2Text。应用更新后，可能需要先移除再重新添加。</span>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <span class="en">Model download stuck</span>
+        <span class="zh">模型下载卡住</span>
+      </td>
+      <td>
+        <span class="en">Check your internet connection. Models are downloaded from HuggingFace. Try a different model size.</span>
+        <span class="zh">检查网络连接。模型从 HuggingFace 下载，可以尝试其他大小的模型。</span>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <span class="en">Apple Speech not available</span>
+        <span class="zh">Apple 语音识别不可用</span>
+      </td>
+      <td>
+        <span class="en">Apple Speech requires an internet connection. Check your network status.</span>
+        <span class="zh">Apple 语音识别需要联网，请检查网络状态。</span>
+      </td>
+    </tr>
+  </table>
+
+  <div class="tip">
+    <span class="en"><strong>Tip:</strong> Enable Developer Mode in Settings &rarr; Advanced to access debug logs for detailed troubleshooting.</span>
+    <span class="zh"><strong>提示：</strong>在设置 &rarr; 高级中启用开发者模式，可查看调试日志以便排查问题。</span>
+  </div>
+</section>
+
+<!-- ============ KEYBOARD SHORTCUTS ============ -->
+<section id="shortcuts">
+  <h2>
+    <span class="en">Keyboard Shortcuts</span>
+    <span class="zh">键盘快捷键</span>
+  </h2>
+  <table>
+    <tr>
+      <th>
+        <span class="en">Shortcut</span>
+        <span class="zh">快捷键</span>
+      </th>
+      <th>
+        <span class="en">Action</span>
+        <span class="zh">操作</span>
+      </th>
+    </tr>
+    <tr>
+      <td><kbd>Space</kbd> <span class="en">(hold)</span><span class="zh">（按住）</span></td>
+      <td>
+        <span class="en">Push-to-talk in main window</span>
+        <span class="zh">在主窗口中按住说话</span>
+      </td>
+    </tr>
+    <tr>
+      <td><kbd>&#8984;</kbd> + <kbd>;</kbd> <span class="en">(hold)</span><span class="zh">（按住）</span></td>
+      <td>
+        <span class="en">Global hotkey — record from any app</span>
+        <span class="zh">全局快捷键——在任何应用中录音</span>
+      </td>
+    </tr>
+    <tr>
+      <td><kbd>&#8984;</kbd> + <kbd>C</kbd></td>
+      <td>
+        <span class="en">Copy transcription</span>
+        <span class="zh">复制转录文本</span>
+      </td>
+    </tr>
+    <tr>
+      <td><kbd>&#8984;</kbd> + <kbd>,</kbd></td>
+      <td>
+        <span class="en">Open Settings</span>
+        <span class="zh">打开设置</span>
+      </td>
+    </tr>
+  </table>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<div class="footer">
+  <p>Voice2Text v1.9.0 &mdash; &copy; C. C. Hsieh</p>
+  <p style="margin-top:4px;">Built with whisper.cpp &bull; CoreML &bull; SwiftUI</p>
+</div>
+
+<script>
+function switchLang(lang) {
+  document.body.className = 'lang-' + lang;
+  document.getElementById('btn-en').className = lang === 'en' ? 'active' : '';
+  document.getElementById('btn-zh').className = lang === 'zh' ? 'active' : '';
+  try { localStorage.setItem('v2t-guide-lang', lang); } catch(e) {}
+}
+// Restore saved preference
+try {
+  var saved = localStorage.getItem('v2t-guide-lang');
+  if (saved === 'zh') switchLang('zh');
+} catch(e) {}
+</script>
+
+</body>
+</html>

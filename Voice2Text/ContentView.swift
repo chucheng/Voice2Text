@@ -141,7 +141,7 @@ struct ContentView: View {
     @ViewBuilder
     private var topBar: some View {
         HStack(spacing: 8) {
-            // Engine badge
+            // Engine badge — tap to toggle Whisper ↔ Apple Speech
             HStack(spacing: 4) {
                 Image(systemName: appState.sttEngine == .whisper ? "cpu" : "applelogo")
                     .font(.caption2)
@@ -152,6 +152,9 @@ struct ContentView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(Capsule().fill(.quaternary))
+            .onTapGesture {
+                appState.sttEngine = appState.sttEngine == .whisper ? .apple : .whisper
+            }
 
             // Service status capsules (BERT hidden when any LLM provider active)
             if appState.usePunctuationRestore && appState.postEditProvider == .none {

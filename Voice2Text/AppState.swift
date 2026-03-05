@@ -65,7 +65,7 @@ enum LocalLLMModel: String, CaseIterable, Identifiable {
         case .qwen05B: return "Qwen 2.5 0.5B (~400 MB)"
         case .qwen15B: return "Qwen 2.5 1.5B (~1.0 GB)"
         case .qwen3B:  return "Qwen 2.5 3B (~2.0 GB)"
-        case .qwen7B:  return "Qwen 2.5 7B (~4.5 GB)"
+        case .qwen7B:  return "Qwen 2.5 7B (~3.5 GB)"
         }
     }
 
@@ -76,7 +76,7 @@ enum LocalLLMModel: String, CaseIterable, Identifiable {
         case .qwen05B: return "qwen2.5-0.5b-instruct-q4_k_m.gguf"
         case .qwen15B: return "qwen2.5-1.5b-instruct-q4_k_m.gguf"
         case .qwen3B:  return "qwen2.5-3b-instruct-q4_k_m.gguf"
-        case .qwen7B:  return "qwen2.5-7b-instruct-q4_k_m.gguf"
+        case .qwen7B:  return "qwen2.5-7b-instruct-q3_k_m.gguf"
         }
     }
 
@@ -1127,8 +1127,10 @@ class AppState: ObservableObject {
     }
 
     func switchModel(to model: WhisperModel) {
+        let prev = selectedModel.displayName
         selectedModel = model
         UserDefaults.standard.set(model.rawValue, forKey: "selectedModel")
+        log("Switch model: \(prev) → \(model.displayName), downloaded=\(isModelDownloaded(model))")
         if isModelDownloaded(model) {
             loadModelIfAvailable()
         } else {
