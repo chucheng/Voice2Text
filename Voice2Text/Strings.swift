@@ -311,6 +311,9 @@ enum L {
     static var selectButton: String {
         lang == .english ? "Select" : "选择"
     }
+    static var selectedLabel: String {
+        lang == .english ? "Selected" : "已选择"
+    }
     static var downloadButton: String {
         lang == .english ? "Download" : "下载"
     }
@@ -389,10 +392,37 @@ enum L {
     static var aiServicesTab: String {
         lang == .english ? "AI Services" : "AI 服务"
     }
-    static var aiServicesWarning: String {
+    static var postEditProviderSection: String {
+        lang == .english ? "Post-Edit Provider" : "后编辑服务"
+    }
+    static var providerNone: String {
+        lang == .english ? "None (disabled)" : "无（禁用）"
+    }
+    static var providerLocalLLM: String {
+        lang == .english ? "Local LLM (offline, on-device)" : "本地 LLM（离线，设备端）"
+    }
+    static var providerCloudAPI: String {
+        lang == .english ? "Cloud API (Anthropic Claude)" : "云端 API（Anthropic Claude）"
+    }
+    static var localLLMModelSection: String {
+        lang == .english ? "Local LLM Model" : "本地 LLM 模型"
+    }
+    static var recommended: String {
+        lang == .english ? "Recommended" : "推荐"
+    }
+    static var localLLMNotImplemented: String {
+        lang == .english ? "Local LLM inference will be available in a future update." : "本地 LLM 推理将在后续版本中提供。"
+    }
+    static var localLLMDownloadPrompt: String {
+        lang == .english ? "Download a model to enable local post-editing. The recommended model (1.5B) offers a good balance of quality and speed." : "下载模型以启用本地后编辑。推荐的 1.5B 模型在质量和速度之间取得了良好的平衡。"
+    }
+    static var downloadRecommended: String {
+        lang == .english ? "Download Recommended Model" : "下载推荐模型"
+    }
+    static var cloudAPIWarning: String {
         lang == .english
-            ? "These settings connect to external AI services. Your transcription text will be sent to the configured API endpoint."
-            : "这些设置会连接外部 AI 服务。您的转写文本将被发送到配置的 API 端点。"
+            ? "Your transcription text will be sent to the configured API endpoint."
+            : "您的转写文本将被发送到配置的 API 端点。"
     }
     static var apiCredentialsSection: String {
         lang == .english ? "API Credentials" : "API 凭证"
@@ -433,13 +463,10 @@ enum L {
     static var postEditReviseSection: String {
         lang == .english ? "Post-Edit Revise" : "后编辑修订"
     }
-    static var enablePostEditRevise: String {
-        lang == .english ? "Enable Post-Edit Revise" : "启用后编辑修订"
-    }
-    static var postEditReviseDescription: String {
+    static var postEditProviderDescription: String {
         lang == .english
-            ? "Send transcription through Claude for post-editing:\n• Auto-punctuation for all languages (no BERT model needed)\n• English: fix spelling typos & grammar (tense, articles, agreement)\n• Chinese: correct misheard words & add proper punctuation\n• All languages: improve clarity while preserving original meaning\nFalls back gracefully on failure."
-            : "将转写文本通过 Claude 进行后期编辑：\n• 自动为所有语言添加标点（无需 BERT 模型）\n• 英文：修正拼写错误和语法（时态、冠词、主谓一致）\n• 中文：纠正误听词汇并添加正确标点\n• 所有语言：在保留原意的前提下提升清晰度\n失败时自动回退。"
+            ? "After transcription, an LLM can post-edit your text:\n• Auto-punctuation for all languages\n• Fix spelling, grammar, and misheard words\n• Improve clarity while preserving meaning"
+            : "转写后，LLM 可以对文本进行后编辑：\n• 自动为所有语言添加标点\n• 修正拼写、语法和误听词汇\n• 在保留原意的前提下提升清晰度"
     }
     static var reviseFailedBanner: String {
         lang == .english ? "Revise failed — using original text" : "修订失败 — 使用原始文本"

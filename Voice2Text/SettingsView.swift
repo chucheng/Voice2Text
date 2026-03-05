@@ -354,199 +354,235 @@ private struct AIServicesTab: View {
 
     var body: some View {
         Form {
-            // Warning banner
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(.orange)
-                Text(L.aiServicesWarning)
-                    .font(.caption)
-                    .foregroundColor(.orange)
-            }
-            .padding(8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.1)))
-            .listRowInsets(EdgeInsets())
-            .padding(.horizontal)
+            // Provider picker
+            Section(L.postEditProviderSection) {
+                Picker(L.postEditProviderSection, selection: $appState.postEditProvider) {
+                    Text(L.providerNone).tag(PostEditProvider.none)
+                    Text(L.providerLocalLLM).tag(PostEditProvider.localLLM)
+                    Text(L.providerCloudAPI).tag(PostEditProvider.cloudAPI)
+                }
+                .pickerStyle(.radioGroup)
+                .labelsHidden()
 
-            Section(L.apiCredentialsSection) {
-                // Base URL
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L.baseURLLabel).font(.caption).foregroundColor(.secondary)
-                    TextField(L.baseURLPlaceholder, text: $baseURLDraft)
-                        .textFieldStyle(.roundedBorder)
-                }
-                if !isBaseURLValid {
-                    Text(L.invalidBaseURL)
-                        .font(.caption)
-                        .foregroundColor(.red)
-                }
-                if AnthropicClient.isInsecureURL(baseURLDraft) {
-                    Text(L.insecureURLWarning)
+                Text(L.postEditProviderDescription)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            // Local LLM section
+            if appState.postEditProvider == .localLLM {
+                Section(L.localLLMModelSection) {
+                    // Download prompt when no model downloaded
+                    if !appState.isAnyLocalLLMModelDownloaded && !appState.isDownloadingLocalLLM {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(L.localLLMDownloadPrompt)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+
+                            Button(L.downloadRecommended) {
+                                appState.selectLocalLLMModel(.qwen15B)
+                                appState.downloadLocalLLMModel(.qwen15B)
+                            }
+                            .controlSize(.small)
+                            .buttonStyle(.borderedProminent)
+                        }
+                    }
+
+                    ForEach(LocalLLMModel.allCases) { model in
+                        LocalLLMModelRow(model: model, appState: appState)
+                    }
+
+                    if appState.isDownloadingLocalLLM {
+                        VStack(spacing: 4) {
+                            ProgressView(value: appState.localLLMDownloadProgress)
+                            Text(L.downloadingProgress(Int(appState.localLLMDownloadProgress * 100)))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    Text(L.localLLMNotImplemented)
                         .font(.caption)
                         .foregroundColor(.orange)
                 }
+            }
 
-                // Model
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L.modelLabel).font(.caption).foregroundColor(.secondary)
-                    TextField("", text: $modelDraft)
-                        .textFieldStyle(.roundedBorder)
-                }
+            // Cloud API section
+            if appState.postEditProvider == .cloudAPI {
+                Section(L.apiCredentialsSection) {
+                    // Warning banner
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        Text(L.cloudAPIWarning)
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.1)))
+                    // Base URL
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L.baseURLLabel).font(.caption).foregroundColor(.secondary)
+                        TextField(L.baseURLPlaceholder, text: $baseURLDraft)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                    if !isBaseURLValid {
+                        Text(L.invalidBaseURL)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
+                    if AnthropicClient.isInsecureURL(baseURLDraft) {
+                        Text(L.insecureURLWarning)
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
 
-                // Save Credentials / Revert
-                HStack(spacing: 8) {
-                    Button(L.saveCredentials) {
-                        appState.dangerousZoneBaseURL = baseURLDraft
-                        appState.dangerousZoneModel = modelDraft
-                        appState.resetAPICheckState()
-                        credentialsSavedFeedback = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                            credentialsSavedFeedback = false
+                    // Model
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L.modelLabel).font(.caption).foregroundColor(.secondary)
+                        TextField("", text: $modelDraft)
+                            .textFieldStyle(.roundedBorder)
+                    }
+
+                    // Save Credentials / Revert
+                    HStack(spacing: 8) {
+                        Button(L.saveCredentials) {
+                            appState.dangerousZoneBaseURL = baseURLDraft
+                            appState.dangerousZoneModel = modelDraft
+                            appState.resetAPICheckState()
+                            credentialsSavedFeedback = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                credentialsSavedFeedback = false
+                            }
+                        }
+                        .disabled(!hasUnsavedCredentials || !isBaseURLValid)
+                        .controlSize(.small)
+
+                        Button(L.revert) {
+                            baseURLDraft = appState.dangerousZoneBaseURL
+                            modelDraft = appState.dangerousZoneModel
+                        }
+                        .disabled(!hasUnsavedCredentials)
+                        .controlSize(.small)
+
+                        Spacer()
+
+                        if credentialsSavedFeedback {
+                            Label(L.credentialsSaved, systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                        } else if hasUnsavedCredentials {
+                            Label(L.unsavedChanges, systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundColor(.orange)
                         }
                     }
-                    .disabled(!hasUnsavedCredentials || !isBaseURLValid)
-                    .controlSize(.small)
 
-                    Button(L.revert) {
-                        baseURLDraft = appState.dangerousZoneBaseURL
-                        modelDraft = appState.dangerousZoneModel
+                    // API Token
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L.apiTokenLabel).font(.caption).foregroundColor(.secondary)
+                        HStack {
+                            if showToken {
+                                TextField(L.apiTokenPlaceholder, text: $tokenInput)
+                                    .textFieldStyle(.roundedBorder)
+                            } else {
+                                SecureField(L.apiTokenPlaceholder, text: $tokenInput)
+                                    .textFieldStyle(.roundedBorder)
+                            }
+                            Button(action: { showToken.toggle() }) {
+                                Image(systemName: showToken ? "eye.slash" : "eye")
+                            }
+                            .buttonStyle(.borderless)
+                        }
                     }
-                    .disabled(!hasUnsavedCredentials)
-                    .controlSize(.small)
 
-                    Spacer()
+                    HStack(spacing: 8) {
+                        Button(L.saveToken) {
+                            appState.saveDangerousZoneToken(tokenInput)
+                            tokenInput = ""
+                            tokenSavedFeedback = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                tokenSavedFeedback = false
+                            }
+                        }
+                        .disabled(tokenInput.isEmpty)
+                        .controlSize(.small)
 
-                    if credentialsSavedFeedback {
-                        Label(L.credentialsSaved, systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundColor(.green)
-                    } else if hasUnsavedCredentials {
-                        Label(L.unsavedChanges, systemImage: "exclamationmark.triangle.fill")
+                        if appState.dangerousZoneTokenIsSet {
+                            Button(L.deleteToken, role: .destructive) {
+                                appState.deleteDangerousZoneToken()
+                                tokenSavedFeedback = false
+                            }
+                            .controlSize(.small)
+                        }
+
+                        Spacer()
+
+                        // Token status
+                        if tokenSavedFeedback {
+                            Label(L.tokenSaved, systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                        } else if appState.dangerousZoneTokenIsSet {
+                            Label(L.tokenIsSet, systemImage: "key.fill")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else {
+                            Label(L.tokenNotSet, systemImage: "key")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    // Check API + Enable
+                    HStack(spacing: 8) {
+                        Button(L.checkAPI) {
+                            appState.pendingEnableRevise = true
+                            appState.performAPICheck()
+                        }
+                        .disabled(!appState.dangerousZoneTokenIsSet
+                                  || appState.dangerousZoneBaseURL.isEmpty
+                                  || !isBaseURLValid
+                                  || appState.apiCheckState == .checking
+                                  || hasUnsavedCredentials)
+                        .controlSize(.small)
+
+                        switch appState.apiCheckState {
+                        case .unchecked:
+                            EmptyView()
+                        case .checking:
+                            ProgressView()
+                                .controlSize(.small)
+                            Text(L.checking)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        case .valid(let ms):
+                            Label(L.apiValid(ms), systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                        case .invalid(let msg):
+                            Label(L.apiInvalid(msg), systemImage: "xmark.circle.fill")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+
+                if appState.usePostEditRevise {
+                    Section(L.postEditReviseSection) {
+                        Text(L.reviseExclusivityNote)
                             .font(.caption)
                             .foregroundColor(.orange)
                     }
                 }
-
-                // API Token
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L.apiTokenLabel).font(.caption).foregroundColor(.secondary)
-                    HStack {
-                        if showToken {
-                            TextField(L.apiTokenPlaceholder, text: $tokenInput)
-                                .textFieldStyle(.roundedBorder)
-                        } else {
-                            SecureField(L.apiTokenPlaceholder, text: $tokenInput)
-                                .textFieldStyle(.roundedBorder)
-                        }
-                        Button(action: { showToken.toggle() }) {
-                            Image(systemName: showToken ? "eye.slash" : "eye")
-                        }
-                        .buttonStyle(.borderless)
-                    }
-                }
-
-                HStack(spacing: 8) {
-                    Button(L.saveToken) {
-                        appState.saveDangerousZoneToken(tokenInput)
-                        tokenInput = ""
-                        tokenSavedFeedback = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                            tokenSavedFeedback = false
-                        }
-                    }
-                    .disabled(tokenInput.isEmpty)
-                    .controlSize(.small)
-
-                    if appState.dangerousZoneTokenIsSet {
-                        Button(L.deleteToken, role: .destructive) {
-                            appState.deleteDangerousZoneToken()
-                            tokenSavedFeedback = false
-                        }
-                        .controlSize(.small)
-                    }
-
-                    Spacer()
-
-                    // Token status
-                    if tokenSavedFeedback {
-                        Label(L.tokenSaved, systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundColor(.green)
-                    } else if appState.dangerousZoneTokenIsSet {
-                        Label(L.tokenIsSet, systemImage: "key.fill")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    } else {
-                        Label(L.tokenNotSet, systemImage: "key")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                // Check API button + status
-                HStack(spacing: 8) {
-                    Button(L.checkAPI) {
-                        appState.performAPICheck()
-                    }
-                    .disabled(!appState.dangerousZoneTokenIsSet
-                              || appState.dangerousZoneBaseURL.isEmpty
-                              || !isBaseURLValid
-                              || appState.apiCheckState == .checking
-                              || hasUnsavedCredentials)
-                    .controlSize(.small)
-
-                    switch appState.apiCheckState {
-                    case .unchecked:
-                        EmptyView()
-                    case .checking:
-                        ProgressView()
-                            .controlSize(.small)
-                        Text(L.checking)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    case .valid(let ms):
-                        Label(L.apiValid(ms), systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundColor(.green)
-                    case .invalid(let msg):
-                        Label(L.apiInvalid(msg), systemImage: "xmark.circle.fill")
-                            .font(.caption)
-                            .foregroundColor(.red)
-                    }
-                }
             }
 
-            Section(L.postEditReviseSection) {
-                Toggle(L.enablePostEditRevise, isOn: Binding(
-                    get: { appState.usePostEditRevise },
-                    set: { newValue in
-                        if newValue && !appState.apiCheckState.isValid {
-                            // Auto-check API when user tries to enable
-                            appState.pendingEnableRevise = true
-                            appState.performAPICheck()
-                        } else {
-                            appState.usePostEditRevise = newValue
-                        }
-                    }
-                ))
-                .disabled(appState.apiCheckState == .checking
-                          || !appState.dangerousZoneTokenIsSet
-                          || appState.dangerousZoneBaseURL.isEmpty)
-
-                Text(L.postEditReviseDescription)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                if appState.usePostEditRevise {
-                    Text(L.reviseExclusivityNote)
-                        .font(.caption)
-                        .foregroundColor(.orange)
-
+            // Custom prompt (shared, shown when any provider is active)
+            if appState.postEditProvider != .none {
+                Section(L.customPromptLabel) {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text(L.customPromptLabel)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
                             Spacer()
 
                             if promptDraft != appState.customRevisePrompt {
@@ -590,5 +626,64 @@ private struct AIServicesTab: View {
             baseURLDraft = appState.dangerousZoneBaseURL
             modelDraft = appState.dangerousZoneModel
         }
+    }
+}
+
+// MARK: - Local LLM Model Row
+
+private struct LocalLLMModelRow: View {
+    let model: LocalLLMModel
+    @ObservedObject var appState: AppState
+
+    private var isSelected: Bool { appState.selectedLocalLLMModel == model }
+    private var isDownloaded: Bool { appState.isLocalLLMModelDownloaded(model) }
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(model.displayName)
+                        .fontWeight(isSelected ? .semibold : .regular)
+                    if model.isRecommended {
+                        Text(L.recommended)
+                            .font(.caption2)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(Color.blue.opacity(0.15)))
+                            .foregroundColor(.blue)
+                    }
+                }
+            }
+
+            Spacer()
+
+            if isDownloaded {
+                if isSelected {
+                    Label(L.selectedLabel, systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                } else {
+                    Button(L.selectButton) {
+                        appState.selectLocalLLMModel(model)
+                    }
+                    .controlSize(.small)
+                }
+                Button(role: .destructive) {
+                    appState.deleteLocalLLMModel(model)
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .help(L.deleteTooltip)
+            } else {
+                Button(L.downloadButton) {
+                    appState.selectLocalLLMModel(model)
+                    appState.downloadLocalLLMModel(model)
+                }
+                .controlSize(.small)
+                .disabled(appState.isDownloadingLocalLLM)
+            }
+        }
+        .padding(.vertical, 2)
     }
 }
