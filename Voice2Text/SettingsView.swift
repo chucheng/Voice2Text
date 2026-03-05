@@ -335,14 +335,21 @@ private struct AdvancedTab: View {
 
 private struct AIServicesTab: View {
     @ObservedObject var appState: AppState
+    @State private var baseURLDraft = ""
+    @State private var modelDraft = ""
     @State private var tokenInput = ""
     @State private var showToken = false
     @State private var tokenSavedFeedback = false
+    @State private var credentialsSavedFeedback = false
     @State private var promptDraft = ""
     @State private var promptSavedFeedback = false
 
     private var isBaseURLValid: Bool {
-        appState.dangerousZoneBaseURL.isEmpty || AnthropicClient.isValidBaseURL(appState.dangerousZoneBaseURL)
+        baseURLDraft.isEmpty || AnthropicClient.isValidBaseURL(baseURLDraft)
+    }
+
+    private var hasUnsavedCredentials: Bool {
+        baseURLDraft != appState.dangerousZoneBaseURL || modelDraft != appState.dangerousZoneModel
     }
 
     var body: some View {
@@ -365,18 +372,15 @@ private struct AIServicesTab: View {
                 // Base URL
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L.baseURLLabel).font(.caption).foregroundColor(.secondary)
-                    TextField(L.baseURLPlaceholder, text: $appState.dangerousZoneBaseURL)
+                    TextField(L.baseURLPlaceholder, text: $baseURLDraft)
                         .textFieldStyle(.roundedBorder)
-                        .onChange(of: appState.dangerousZoneBaseURL) {
-                            appState.resetAPICheckState()
-                        }
                 }
                 if !isBaseURLValid {
                     Text(L.invalidBaseURL)
                         .font(.caption)
                         .foregroundColor(.red)
                 }
-                if AnthropicClient.isInsecureURL(appState.dangerousZoneBaseURL) {
+                if AnthropicClient.isInsecureURL(baseURLDraft) {
                     Text(L.insecureURLWarning)
                         .font(.caption)
                         .foregroundColor(.orange)
@@ -385,11 +389,42 @@ private struct AIServicesTab: View {
                 // Model
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L.modelLabel).font(.caption).foregroundColor(.secondary)
-                    TextField("", text: $appState.dangerousZoneModel)
+                    TextField("", text: $modelDraft)
                         .textFieldStyle(.roundedBorder)
-                        .onChange(of: appState.dangerousZoneModel) {
-                            appState.resetAPICheckState()
+                }
+
+                // Save Credentials / Revert
+                HStack(spacing: 8) {
+                    Button(L.saveCredentials) {
+                        appState.dangerousZoneBaseURL = baseURLDraft
+                        appState.dangerousZoneModel = modelDraft
+                        appState.resetAPICheckState()
+                        credentialsSavedFeedback = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                            credentialsSavedFeedback = false
                         }
+                    }
+                    .disabled(!hasUnsavedCredentials || !isBaseURLValid)
+                    .controlSize(.small)
+
+                    Button(L.revert) {
+                        baseURLDraft = appState.dangerousZoneBaseURL
+                        modelDraft = appState.dangerousZoneModel
+                    }
+                    .disabled(!hasUnsavedCredentials)
+                    .controlSize(.small)
+
+                    Spacer()
+
+                    if credentialsSavedFeedback {
+                        Label(L.credentialsSaved, systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                    } else if hasUnsavedCredentials {
+                        Label(L.unsavedChanges, systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
                 }
 
                 // API Token
@@ -456,7 +491,8 @@ private struct AIServicesTab: View {
                     .disabled(!appState.dangerousZoneTokenIsSet
                               || appState.dangerousZoneBaseURL.isEmpty
                               || !isBaseURLValid
-                              || appState.apiCheckState == .checking)
+                              || appState.apiCheckState == .checking
+                              || hasUnsavedCredentials)
                     .controlSize(.small)
 
                     switch appState.apiCheckState {
@@ -550,5 +586,9 @@ private struct AIServicesTab: View {
         }
         .formStyle(.grouped)
         .padding()
+        .onAppear {
+            baseURLDraft = appState.dangerousZoneBaseURL
+            modelDraft = appState.dangerousZoneModel
+        }
     }
 }

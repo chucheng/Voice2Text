@@ -473,6 +473,18 @@ enum L {
     static var insecureURLWarning: String {
         lang == .english ? "Warning: HTTP sends credentials in cleartext" : "警告：HTTP 以明文发送凭证"
     }
+    static var saveCredentials: String {
+        lang == .english ? "Save Credentials" : "保存凭证"
+    }
+    static var revert: String {
+        lang == .english ? "Revert" : "还原"
+    }
+    static var unsavedChanges: String {
+        lang == .english ? "Unsaved changes" : "有未保存的更改"
+    }
+    static var credentialsSaved: String {
+        lang == .english ? "Saved" : "已保存"
+    }
 
     // MARK: Punctuation Model
 
