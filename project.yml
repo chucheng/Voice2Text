@@ -15,8 +15,8 @@ targets:
       base:
         CODE_SIGN_ENTITLEMENTS: Voice2Text/Voice2Text.entitlements
         PRODUCT_BUNDLE_IDENTIFIER: com.voice2text.Voice2Text
-        MARKETING_VERSION: "2.0.1"
-        CURRENT_PROJECT_VERSION: "14"
+        MARKETING_VERSION: "2.0.2"
+        CURRENT_PROJECT_VERSION: "15"
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         ENABLE_HARDENED_RUNTIME: true
         SWIFT_OBJC_BRIDGING_HEADER: Voice2Text/Voice2Text-Bridging-Header.h
@@ -47,7 +47,7 @@ targets:
       properties:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
-        NSHumanReadableCopyright: "Copyright © 2025-2026 C. C. Hsieh. GPL v3.0 License."
+        NSHumanReadableCopyright: "Copyright © 2025-2026 Chucheng Hsieh. GPL v3.0 License."
         NSMicrophoneUsageDescription: "Voice2Text needs microphone access to record audio for transcription."
         NSSpeechRecognitionUsageDescription: "Voice2Text uses speech recognition to transcribe your voice."
         NSAppTransportSecurity:

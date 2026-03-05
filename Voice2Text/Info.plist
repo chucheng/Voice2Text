@@ -32,7 +32,7 @@
 		</dict>
 	</dict>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2025-2026 C. C. Hsieh. GPL v3.0 License.</string>
+	<string>Copyright © 2025-2026 Chucheng Hsieh. GPL v3.0 License.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Voice2Text needs microphone access to record audio for transcription.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
