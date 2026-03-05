@@ -544,7 +544,6 @@ private struct AIServicesTab: View {
                     // Check API + Enable
                     HStack(spacing: 8) {
                         Button(L.checkAPI) {
-                            appState.pendingEnableRevise = true
                             appState.performAPICheck()
                         }
                         .disabled(!appState.dangerousZoneTokenIsSet
@@ -575,13 +574,6 @@ private struct AIServicesTab: View {
                     }
                 }
 
-                if appState.usePostEditRevise {
-                    Section(L.postEditReviseSection) {
-                        Text(L.reviseExclusivityNote)
-                            .font(.caption)
-                            .foregroundColor(.orange)
-                    }
-                }
             }
 
             // Custom prompt (shared, shown when any provider is active)

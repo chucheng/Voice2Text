@@ -1,5 +1,24 @@
 [
     {
+        "version": "1.10.1",
+        "changes": {
+            "en": [
+                "Improved: Cloud API auto-activates when credentials exist — no manual enable needed",
+                "Improved: Keychain only read when Cloud API is selected (lazy loading)",
+                "Improved: Cloud API badge shows spinner during check, tap red to retry",
+                "Removed: Redundant Post-Edit Revise toggle — provider picker handles everything",
+                "Improved: Auto-punctuation shows 'on standby' instead of 'paused' when AI revise active"
+            ],
+            "zh": [
+                "改进：切换到云端 API 时自动激活（无需手动启用）",
+                "改进：仅在选择云端 API 时读取钥匙串（延迟加载）",
+                "改进：云端 API 徽章检查中显示旋转指示器，点击红色重试",
+                "移除：冗余的后编辑修订开关 — 由提供者选择器统一控制",
+                "改进：AI 修正激活时，自动标点显示「待命中」而非「已暂停」"
+            ]
+        }
+    },
+    {
         "version": "1.10.0",
         "changes": {
             "en": [

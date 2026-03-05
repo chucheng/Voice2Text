@@ -493,7 +493,7 @@ enum L {
         lang == .english ? "Saved" : "已保存"
     }
     static var punctuationHandledByRevise: String {
-        lang == .english ? "Auto-punctuation is paused — AI Revise handles punctuation" : "自动标点已暂停 — 由 AI 修正处理标点"
+        lang == .english ? "Auto-punctuation on standby — used as fallback if AI Revise fails" : "自动标点待命中 — 仅在 AI 修正失败时作为后备"
     }
     static var reviseExclusivityNote: String {
         lang == .english

@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.10.0** — Local LLM inference via llama.cpp (Qwen), three-state badge, download protection, corrupt model auto-delete.
+**Version: 1.10.1** — Cloud API auto-activate, lazy Keychain, remove redundant Post-Edit Revise toggle.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
