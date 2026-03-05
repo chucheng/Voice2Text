@@ -264,27 +264,63 @@ Voice2Text/
 ├── PunctuationRestorer.swift    # CoreML BERT inference for Chinese punctuation restoration
 ├── vocab.txt                    # WordPiece vocabulary (21K tokens) bundled for tokenizer
 ├── AnthropicClient.swift        # Claude API client: API check, Post-Edit Revise, custom prompt
-├── WhatsNewView.swift           # What's New overlay with 3s countdown auto-dismiss
+├── LlamaBridge.swift            # Swift wrapper around llama.cpp C API for local LLM inference
+├── WhatsNewView.swift           # What's New overlay with 8s countdown auto-dismiss
 ├── WhatsNew.json                # Bundled changelog (bilingual en/zh)
 ├── DebugLogWindow.swift         # Separate debug log window with Copy All
 ├── KeychainHelper.swift         # macOS Keychain wrapper for API token storage
 ├── AppDelegate.swift            # Dock icon handler + graceful shutdown
-├── WindowAccessor.swift         # NSWindow reference capture + hide-on-close
-├── Voice2Text-Bridging-Header.h # C interop header for whisper.cpp
+├── WindowAccessor.swift         # NSWindow reference capture + quit-on-close
+├── Voice2Text-Bridging-Header.h # C interop header for whisper.cpp + llama.cpp
 ├── Voice2Text.entitlements      # App Sandbox: audio-input + network-client
 ├── Info.plist                   # Microphone + Speech Recognition usage descriptions
 └── Assets.xcassets/             # Asset catalog
 Whisper/
 ├── lib/                         # Pre-built static libraries (whisper, ggml, metal, cpu, blas)
 └── include/                     # Header files (whisper.h, ggml*.h)
+LlamaCpp/
+├── lib/                         # Pre-built static library (libllama.a)
+└── include/                     # Header file (llama.h)
+docs/
+├── Getting Started.html         # User guide included in DMG
+└── images/                      # Screenshots for the guide
 scripts/
 ├── convert_punctuation_model.py # Convert PyTorch BERT → CoreML .mlpackage
 ├── build_dmg.sh                 # Build Voice2Text.dmg for distribution
+├── build_llama.sh               # Build llama.cpp static lib for macOS arm64
+├── build_whisper.sh             # Build whisper.cpp static lib for macOS arm64
 └── requirements.txt             # Python dependencies for model conversion
 project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v1.10.3 — Engine Toggle + Qwen 7B Fix
+- **Engine toggle** — tap STT engine badge to switch Whisper ↔ Apple Speech
+- **Fix: Qwen 7B download** — Q4_K_M was split into 2 files; switched to single-file Q3_K_M (~3.5 GB)
+- **Menu bar icon** — filled waveform icon, no text label
+- **Getting Started guide** — HTML guide with screenshots included in DMG
+
+### v1.10.2 — Window Close + Onboarding Reset + Lazy Keychain
+- **Window close quits app** — clicking X now terminates the app instead of hiding
+- **Reset Onboarding** — button in Settings > Advanced > Dev Mode
+- **Accessibility upgrade detection** — onboarding detects stale permission after app upgrade, guides user to remove and re-add
+- **Lazy Keychain** — Keychain never read during app launch; only on first Cloud API use
+
+### v1.10.1 — Cloud API Auto-Activate + Cleanup
+- **Cloud API auto-activate** — switching to Cloud API auto-reads Keychain and checks credentials
+- **Lazy Keychain loading** — only read when Cloud API is selected
+- **Cloud API badge** — spinner during check, tap red to retry
+- **Removed** — redundant Post-Edit Revise toggle (provider picker handles everything)
+- **Auto-punctuation standby** — shows "on standby" instead of "paused" when AI Revise active
+
+### v1.10.0 — Local LLM Inference (llama.cpp + Qwen)
+- **Local LLM inference** — on-device Qwen 2.5 post-editing powered by llama.cpp, no cloud needed
+- **Three-state badge** — green (loaded) / orange (downloaded) / red (not downloaded); tap orange to load
+- **Download protection** — cancel button, progress locked during download, provider picker disabled
+- **Corrupt model auto-detection** — invalid files deleted on load failure (both Whisper and LLM)
+- **Stronger punctuation** — revise prompt emphasizes correct punctuation at every boundary
+- **Dev mode** — full input/output text in debug logs
 
 ### v1.9.4 — What's New Display Time
 - **Longer display** — What's New screen auto-dismiss extended from 3 seconds to 8 seconds
