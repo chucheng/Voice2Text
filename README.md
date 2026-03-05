@@ -43,7 +43,7 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 - **Cmd+C smart copy** — copies full transcription when nothing selected
 - **Custom Revise Prompt** — customize what the LLM does with your transcript
 - **Secure API Key storage** — API Key stored in macOS Keychain, never in plaintext
-- **What's New screen** — shows changes after version update, auto-dismisses in 3 seconds
+- **What's New screen** — shows changes after version update, auto-dismisses in 8 seconds
 - **Debug log window** — separate resizable window with Copy All for troubleshooting
 - **Dev mode** — always-on logging (capped at 500 lines), viewable in debug log window
 - Menu bar + Dock presence
@@ -285,6 +285,9 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v1.9.4 — What's New Display Time
+- **Longer display** — What's New screen auto-dismiss extended from 3 seconds to 8 seconds
 
 ### v1.9.3 — Model Auto-Select + Debug Improvements
 - **Auto-select model** — when no saved preference exists (e.g. after settings reset), automatically picks the largest downloaded Whisper model instead of defaulting to Base

@@ -45,7 +45,7 @@ struct WhatsNewView: View {
     let language: UILanguage
     let onDismiss: () -> Void
 
-    @State private var countdown = 3
+    @State private var countdown = 8
     @State private var timer: Timer?
 
     /// Display version: use the first (newest) entry's version for the title.
@@ -105,7 +105,7 @@ struct WhatsNewView: View {
     }
 
     private func startCountdown() {
-        countdown = 3
+        countdown = 8
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if countdown > 1 {
                 countdown -= 1

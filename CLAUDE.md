@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.9.3** — Auto-select largest downloaded Whisper model when no saved default + debug log shows full text.
+**Version: 1.9.4** — What's New auto-dismiss extended to 8 seconds.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -26,7 +26,7 @@ STT engines:
 
 **Post-Edit Revise** (optional): after transcription, send text through Claude API to improve clarity and flow. Configured in Settings > AI Services tab. API token stored in macOS Keychain. Custom prompt support. When enabled, BERT punctuation is skipped (LLM handles it). On LLM failure, falls back to BERT if available, then to raw text.
 
-**What's New** screen: shown once after version update with 3-second countdown auto-dismiss. Reads from bundled `WhatsNew.json` (bilingual en/zh).
+**What's New** screen: shown once after version update with 8-second countdown auto-dismiss. Reads from bundled `WhatsNew.json` (bilingual en/zh).
 
 **Debug Log Window**: separate resizable window (opened from Settings > Advanced > Dev Mode). Logs always collected (capped at 500 lines) so history is available when Dev Mode is toggled on. Copy All button for easy export.
 
@@ -71,7 +71,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `Voice2Text/PunctuationRestorer.swift` | CoreML BERT inference for Chinese punctuation restoration, chunking for long text |
 | `Voice2Text/vocab.txt` | WordPiece vocabulary (21K tokens) bundled in app for tokenizer |
 | `Voice2Text/AnthropicClient.swift` | Claude API client: APICheckResult enum, checkAPI(), reviseText(prompt:), configurable base URL/model/token |
-| `Voice2Text/WhatsNewView.swift` | What's New overlay: version changelog display with 3s countdown auto-dismiss |
+| `Voice2Text/WhatsNewView.swift` | What's New overlay: version changelog display with 8s countdown auto-dismiss |
 | `Voice2Text/WhatsNew.json` | Bundled changelog data (bilingual en/zh, all versions) |
 | `Voice2Text/DebugLogWindow.swift` | Separate debug log window with Copy All, text selection |
 | `Voice2Text/KeychainHelper.swift` | Minimal macOS Keychain wrapper: saveToken, loadToken, deleteToken |

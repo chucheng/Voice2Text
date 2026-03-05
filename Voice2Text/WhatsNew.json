@@ -1,5 +1,16 @@
 [
     {
+        "version": "1.9.4",
+        "changes": {
+            "en": [
+                "Improved: What's New screen stays visible for 8 seconds (was 3s)"
+            ],
+            "zh": [
+                "改进：新功能提示显示时间延长至 8 秒（原为 3 秒）"
+            ]
+        }
+    },
+    {
         "version": "1.9.3",
         "changes": {
             "en": [
