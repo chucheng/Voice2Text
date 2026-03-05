@@ -264,9 +264,9 @@ private struct AdvancedTab: View {
         Form {
             Section(L.punctuationSection) {
                 Toggle(L.enablePunctuation, isOn: $appState.usePunctuationRestore)
-                    .disabled(!appState.isPunctuationModelLoaded || appState.usePostEditRevise)
+                    .disabled(!appState.isPunctuationModelLoaded || appState.postEditProvider != .none)
 
-                if appState.usePostEditRevise {
+                if appState.postEditProvider != .none {
                     Text(L.punctuationHandledByRevise)
                         .font(.caption)
                         .foregroundColor(.orange)

@@ -149,8 +149,13 @@ class AppState: ObservableObject {
     @Published var reviseFailedWithFallback = false
     @Published var customRevisePrompt: String = {
         let stored = UserDefaults.standard.string(forKey: "customRevisePrompt")
-        // Migrate: empty string from previous versions means "use default"
-        return (stored == nil || stored!.isEmpty) ? AnthropicClient.revisePrompt : stored!
+        // Migrate: empty or matching a known old default → use current default
+        if stored == nil || stored!.isEmpty { return AnthropicClient.revisePrompt }
+        // Detect old default prompt by its unique first rule (removed in v1.9.0)
+        if stored!.contains("Improve clarity only when the meaning is clearly implied by the context.") {
+            return AnthropicClient.revisePrompt
+        }
+        return stored!
     }() {
         didSet { UserDefaults.standard.set(customRevisePrompt, forKey: "customRevisePrompt") }
     }

@@ -134,6 +134,9 @@ enum L {
     static var aiRevise: String {
         lang == .english ? "AI Revise" : "AI 修正"
     }
+    static var localLLMBadge: String {
+        lang == .english ? "Local LLM" : "本地 LLM"
+    }
     static var reformatting: String {
         lang == .english ? "Reformatting..." : "正在重新格式化…"
     }

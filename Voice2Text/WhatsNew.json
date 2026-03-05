@@ -1,5 +1,20 @@
 [
     {
+        "version": "1.9.1",
+        "changes": {
+            "en": [
+                "Improved: Language-aware post-edit prompt — punctuation focus for non-English, detailed grammar fixes for English",
+                "New: Main window shows active AI service badge (Local LLM / AI Revise)",
+                "Fix: BERT punctuation auto-disabled when any LLM provider is active"
+            ],
+            "zh": [
+                "改进：语言感知后编辑提示 — 非英文重点加标点，英文细致语法修正",
+                "新增：主窗口显示当前 AI 服务状态（本地 LLM / AI 修正）",
+                "修复：启用任何 LLM 服务时自动禁用 BERT 标点"
+            ]
+        }
+    },
+    {
         "version": "1.9.0",
         "changes": {
             "en": [
