@@ -1,6 +1,7 @@
 # Xcode
 build/
 DerivedData/
+*.xcodeproj/project.pbxproj
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
 *.pbxuser
