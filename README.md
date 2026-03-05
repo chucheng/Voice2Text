@@ -4,15 +4,15 @@
 
 Powered by OpenAI Whisper for speech recognition and Qwen LLM for intelligent post-editing — both running entirely on-device. Hold a hotkey, speak, and your words appear at the cursor in any app.
 
-**免費、開源的 macOS 語音輸入工具 — 所有功能皆在本機運行，無需雲端服務、無需 API 費用、無需訂閱。**
+**免费、开源的 macOS 语音输入工具 — 所有功能皆在本机运行，无需云端服务、无需 API 费用、无需订阅。**
 
-採用 OpenAI Whisper 語音辨識 + Qwen LLM 智慧潤稿，全部在設備端執行。按住快捷鍵說話，文字自動出現在任何應用程式的游標位置。
+采用 OpenAI Whisper 语音识别 + Qwen LLM 智能润稿，全部在设备端执行。按住快捷键说话，文字自动出现在任何应用程序的光标位置。
 
 ---
 
 > **Supports 99 languages via Whisper.** Optimized for Chinese + English mixed input. On-device Qwen LLM adds punctuation and polishes transcription — no internet needed. Optional Cloud API (Anthropic Claude) also available for users who prefer it.
 >
-> **支援 99 種語言。** 針對中英文混合輸入特別優化。設備端 Qwen LLM 自動加標點、潤稿 — 無需聯網。也可選用雲端 API（Anthropic Claude）。
+> **支持 99 种语言。** 针对中英文混合输入特别优化。设备端 Qwen LLM 自动加标点、润稿 — 无需联网。也可选用云端 API（Anthropic Claude）。
 
 ---
 
@@ -49,6 +49,8 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 - Menu bar + Dock presence
 
 ## Installation (Non-Developer)
+
+> **New to Voice2Text?** See the [Getting Started Guide](docs/Getting%20Started.html) for a step-by-step walkthrough with screenshots.
 
 1. Download `Voice2Text.dmg` from the [Releases](../../releases) page
 2. Open the DMG and drag **Voice2Text** to the **Applications** folder
@@ -294,6 +296,10 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v2.0.1
+
+- Fix: CJK characters no longer corrupted in Local LLM output (multi-byte UTF-8 split across tokens)
 
 ### v2.0.0 — What's New Since 1.0
 

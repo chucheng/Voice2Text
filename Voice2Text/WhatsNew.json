@@ -1,5 +1,16 @@
 [
     {
+        "version": "2.0.1",
+        "changes": {
+            "en": [
+                "Fix: CJK characters no longer corrupted in Local LLM output (e.g. multi-byte UTF-8 split across tokens)"
+            ],
+            "zh": [
+                "修复：本地 LLM 输出不再出现 CJK 字符乱码（多字节 UTF-8 跨 token 拆分问题）"
+            ]
+        }
+    },
+    {
         "version": "2.0.0",
         "changes": {
             "en": [

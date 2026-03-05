@@ -226,30 +226,33 @@ final class LlamaBridge {
     }
 
     /// Detokenize tokens back to text.
+    /// Accumulates raw bytes first, then converts to String once — avoids
+    /// corrupting multi-byte UTF-8 characters (e.g. CJK) split across tokens.
     private func detokenize(vocab: OpaquePointer!, tokens: [llama_token]) -> String {
         guard let vocab else { return "" }
-        var result = ""
-        // +1 for null terminator to avoid out-of-bounds write
+        var rawBytes = [UInt8]()
         var buf = [CChar](repeating: 0, count: 257)
 
         for token in tokens {
             let n = llama_token_to_piece(vocab, token, &buf, Int32(buf.count - 1), 0, false)
             if n > 0 {
-                buf[Int(n)] = 0
-                result += String(cString: buf)
+                for i in 0..<Int(n) {
+                    rawBytes.append(UInt8(bitPattern: buf[i]))
+                }
             } else if n < 0 {
                 // Buffer too small — allocate larger buffer for this token
                 let needed = -n
                 var largeBuf = [CChar](repeating: 0, count: Int(needed) + 1)
                 let n2 = llama_token_to_piece(vocab, token, &largeBuf, needed, 0, false)
                 if n2 > 0 {
-                    largeBuf[Int(n2)] = 0
-                    result += String(cString: largeBuf)
+                    for i in 0..<Int(n2) {
+                        rawBytes.append(UInt8(bitPattern: largeBuf[i]))
+                    }
                 }
             }
         }
 
-        return result
+        return String(bytes: rawBytes, encoding: .utf8) ?? ""
     }
 
     deinit {
