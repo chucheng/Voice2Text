@@ -5,8 +5,7 @@ import os.log
 private let logger = Logger(subsystem: "com.voice2text", category: "WindowAccessor")
 
 /// Invisible NSViewRepresentable that captures the hosting NSWindow reference
-/// and intercepts the close button to hide the window instead of destroying it.
-/// This allows AppDelegate to reopen the window on Dock icon click.
+/// and intercepts the close button to quit the app.
 struct WindowAccessor: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
@@ -33,8 +32,8 @@ struct WindowAccessor: NSViewRepresentable {
         weak var originalDelegate: NSWindowDelegate?
 
         func windowShouldClose(_ sender: NSWindow) -> Bool {
-            logger.info("windowShouldClose intercepted — hiding window")
-            sender.orderOut(nil) // hide instead of destroy
+            logger.info("windowShouldClose intercepted — terminating app")
+            NSApp.terminate(nil)
             return false
         }
 
