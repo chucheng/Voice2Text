@@ -220,6 +220,19 @@ Pull requests for multi-language improvements are welcome.
 
 Models are downloaded from [ggerganov/whisper.cpp on HuggingFace](https://huggingface.co/ggerganov/whisper.cpp) to `~/Library/Application Support/Voice2Text/`.
 
+## Available Qwen LLM Models (Optional)
+
+On-device post-editing uses [Qwen 2.5 Instruct](https://huggingface.co/Qwen) models in GGUF format, powered by [llama.cpp](https://github.com/ggerganov/llama.cpp). Select and download from Settings > AI Services > Local LLM.
+
+| Model | Size | Quality | Recommendation |
+|-------|------|---------|----------------|
+| Qwen 2.5 0.5B | ~400 MB | Basic punctuation | Low-end Macs |
+| Qwen 2.5 1.5B | ~1.0 GB | Good balance | Recommended for most users |
+| Qwen 2.5 3B | ~2.0 GB | Better grammar fixes | 16 GB+ RAM |
+| Qwen 2.5 7B | ~3.5 GB | Best quality | 32 GB+ RAM |
+
+Models run entirely on-device with Metal GPU acceleration. Larger models produce better results but require more RAM and take longer to load.
+
 ## Punctuation Restoration (Optional)
 
 Built-in CoreML BERT model that adds punctuation to raw STT output (Chinese only). Uses the [p208p2002/zh-wiki-punctuation-restore](https://huggingface.co/p208p2002/zh-wiki-punctuation-restore) model converted to CoreML format.
