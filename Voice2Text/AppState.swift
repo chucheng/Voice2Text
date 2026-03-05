@@ -269,6 +269,7 @@ class AppState: ObservableObject {
         log("Voice2Text v\(appVersion) (build \(buildNumber)) starting")
         log("STT engine: \(sttEngine.rawValue), model: \(selectedModel.rawValue), script: \(outputScript.rawValue)")
         log("UI language: \(uiLanguage.rawValue)")
+        log("Post-edit provider: \(postEditProvider.rawValue), local model: \(selectedLocalLLMModel.displayName)")
 
         // Load Dangerous Zone token presence
         dangerousZoneTokenIsSet = KeychainHelper.loadToken() != nil
@@ -531,8 +532,8 @@ class AppState: ObservableObject {
         audioLevel = 0
         log("Apple Speech: recognition stopped, processing final result...")
 
-        // If Post-Edit Revise is enabled, wait for isFinal before post-processing
-        if usePostEditRevise && anthropicClient != nil {
+        // If any post-edit provider is active, wait for isFinal before post-processing
+        if postEditProvider != .none {
             pendingAppleSpeechPostProcess = true
             isReformatting = true
             if isGlobalHotkeyActive {
@@ -661,13 +662,16 @@ class AppState: ObservableObject {
     }
 
     /// Post-process whisper output: punctuation restore → LLM reformat → script conversion.
-    /// When Post-Edit Revise is enabled, BERT punctuation is skipped (LLM handles it).
+    /// When any post-edit provider is active, BERT punctuation is skipped (LLM handles it).
     /// On LLM failure, falls back to BERT if available.
     private func postProcess(_ text: String) {
         isReformatting = true
+        log("Post-process: provider=\(postEditProvider.rawValue), input=\(text.count) chars")
 
-        // When Post-Edit Revise is active, skip BERT — LLM handles punctuation
-        if usePostEditRevise, anthropicClient != nil {
+        // When any post-edit provider is active, skip BERT — LLM handles punctuation
+        if postEditProvider == .localLLM {
+            applyLocalLLMAndConvert(text)
+        } else if usePostEditRevise, anthropicClient != nil {
             applyLLMAndConvert(text)
         } else if usePunctuationRestore && isPunctuationModelLoaded && textContainsChinese(text) {
             log("BERT punctuation restore: sending \(text.count) chars to CoreML model...")
@@ -687,7 +691,45 @@ class AppState: ObservableObject {
         }
     }
 
-    /// Apply Post-Edit Revise (if enabled) then script conversion.
+    /// Apply Local LLM post-edit (Qwen) then script conversion.
+    /// Falls back to BERT if model not downloaded or inference not yet implemented.
+    private func applyLocalLLMAndConvert(_ text: String) {
+        if !isLocalLLMModelDownloaded(selectedLocalLLMModel) {
+            log("Local LLM: model \(selectedLocalLLMModel.displayName) not downloaded, skipping post-edit")
+            applyBERTFallbackAndConvert(text)
+            return
+        }
+
+        // TODO: llama.cpp inference — for now log and fall back to BERT
+        log("Local LLM: inference not yet implemented for \(selectedLocalLLMModel.displayName), falling back")
+        applyBERTFallbackAndConvert(text)
+    }
+
+    /// Try BERT punctuation as best-effort, then script-convert and finish.
+    private func applyBERTFallbackAndConvert(_ text: String) {
+        if usePunctuationRestore && isPunctuationModelLoaded && textContainsChinese(text) {
+            log("BERT punctuation restore: sending \(text.count) chars to CoreML model...")
+            punctuationRestorer.restore(text) { [weak self] restored, error in
+                guard let self else { return }
+                if let restored {
+                    self.log("BERT punctuation restore: success (\(restored.count) chars)")
+                    self.rawTranscription = restored
+                    self.transcriptionText = self.convertScript(restored)
+                } else {
+                    self.log("BERT punctuation restore failed: \(error ?? "unknown")")
+                    self.transcriptionText = self.convertScript(text)
+                }
+                self.isReformatting = false
+                self.performAutoPaste(self.transcriptionText)
+            }
+        } else {
+            transcriptionText = convertScript(text)
+            isReformatting = false
+            performAutoPaste(transcriptionText)
+        }
+    }
+
+    /// Apply Cloud API Post-Edit Revise (if enabled) then script conversion.
     /// On LLM failure, falls back to BERT punctuation model if loaded + Chinese text.
     private func applyLLMAndConvert(_ text: String) {
         if usePostEditRevise, let client = anthropicClient {

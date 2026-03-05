@@ -286,6 +286,12 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v1.9.2 — Post-Edit Flow Fixes
+- **Fix: Local LLM routing** — post-edit flow now correctly routes through BERT fallback when Local LLM inference is not yet available
+- **Fix: Apple Speech post-process** — works with all providers; was silently skipping when Cloud API selected but not yet validated
+- **Fix: Badge accuracy** — main window Local LLM badge reflects the selected model's download status, not just any downloaded model
+- **Code cleanup** — extracted shared BERT fallback logic, redacted raw text from debug logs
+
 ### v1.9.1 — Language-Aware Prompt + AI Service Badge
 - **Language-aware prompt** — non-English: focus on adding punctuation; English: detailed grammar/spelling/tense fixes; mixed: applies appropriate rules per segment
 - **AI service badge** — main window shows active provider status (Local LLM orange/red, AI Revise green/red)

@@ -171,7 +171,7 @@ struct ContentView: View {
             if appState.postEditProvider == .localLLM {
                 HStack(spacing: 4) {
                     Circle()
-                        .fill(appState.isAnyLocalLLMModelDownloaded ? .orange : .red)
+                        .fill(appState.isLocalLLMModelDownloaded(appState.selectedLocalLLMModel) ? .orange : .red)
                         .frame(width: 6, height: 6)
                     Text(L.localLLMBadge)
                         .font(.caption)
