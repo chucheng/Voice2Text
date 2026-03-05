@@ -179,7 +179,8 @@ struct ContentView: View {
                             .frame(width: 6, height: 6)
                     } else {
                         Circle()
-                            .fill(appState.isLocalLLMModelLoaded ? .green :
+                            .fill(appState.isPostEditPaused ? .gray :
+                                  appState.isLocalLLMModelLoaded ? .green :
                                   appState.isLocalLLMModelDownloaded(appState.selectedLocalLLMModel) ? .orange : .red)
                             .frame(width: 6, height: 6)
                     }
@@ -190,11 +191,19 @@ struct ContentView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(Capsule().fill(.quaternary))
+                .opacity(appState.isPostEditPaused ? 0.6 : 1.0)
                 .onTapGesture {
-                    // Click orange (downloaded but not loaded) → auto-load
-                    if !appState.isLocalLLMModelLoaded &&
-                       !appState.isLoadingLocalLLMModel &&
-                       appState.isLocalLLMModelDownloaded(appState.selectedLocalLLMModel) {
+                    if appState.isPostEditPaused {
+                        // Resume
+                        appState.isPostEditPaused = false
+                        appState.log("Local LLM: resumed from badge tap")
+                    } else if appState.isLocalLLMModelLoaded {
+                        // Pause (green → grey)
+                        appState.isPostEditPaused = true
+                        appState.log("Local LLM: paused from badge tap")
+                    } else if !appState.isLoadingLocalLLMModel &&
+                              appState.isLocalLLMModelDownloaded(appState.selectedLocalLLMModel) {
+                        // Orange → load model
                         appState.log("Local LLM: manual load from badge tap")
                         appState.loadLocalLLMModel()
                     }
@@ -209,7 +218,8 @@ struct ContentView: View {
                             .frame(width: 6, height: 6)
                     } else {
                         Circle()
-                            .fill(appState.apiCheckState.isValid ? .green : .red)
+                            .fill(appState.isPostEditPaused ? .gray :
+                                  appState.apiCheckState.isValid ? .green : .red)
                             .frame(width: 6, height: 6)
                     }
                     Text(L.aiRevise)
@@ -219,9 +229,18 @@ struct ContentView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(Capsule().fill(.quaternary))
+                .opacity(appState.isPostEditPaused ? 0.6 : 1.0)
                 .onTapGesture {
-                    // Click red badge → retry API check
-                    if !appState.apiCheckState.isValid && appState.apiCheckState != .checking {
+                    if appState.isPostEditPaused {
+                        // Resume
+                        appState.isPostEditPaused = false
+                        appState.log("Cloud API: resumed from badge tap")
+                    } else if appState.apiCheckState.isValid {
+                        // Pause (green → grey)
+                        appState.isPostEditPaused = true
+                        appState.log("Cloud API: paused from badge tap")
+                    } else if appState.apiCheckState != .checking {
+                        // Red → retry API check
                         appState.ensureCloudAPIReady()
                     }
                 }

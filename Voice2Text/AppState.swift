@@ -166,6 +166,10 @@ class AppState: ObservableObject {
     }
 
     // MARK: - Post-Edit Provider & Local LLM
+    /// Temporarily bypass post-edit LLM — pipeline falls back to BERT/raw text.
+    /// Model stays loaded so resume is instant.
+    @Published var isPostEditPaused = false
+
     @Published var postEditProvider: PostEditProvider = {
         if let saved = UserDefaults.standard.string(forKey: "postEditProvider"),
            let provider = PostEditProvider(rawValue: saved) {
@@ -175,6 +179,7 @@ class AppState: ObservableObject {
     }() {
         didSet {
             UserDefaults.standard.set(postEditProvider.rawValue, forKey: "postEditProvider")
+            isPostEditPaused = false
             if postEditProvider == .cloudAPI {
                 // Auto-check API when switching to Cloud API if credentials exist
                 ensureCloudAPIReady()
@@ -668,15 +673,16 @@ class AppState: ObservableObject {
     /// On LLM failure, falls back to BERT if available.
     private func postProcess(_ text: String) {
         isReformatting = true
-        log("Post-process: provider=\(postEditProvider.rawValue), input=\(text.count) chars")
+        let effectiveProvider = isPostEditPaused ? PostEditProvider.none : postEditProvider
+        log("Post-process: provider=\(effectiveProvider.rawValue)\(isPostEditPaused ? " (paused)" : ""), input=\(text.count) chars")
         if devMode {
             log("  → Raw input: \(text)")
         }
 
         // When any post-edit provider is active, skip BERT — LLM handles punctuation
-        if postEditProvider == .localLLM {
+        if effectiveProvider == .localLLM {
             applyLocalLLMAndConvert(text)
-        } else if postEditProvider == .cloudAPI {
+        } else if effectiveProvider == .cloudAPI {
             // Lazy init: build client on first use if not yet loaded
             if anthropicClient == nil {
                 loadTokenFromKeychain()
