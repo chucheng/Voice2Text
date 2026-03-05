@@ -6,7 +6,7 @@
 #   - Xcode 15+ with command line tools
 #   - XcodeGen (brew install xcodegen)
 #
-# Output: build/Voice2Text.dmg
+# Output: build/Voice2Text-<version>.dmg
 
 set -euo pipefail
 
@@ -15,9 +15,12 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BUILD_DIR="$PROJECT_DIR/build"
 ARCHIVE_PATH="$BUILD_DIR/Voice2Text.xcarchive"
 EXPORT_DIR="$BUILD_DIR/export"
-DMG_PATH="$BUILD_DIR/Voice2Text.dmg"
 DMG_STAGING="$BUILD_DIR/dmg_staging"
 APP_NAME="Voice2Text"
+
+# Read version from project.yml
+VERSION=$(grep 'MARKETING_VERSION' "$PROJECT_DIR/project.yml" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+DMG_PATH="$BUILD_DIR/${APP_NAME}-${VERSION}.dmg"
 
 cd "$PROJECT_DIR"
 
