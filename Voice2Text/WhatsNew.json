@@ -1,5 +1,18 @@
 [
     {
+        "version": "1.10.3",
+        "changes": {
+            "en": [
+                "Improved: Tap STT engine badge to toggle Whisper ↔ Apple Speech",
+                "Fix: Qwen 7B model download URL (was split file, now uses single-file Q3_K_M)"
+            ],
+            "zh": [
+                "改进：点击语音引擎徽章可切换 Whisper ↔ Apple Speech",
+                "修复：Qwen 7B 模型下载链接（原分片文件改为单文件 Q3_K_M）"
+            ]
+        }
+    },
+    {
         "version": "1.10.2",
         "changes": {
             "en": [

@@ -41,7 +41,7 @@ struct Voice2TextApp: App {
             MenuBarView()
                 .environmentObject(appState)
         } label: {
-            Label("V2T", systemImage: "waveform.circle")
+            Image(systemName: "waveform.circle.fill")
         }
     }
 }
