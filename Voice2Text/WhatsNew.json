@@ -1,5 +1,20 @@
 [
     {
+        "version": "1.9.2",
+        "changes": {
+            "en": [
+                "Fix: Local LLM post-edit flow now correctly routes through BERT fallback when inference not available",
+                "Fix: Apple Speech post-processing works with all providers (was skipping when Cloud API not yet validated)",
+                "Fix: Main window badge reflects selected model status, not just any downloaded model"
+            ],
+            "zh": [
+                "修复：本地 LLM 后编辑流程现在正确回退到 BERT（推论尚未实现时）",
+                "修复：Apple Speech 后处理适用于所有服务提供者（之前在云端 API 未验证时跳过）",
+                "修复：主窗口状态标记反映已选模型状态，而非任意已下载模型"
+            ]
+        }
+    },
+    {
         "version": "1.9.1",
         "changes": {
             "en": [
