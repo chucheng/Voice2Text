@@ -4,11 +4,15 @@
         "changes": {
             "en": [
                 "Improved: Close window (X) now quits the app entirely",
-                "New: Reset Onboarding button in Settings > Advanced > Dev Mode"
+                "New: Reset Onboarding button in Settings > Advanced > Dev Mode",
+                "Improved: Onboarding detects stale Accessibility permission after app upgrade — guides user to remove and re-add",
+                "Fix: Keychain never read during app launch — truly lazy Cloud API loading"
             ],
             "zh": [
                 "改进：关闭窗口（X）现在直接退出应用",
-                "新增：设置 > 高级 > 开发模式中新增「重置引导」按钮"
+                "新增：设置 > 高级 > 开发模式中新增「重置引导」按钮",
+                "改进：引导流程检测升级后失效的辅助功能权限 — 引导用户移除后重新添加",
+                "修复：启动时不再读取钥匙串 — 云端 API 完全延迟加载"
             ]
         }
     },

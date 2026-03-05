@@ -322,6 +322,7 @@ private struct AdvancedTab: View {
 
                     Button(L.resetOnboarding) {
                         appState.onboardingCompleted = false
+                        appState.accessibilityWasGranted = false
                         onboardingResetFeedback = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                             onboardingResetFeedback = false

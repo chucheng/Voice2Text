@@ -237,6 +237,18 @@ struct OnboardingView: View {
                 Label(L.accessibilityGranted, systemImage: "checkmark.circle.fill")
                     .foregroundColor(.green)
                     .font(.callout.bold())
+            } else if appState.accessibilityWasGranted {
+                // Previously granted but now invalid (app was upgraded)
+                VStack(spacing: 6) {
+                    Label(L.accessibilityNeedsRefresh, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                        .font(.callout.bold())
+                    Text(L.accessibilityRefreshMessage)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 320)
+                }
             }
 
             Spacer()
