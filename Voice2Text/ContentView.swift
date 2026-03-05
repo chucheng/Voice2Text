@@ -153,8 +153,8 @@ struct ContentView: View {
             .padding(.vertical, 4)
             .background(Capsule().fill(.quaternary))
 
-            // Service status capsules (BERT hidden when LLM active — LLM handles punctuation)
-            if appState.usePunctuationRestore && !appState.usePostEditRevise {
+            // Service status capsules (BERT hidden when any LLM provider active)
+            if appState.usePunctuationRestore && appState.postEditProvider == .none {
                 HStack(spacing: 4) {
                     Circle()
                         .fill(appState.isPunctuationModelLoaded ? .green : .red)
@@ -168,7 +168,21 @@ struct ContentView: View {
                 .background(Capsule().fill(.quaternary))
             }
 
-            if appState.usePostEditRevise {
+            if appState.postEditProvider == .localLLM {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(appState.isAnyLocalLLMModelDownloaded ? .orange : .red)
+                        .frame(width: 6, height: 6)
+                    Text(L.localLLMBadge)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(.quaternary))
+            }
+
+            if appState.postEditProvider == .cloudAPI {
                 HStack(spacing: 4) {
                     Circle()
                         .fill(appState.apiCheckState.isValid ? .green : .red)

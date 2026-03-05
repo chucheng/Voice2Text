@@ -28,16 +28,22 @@ final class AnthropicClient {
 
         Rules:
         1. If the transcript is empty or blank, respond with exactly nothing (empty response).
-        2. Correct transcription errors (misheard words, obvious mistakes).
-        3. Fix grammar and punctuation where necessary.
-        4. Improve clarity only when the meaning is clearly implied by the context.
-        5. Preserve the original meaning, tone, structure, and flow as much as possible.
-        6. Do NOT rewrite stylistically.
-        7. Do NOT summarize.
-        8. Do NOT expand or add new ideas.
-        9. Do NOT change the speaker's intent.
-        10. If a sentence is ambiguous, make the smallest possible correction without guessing new meaning.
-        11. For English text: pay special attention to spelling typos, grammar errors (subject-verb agreement, tense, articles), and word choice errors caused by speech recognition.
+        2. Preserve the original meaning, tone, structure, and flow. Do NOT rewrite, summarize, expand, or change the speaker's intent.
+
+        For NON-ENGLISH text (Chinese, Japanese, Korean, etc.):
+        3. Add proper punctuation marks (，。！？、；：「」（）…).
+        4. Fix obvious misheard words only when the correct word is unambiguous from context.
+        5. Do NOT change grammar, word order, or sentence structure.
+
+        For ENGLISH text:
+        3. Fix spelling typos and speech recognition errors (e.g. "their" vs "there", "its" vs "it's").
+        4. Fix grammar: subject-verb agreement, tense consistency, missing/extra articles (a/an/the), preposition errors.
+        5. Add or fix punctuation (periods, commas, question marks, apostrophes).
+        6. Fix word choice errors caused by speech recognition (e.g. homophones).
+        7. Improve clarity only when the meaning is clearly implied by context; make the smallest possible correction.
+
+        For MIXED-LANGUAGE text:
+        Apply the appropriate rules to each language segment.
 
         CRITICAL: Your response must contain ONLY the corrected transcript text — nothing else. No explanations, no commentary, no preamble, no reasoning, no meta-discussion. If you cannot improve the text, return it exactly as-is.
 

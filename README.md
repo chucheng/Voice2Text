@@ -280,6 +280,11 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v1.9.1 — Language-Aware Prompt + AI Service Badge
+- **Language-aware prompt** — non-English: focus on adding punctuation; English: detailed grammar/spelling/tense fixes; mixed: applies appropriate rules per segment
+- **AI service badge** — main window shows active provider status (Local LLM orange/red, AI Revise green/red)
+- **BERT auto-disable** — punctuation toggle disabled when any LLM provider is active (not just Cloud API)
+
 ### v1.9.0 — Post-Edit Provider + Local LLM Model Selection
 - **Post-Edit Provider picker** — choose None, Local LLM (offline), or Cloud API (Anthropic Claude) in Settings > AI Services
 - **Local LLM model selection** — Qwen 2.5 models (0.5B/1.5B/3B/7B) with on-demand download, recommended model guidance
