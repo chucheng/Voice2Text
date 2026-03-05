@@ -867,9 +867,12 @@ class AppState: ObservableObject {
     func saveDangerousZoneToken(_ token: String) {
         if token.isEmpty {
             KeychainHelper.deleteToken()
+            cachedToken = nil
             dangerousZoneTokenIsSet = false
         } else {
-            dangerousZoneTokenIsSet = KeychainHelper.saveToken(token)
+            let saved = KeychainHelper.saveToken(token)
+            cachedToken = saved ? token : nil
+            dangerousZoneTokenIsSet = saved
         }
         rebuildAnthropicClient()
         resetAPICheckState()
@@ -877,14 +880,16 @@ class AppState: ObservableObject {
 
     func deleteDangerousZoneToken() {
         KeychainHelper.deleteToken()
+        cachedToken = nil
         dangerousZoneTokenIsSet = false
         rebuildAnthropicClient()
         resetAPICheckState()
     }
 
+    private var cachedToken: String?
+
     func rebuildAnthropicClient() {
-        guard dangerousZoneTokenIsSet,
-              let token = KeychainHelper.loadToken(),
+        guard let token = cachedToken,
               !token.isEmpty,
               !dangerousZoneBaseURL.isEmpty,
               AnthropicClient.isValidBaseURL(dangerousZoneBaseURL)
@@ -899,11 +904,16 @@ class AppState: ObservableObject {
         )
     }
 
+    /// Load token from Keychain into cache. Called only when Cloud API is needed.
+    private func loadTokenFromKeychain() {
+        cachedToken = KeychainHelper.loadToken()
+        dangerousZoneTokenIsSet = cachedToken != nil
+    }
+
     /// Called when switching to Cloud API or on launch with Cloud API selected.
     /// Reads Keychain lazily, builds client, auto-checks if credentials exist.
     func ensureCloudAPIReady() {
-        // Lazy Keychain read — only load token when Cloud API is actually selected
-        dangerousZoneTokenIsSet = KeychainHelper.loadToken() != nil
+        loadTokenFromKeychain()
         rebuildAnthropicClient()
         if dangerousZoneTokenIsSet && !dangerousZoneBaseURL.isEmpty {
             log("Cloud API: credentials found, auto-checking...")
