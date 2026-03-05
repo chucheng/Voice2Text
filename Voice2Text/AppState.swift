@@ -311,10 +311,8 @@ class AppState: ObservableObject {
         loadPunctuationModelIfAvailable()
         migratePunctuationServer()
 
-        // Auto-check API on launch if cloud API provider is selected
-        if postEditProvider == .cloudAPI {
-            ensureCloudAPIReady()
-        }
+        // Cloud API: don't read Keychain on launch — wait for user interaction
+        // (badge tap, settings open, or actual transcription triggers ensureCloudAPIReady)
 
         setupGlobalHotkey()
         refreshAccessibilityStatus()
@@ -678,7 +676,12 @@ class AppState: ObservableObject {
         // When any post-edit provider is active, skip BERT — LLM handles punctuation
         if postEditProvider == .localLLM {
             applyLocalLLMAndConvert(text)
-        } else if postEditProvider == .cloudAPI, anthropicClient != nil {
+        } else if postEditProvider == .cloudAPI {
+            // Lazy init: build client on first use if not yet loaded
+            if anthropicClient == nil {
+                loadTokenFromKeychain()
+                rebuildAnthropicClient()
+            }
             applyLLMAndConvert(text)
         } else if usePunctuationRestore && isPunctuationModelLoaded && textContainsChinese(text) {
             log("BERT punctuation restore: sending \(text.count) chars to CoreML model...")
@@ -904,8 +907,9 @@ class AppState: ObservableObject {
         )
     }
 
-    /// Load token from Keychain into cache. Called only when Cloud API is needed.
+    /// Load token from Keychain into cache. Only reads Keychain if not already cached.
     private func loadTokenFromKeychain() {
+        guard cachedToken == nil else { return }
         cachedToken = KeychainHelper.loadToken()
         dangerousZoneTokenIsSet = cachedToken != nil
     }
