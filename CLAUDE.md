@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 1.10.1** — Cloud API auto-activate, lazy Keychain, remove redundant Post-Edit Revise toggle.
+**Version: 2.0.0** — On-device AI post-editing (llama.cpp + Qwen), global hotkey, 99 languages, bilingual UI.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)

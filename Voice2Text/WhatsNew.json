@@ -1,14 +1,18 @@
 [
     {
-        "version": "1.10.3",
+        "version": "2.0.0",
         "changes": {
             "en": [
-                "Improved: Tap STT engine badge to toggle Whisper ↔ Apple Speech",
-                "Fix: Qwen 7B model download URL (was split file, now uses single-file Q3_K_M)"
+                "New: Voice2Text 2.0 — on-device AI post-editing, global hotkey, 99 languages",
+                "New: Local LLM inference via llama.cpp (Qwen 2.5, no cloud needed)",
+                "New: Tap STT engine badge to toggle Whisper ↔ Apple Speech",
+                "Improved: Clean README with consolidated release notes"
             ],
             "zh": [
+                "新版：Voice2Text 2.0 — 设备端 AI 润稿、全局快捷键、99 种语言",
+                "新功能：基于 llama.cpp 的本地 LLM 推理（Qwen 2.5，无需云端）",
                 "改进：点击语音引擎徽章可切换 Whisper ↔ Apple Speech",
-                "修复：Qwen 7B 模型下载链接（原分片文件改为单文件 Q3_K_M）"
+                "改进：整理 README，合并版本说明"
             ]
         }
     },
