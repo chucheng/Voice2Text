@@ -1,5 +1,16 @@
 [
     {
+        "version": "2.0.2",
+        "changes": {
+            "en": [
+                "Updated author name to Chucheng Hsieh across app, docs, and copyright"
+            ],
+            "zh": [
+                "更新作者名称为 Chucheng Hsieh（应用、文档及版权信息）"
+            ]
+        }
+    },
+    {
         "version": "2.0.1",
         "changes": {
             "en": [

@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.0.1** — Fix CJK UTF-8 corruption in Local LLM detokenization.
+**Version: 2.0.2** — Update author name to Chucheng Hsieh.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -130,7 +130,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - UI language (English / 简体中文) persisted via UserDefaults (key: `"uiLanguage"`), default follows system locale
 - All UI strings centralized in `Strings.swift` `L` enum; `L.lang` reads `AppState.shared.uiLanguage`
 - Language picker: segmented control on OnboardingView welcome step + Settings > General top section
-- Copyright notice "© C. C. Hsieh" shown in ContentView bottom toolbar center after first-use tooltip disappears
+- Copyright notice "© Chucheng Hsieh" shown in ContentView bottom toolbar center after first-use tooltip disappears
 - Strings that stay English in both languages: WhisperModel.displayName, STTEngine.rawValue, OutputScript.rawValue, "V2T"
 
 ### Global Hotkey Architecture
