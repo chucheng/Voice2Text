@@ -26,7 +26,7 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 
 ## Features
 
-- **Global hotkey (⌘;)** — hold from any app to record, release to auto-paste at cursor
+- **Global hotkey (⌘;)** — hold from any app to record, text appears at cursor in real-time with `...▍` indicator, release to auto-paste final LLM-revised result
 - **Dual STT engines** — whisper.cpp (offline) and Apple Speech Recognition (online, streaming)
 - **99 languages supported** — Whisper auto-detects language; optimized for Chinese + English
 - **In-app language switching** — English / 简体中文 UI, selectable during onboarding and in Settings
@@ -325,8 +325,8 @@ project.yml                      # XcodeGen spec
 
 ### v2.6.0
 
-- New: Global hotkey live typing — text appears at cursor while recording, replaced by final LLM-revised result on release
-- New: Cursor indicator (▍) shows processing is ongoing during global hotkey recording
+- New: Global hotkey live typing — text appears at cursor while recording with `...▍` indicator, replaced by final LLM-revised result on release
+- New: Diff-based incremental typing — only changed suffix is updated (backspace + type), minimizing keystrokes
 - Improved: VAD streaming sends full audio for better accuracy (text naturally grows at the end)
 
 ### v2.5.0
