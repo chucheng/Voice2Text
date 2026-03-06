@@ -44,8 +44,10 @@ final class LlamaBridge {
     }
 
     /// Generate text using the loaded model.
+    /// When `noThink` is true, appends an empty `<think></think>` block after the assistant
+    /// turn start to suppress reasoning output (used for Qwen 3.5 models).
     func generate(text: String, systemPrompt: String, maxTokens: Int = 2048,
-                  completion: @escaping (String?) -> Void) {
+                  noThink: Bool = false, completion: @escaping (String?) -> Void) {
         inferenceQueue.async { [weak self] in
             guard let self, let model = self.model, let ctx = self.ctx else {
                 DispatchQueue.main.async { completion(nil) }
@@ -58,7 +60,12 @@ final class LlamaBridge {
             }
 
             // Build chat prompt using llama_chat_apply_template
-            let prompt = self.buildChatPrompt(systemPrompt: systemPrompt, userMessage: text)
+            var prompt = self.buildChatPrompt(systemPrompt: systemPrompt, userMessage: text)
+
+            // Qwen 3.5: append empty think block to tell model "thinking is done, output answer"
+            if noThink {
+                prompt += "<think>\n\n</think>\n\n"
+            }
 
             // Tokenize
             guard let promptTokens = self.tokenize(vocab: vocab, text: prompt, addSpecial: true, parseSpecial: true),

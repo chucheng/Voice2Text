@@ -787,13 +787,12 @@ class AppState: ObservableObject {
     /// Run inference on the loaded Local LLM model.
     private func runLocalLLMInference(_ text: String) {
         let prompt = customRevisePrompt
-        // Qwen 3.5: prepend /no_think to disable reasoning mode
-        let inputText = selectedLocalLLMModel.isQwen35 ? "/no_think\n\(text)" : text
-        log("Local LLM: sending \(text.count) chars for revision\(selectedLocalLLMModel.isQwen35 ? " (with /no_think)" : "")")
+        let useNoThink = selectedLocalLLMModel.isQwen35
+        log("Local LLM: sending \(text.count) chars for revision\(useNoThink ? " (noThink)" : "")")
         if devMode {
-            log("  → Input: \(inputText)")
+            log("  → Input: \(text)")
         }
-        llamaBridge.generate(text: inputText, systemPrompt: prompt) { [weak self] result in
+        llamaBridge.generate(text: text, systemPrompt: prompt, noThink: useNoThink) { [weak self] result in
             guard let self else { return }
             if let result, !result.isEmpty {
                 // Strip <think>...</think> blocks (safety net for Qwen 3.5)
