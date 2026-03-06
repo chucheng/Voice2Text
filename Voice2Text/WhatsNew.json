@@ -1,5 +1,18 @@
 [
     {
+        "version": "2.2.1",
+        "changes": {
+            "en": [
+                "Improved: Pipeline timing in Dev Mode — shows duration for each stage (Whisper, BERT, LLM, total) after spacebar release",
+                "Improved: Logging only active when Dev Mode is enabled — reduces overhead in normal use"
+            ],
+            "zh": [
+                "改进：Dev Mode 显示流水线计时 — 从空白键放开后显示每阶段耗时（Whisper、BERT、LLM、总时间）",
+                "改进：日志仅在 Dev Mode 启用时记录，减少正常使用时的性能开销"
+            ]
+        }
+    },
+    {
         "version": "2.2.0",
         "changes": {
             "en": [

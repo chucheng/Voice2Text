@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.2.0** — Qwen 3.5 support with /no_think reasoning mode disabled.
+**Version: 2.2.1** — Pipeline timing in Dev Mode; logging only when Dev Mode enabled.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -28,7 +28,7 @@ STT engines:
 
 **What's New** screen: shown once after version update with 8-second countdown auto-dismiss. Reads from bundled `WhatsNew.json` (bilingual en/zh).
 
-**Debug Log Window**: separate resizable window (opened from Settings > Advanced > Dev Mode). Logs always collected (capped at 500 lines) so history is available when Dev Mode is toggled on. Copy All button for easy export.
+**Debug Log Window**: separate resizable window (opened from Settings > Advanced > Dev Mode). Logs only collected when Dev Mode is enabled (reduces overhead). Pipeline timing shows duration of each stage (Whisper, BERT, LLM, total). Copy All button for easy export.
 
 UI language switchable between English and Simplified Chinese (persisted via UserDefaults, default follows system locale).
 99 languages supported via Whisper `language="auto"`. Punctuation model auto-skipped for non-Chinese text.
@@ -117,7 +117,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - Models stored in `~/Library/Application Support/Voice2Text/`
 - Available models: tiny, base, small, medium, large-v3-turbo
 - Transcription text is editable by the user after transcription
-- Dev mode: opens separate debug log window. Logs always collected (capped at 500 lines) even when dev mode is off, so history is available on toggle
+- Dev mode: opens separate debug log window. Logs only collected when dev mode is enabled. Pipeline timing (Whisper/BERT/LLM/total) shown in dev mode
 - Post-Edit Revise: optional Claude API integration, configured in Settings > AI Services
 - API token stored in macOS Keychain (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`), never in UserDefaults or logs
 - API check state machine: Unchecked → Checking → Valid(latencyMs) / Invalid(message); field changes reset to Unchecked

@@ -278,6 +278,10 @@ class AppState: ObservableObject {
     private var keyUpMonitor: Any?
     private var spaceHeld = false
 
+    // MARK: - Pipeline Timing (dev mode only)
+    private var pipelineStartTime: Date?
+    private var stageStartTime: Date?
+
     /// Weak reference to the main window, captured by WindowAccessor.
     /// Used by AppDelegate to reopen the window on Dock icon click.
     weak var mainWindow: NSWindow?
@@ -298,13 +302,9 @@ class AppState: ObservableObject {
         return f
     }()
 
-    /// Always collect logs so history is available when Dev Mode is toggled on.
-    /// Whether app is in init phase (logs always recorded during init).
-    private var isInitializing = true
-
-    /// Log a debug message. Records when Dev Mode is on or during app init phase.
-    func log(_ message: String, force: Bool = false) {
-        guard force || devMode || isInitializing else { return }
+    /// Log a debug message. Only records when Dev Mode is enabled.
+    func log(_ message: String) {
+        guard devMode else { return }
         let ts = Self.dateFormatter.string(from: Date())
         debugLog.append("[\(ts)] \(message)")
         // Keep last 500 lines
@@ -358,11 +358,6 @@ class AppState: ObservableObject {
             self?.checkWhatsNew()
         }
 
-        // End init phase — after this, logs only record when Dev Mode is on.
-        // Use asyncAfter to allow init-triggered async callbacks (network, punctuation model) to log.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
-            self?.isInitializing = false
-        }
     }
 
     // MARK: - What's New
@@ -488,6 +483,7 @@ class AppState: ObservableObject {
     // MARK: - Whisper
 
     private func stopAndTranscribe() {
+        pipelineStartTime = Date()
         let samples = audioRecorder.stopRecording()
         isRecording = false
         audioLevel = 0
@@ -507,6 +503,7 @@ class AppState: ObservableObject {
 
         log("Audio recorded: \(samples.count) samples (\(String(format: "%.1f", Double(samples.count) / 16000))s @ 16kHz)")
         isTranscribing = true
+        stageStartTime = Date()
         transcribe(samples: samples, language: "auto")
     }
 
@@ -565,6 +562,7 @@ class AppState: ObservableObject {
     }
 
     private func stopAppleSpeech() {
+        pipelineStartTime = Date()
         audioRecorder.stopRecording()
         isRecording = false
         audioLevel = 0
@@ -601,6 +599,10 @@ class AppState: ObservableObject {
         log("Whisper: inference started (language=\(language), model=\(selectedModel.rawValue))")
         whisperBridge.transcribe(samples: samples, language: language) { [weak self] text in
             guard let self else { return }
+            if self.devMode, let start = self.stageStartTime {
+                let ms = Int(Date().timeIntervalSince(start) * 1000)
+                self.log("⏱ Whisper: \(ms)ms")
+            }
             self.log("Whisper: inference complete, result: \(text.count) chars")
 
             // If auto-detected and result contains non-Chinese/English text, retry with "zh"
@@ -712,6 +714,7 @@ class AppState: ObservableObject {
 
         // When any post-edit provider is active, skip BERT — LLM handles punctuation
         if effectiveProvider == .localLLM {
+            stageStartTime = Date()
             applyLocalLLMAndConvert(text)
         } else if effectiveProvider == .cloudAPI {
             // Lazy init: build client on first use if not yet loaded
@@ -719,11 +722,17 @@ class AppState: ObservableObject {
                 loadTokenFromKeychain()
                 rebuildAnthropicClient()
             }
+            stageStartTime = Date()
             applyLLMAndConvert(text)
         } else if usePunctuationRestore && isPunctuationModelLoaded && textContainsChinese(text) {
             log("BERT punctuation restore: sending \(text.count) chars to CoreML model...")
+            stageStartTime = Date()
             punctuationRestorer.restore(text) { [weak self] restored, error in
                 guard let self else { return }
+                if self.devMode, let start = self.stageStartTime {
+                    let ms = Int(Date().timeIntervalSince(start) * 1000)
+                    self.log("⏱ BERT: \(ms)ms")
+                }
                 if let restored {
                     self.log("BERT punctuation restore: success (\(restored.count) chars)")
                     self.rawTranscription = restored
@@ -765,6 +774,7 @@ class AppState: ObservableObject {
                       self.selectedLocalLLMModel == model else {
                     self.log("Local LLM: provider or model changed during load, discarding")
                     if success { self.llamaBridge.freeModelAsync() }
+                    self.logPipelineTotal()
                     self.isReformatting = false
                     return
                 }
@@ -792,8 +802,13 @@ class AppState: ObservableObject {
         if devMode {
             log("  → Input: \(text)")
         }
+        let llmStart = Date()
         llamaBridge.generate(text: text, systemPrompt: prompt, noThink: useNoThink) { [weak self] result in
             guard let self else { return }
+            if self.devMode {
+                let ms = Int(Date().timeIntervalSince(llmStart) * 1000)
+                self.log("⏱ Local LLM: \(ms)ms")
+            }
             if let result, !result.isEmpty {
                 // Strip <think>...</think> blocks (safety net for Qwen 3.5)
                 let cleaned = Self.stripThinkTags(result)
@@ -808,6 +823,7 @@ class AppState: ObservableObject {
                 }
                 self.rawTranscription = cleaned
                 self.transcriptionText = self.convertScript(cleaned)
+                self.logPipelineTotal()
                 self.isReformatting = false
                 self.performAutoPaste(self.transcriptionText)
             } else {
@@ -823,25 +839,40 @@ class AppState: ObservableObject {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// Log total pipeline duration (from spacebar release to final output). Dev mode only.
+    private func logPipelineTotal() {
+        if devMode, let start = pipelineStartTime {
+            let ms = Int(Date().timeIntervalSince(start) * 1000)
+            log("⏱ Total pipeline: \(ms)ms")
+        }
+    }
+
     /// Try BERT punctuation as best-effort, then script-convert and finish.
     private func applyBERTFallbackAndConvert(_ text: String) {
         if usePunctuationRestore && isPunctuationModelLoaded && textContainsChinese(text) {
-            log("BERT punctuation restore: sending \(text.count) chars to CoreML model...")
+            log("BERT fallback: sending \(text.count) chars to CoreML model...")
+            let bertStart = Date()
             punctuationRestorer.restore(text) { [weak self] restored, error in
                 guard let self else { return }
+                if self.devMode {
+                    let ms = Int(Date().timeIntervalSince(bertStart) * 1000)
+                    self.log("⏱ BERT fallback: \(ms)ms")
+                }
                 if let restored {
-                    self.log("BERT punctuation restore: success (\(restored.count) chars)")
+                    self.log("BERT fallback: success (\(restored.count) chars)")
                     self.rawTranscription = restored
                     self.transcriptionText = self.convertScript(restored)
                 } else {
-                    self.log("BERT punctuation restore failed: \(error ?? "unknown")")
+                    self.log("BERT fallback failed: \(error ?? "unknown")")
                     self.transcriptionText = self.convertScript(text)
                 }
+                self.logPipelineTotal()
                 self.isReformatting = false
                 self.performAutoPaste(self.transcriptionText)
             }
         } else {
             transcriptionText = convertScript(text)
+            logPipelineTotal()
             isReformatting = false
             performAutoPaste(transcriptionText)
         }
@@ -854,12 +885,18 @@ class AppState: ObservableObject {
             let prompt = (customRevisePrompt == AnthropicClient.revisePrompt) ? nil : customRevisePrompt
             log("Post-Edit Revise: sending \(text.count) chars...")
             log("  → Input: \(text)")
+            let apiStart = Date()
             client.reviseText(text, prompt: prompt) { [weak self] result, error in
                 guard let self else { return }
+                if self.devMode {
+                    let ms = Int(Date().timeIntervalSince(apiStart) * 1000)
+                    self.log("⏱ Cloud API: \(ms)ms")
+                }
                 if let result {
                     self.log("Post-Edit Revise: success (\(result.count) chars)")
                     self.log("  ← Output: \(result)")
                     self.transcriptionText = self.convertScript(result)
+                    self.logPipelineTotal()
                     self.isReformatting = false
                     self.performAutoPaste(self.transcriptionText)
                 } else {
@@ -869,6 +906,7 @@ class AppState: ObservableObject {
             }
         } else {
             transcriptionText = convertScript(text)
+            logPipelineTotal()
             isReformatting = false
             performAutoPaste(transcriptionText)
         }
@@ -878,8 +916,13 @@ class AppState: ObservableObject {
     private func tryBERTFallback(_ text: String) {
         if isPunctuationModelLoaded && textContainsChinese(text) {
             log("BERT fallback: sending \(text.count) chars...")
+            let bertStart = Date()
             punctuationRestorer.restore(text) { [weak self] restored, error in
                 guard let self else { return }
+                if self.devMode {
+                    let ms = Int(Date().timeIntervalSince(bertStart) * 1000)
+                    self.log("⏱ BERT fallback: \(ms)ms")
+                }
                 if let restored {
                     self.log("BERT fallback: success (\(restored.count) chars)")
                     self.rawTranscription = restored
@@ -890,6 +933,7 @@ class AppState: ObservableObject {
                     self.transcriptionText = self.convertScript(text)
                     self.showReviseFailed()
                 }
+                self.logPipelineTotal()
                 self.isReformatting = false
                 self.performAutoPaste(self.transcriptionText)
             }
@@ -897,6 +941,7 @@ class AppState: ObservableObject {
             log("BERT fallback unavailable. Using raw text.")
             transcriptionText = convertScript(text)
             showReviseFailed()
+            logPipelineTotal()
             isReformatting = false
             performAutoPaste(transcriptionText)
         }

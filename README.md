@@ -45,7 +45,7 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 - **Secure API Key storage** — API Key stored in macOS Keychain, never in plaintext
 - **What's New screen** — shows changes after version update, auto-dismisses in 8 seconds
 - **Debug log window** — separate resizable window with Copy All for troubleshooting
-- **Dev mode** — always-on logging (capped at 500 lines), viewable in debug log window
+- **Dev mode** — logging + pipeline timing (Whisper/BERT/LLM/total) only when enabled; viewable in debug log window
 - Menu bar + Dock presence
 
 ## Installation (Non-Developer)
@@ -321,6 +321,11 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v2.2.1
+
+- Improved: Pipeline timing in Dev Mode — shows duration for each stage (Whisper, BERT, LLM, total) after spacebar release
+- Improved: Logging only active when Dev Mode is enabled — reduces overhead in normal use
 
 ### v2.2.0
 
