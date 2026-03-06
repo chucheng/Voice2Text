@@ -310,6 +310,10 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v2.1.1
+
+- Docs: Update Getting Started guide — add Local LLM option to AI post-edit section, fix bilingual tab names in Settings table, update version to 2.1.1
+
 ### v2.1.0
 
 - New: Tap AI service badge (Local LLM / AI Revise) to pause/resume post-editing — model stays loaded for instant resume

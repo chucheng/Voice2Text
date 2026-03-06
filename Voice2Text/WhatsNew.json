@@ -1,5 +1,16 @@
 [
     {
+        "version": "2.1.1",
+        "changes": {
+            "en": [
+                "Docs: Updated Getting Started guide with Local LLM option and bilingual Settings tab names"
+            ],
+            "zh": [
+                "文档：更新入门指南，增加本地 LLM 选项说明，修正设置标签页中英文切换"
+            ]
+        }
+    },
+    {
         "version": "2.1.0",
         "changes": {
             "en": [

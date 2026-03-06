@@ -206,7 +206,7 @@
     <span class="en">Voice to text, right from your menu bar.</span>
     <span class="zh">从菜单栏直接语音转文字。</span>
   </p>
-  <span class="version">v1.9.0</span>
+  <span class="version">v2.1.1</span>
 </div>
 
 <!-- ============ 1. INSTALLATION ============ -->
@@ -542,35 +542,35 @@
       </th>
     </tr>
     <tr>
-      <td><strong>General</strong></td>
+      <td><strong><span class="en">General</span><span class="zh">通用</span></strong></td>
       <td>
         <span class="en">UI language, STT engine (Whisper / Apple Speech), output script (Simplified / Traditional Chinese)</span>
         <span class="zh">界面语言、语音引擎（Whisper / Apple 语音识别）、输出字体（简体/繁体中文）</span>
       </td>
     </tr>
     <tr>
-      <td><strong>Models</strong></td>
+      <td><strong><span class="en">Models</span><span class="zh">模型</span></strong></td>
       <td>
         <span class="en">Download, switch, or delete Whisper models</span>
         <span class="zh">下载、切换或删除 Whisper 模型</span>
       </td>
     </tr>
     <tr>
-      <td><strong>Shortcuts</strong></td>
+      <td><strong><span class="en">Shortcuts</span><span class="zh">快捷键</span></strong></td>
       <td>
         <span class="en">Customize global hotkey, check Accessibility permission</span>
         <span class="zh">自定义全局快捷键、检查辅助功能权限</span>
       </td>
     </tr>
     <tr>
-      <td><strong>AI Services</strong></td>
+      <td><strong><span class="en">AI Services</span><span class="zh">AI 服务</span></strong></td>
       <td>
-        <span class="en">Configure LLM API for post-edit text improvement</span>
-        <span class="zh">配置 LLM API 进行转录后文本润色</span>
+        <span class="en">Configure LLM for post-edit text improvement (Local LLM or Cloud API)</span>
+        <span class="zh">配置 LLM 进行转录后文本润色（本地 LLM 或云端 API）</span>
       </td>
     </tr>
     <tr>
-      <td><strong>Advanced</strong></td>
+      <td><strong><span class="en">Advanced</span><span class="zh">高级</span></strong></td>
       <td>
         <span class="en">Punctuation restoration model, developer mode</span>
         <span class="zh">标点还原模型、开发者模式</span>
@@ -608,8 +608,16 @@
     <span class="zh">AI 润色</span>
   </h3>
   <p>
-    <span class="en">Optionally send transcriptions through an LLM for improved clarity and flow. Configure your API key in Settings &rarr; AI Services.</span>
-    <span class="zh">可选将转录文本通过 LLM 润色，提升表达流畅度。在设置 &rarr; AI 服务中配置 API 密钥。</span>
+    <span class="en">Optionally send transcriptions through an LLM for improved clarity and flow. In Settings &rarr; AI Services, choose a post-edit provider:</span>
+    <span class="zh">可选将转录文本通过 LLM 润色，提升表达流畅度。在设置 &rarr; AI 服务中选择后编辑服务：</span>
+  </p>
+  <p>
+    <span class="en"><strong>Local LLM (Recommended):</strong> Run Qwen 2.5 models entirely on your Mac — no internet, no API fees. Select "Local LLM" and download a model.</span>
+    <span class="zh"><strong>本地 LLM（推荐）：</strong>在 Mac 上运行 Qwen 2.5 模型——无需联网、无需 API 费用。选择「本地 LLM」并下载模型即可。</span>
+  </p>
+  <p>
+    <span class="en"><strong>Cloud API:</strong> Use Anthropic Claude or compatible API for cloud-based post-editing. Select "Cloud API" and configure your API key.</span>
+    <span class="zh"><strong>云端 API：</strong>使用 Anthropic Claude 或兼容 API 进行云端润色。选择「云端 API」并配置 API 密钥。</span>
   </p>
 
   <h3>
@@ -765,7 +773,7 @@
 
 <!-- ============ FOOTER ============ -->
 <div class="footer">
-  <p>Voice2Text v1.9.0 &mdash; &copy; Chucheng Hsieh</p>
+  <p>Voice2Text v2.1.1 &mdash; &copy; Chucheng Hsieh</p>
   <p style="margin-top:4px;">Built with whisper.cpp &bull; CoreML &bull; SwiftUI</p>
 </div>
 

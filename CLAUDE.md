@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.1.0** — Tap AI badge to pause/resume post-editing.
+**Version: 2.1.1** — Tap AI badge to pause/resume post-editing.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
