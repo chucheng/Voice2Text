@@ -610,9 +610,22 @@ class AppState: ObservableObject {
         }
     }
 
+    /// Normalize audio to target RMS level (~-20 dBFS) for consistent Whisper accuracy regardless of mic volume.
+    private func normalizeAudio(_ samples: [Float]) -> [Float] {
+        guard !samples.isEmpty else { return samples }
+        let sumOfSquares = samples.reduce(Float(0)) { $0 + $1 * $1 }
+        let rms = sqrt(sumOfSquares / Float(samples.count))
+        guard rms > 0.0001 else { return samples }  // near-silence, don't amplify noise
+        let targetRMS: Float = 0.1  // ~-20 dBFS
+        let scale = targetRMS / rms
+        if devMode { log("Audio normalize: RMS=\(String(format: "%.4f", rms)) → scale=\(String(format: "%.2f", scale))x") }
+        return samples.map { min(max($0 * scale, -1.0), 1.0) }
+    }
+
     private func transcribe(samples: [Float], language: String) {
+        let normalized = normalizeAudio(samples)
         log("Whisper: inference started (language=\(language), model=\(selectedModel.rawValue))")
-        whisperBridge.transcribe(samples: samples, language: language) { [weak self] text in
+        whisperBridge.transcribe(samples: normalized, language: language) { [weak self] text in
             guard let self else { return }
             if self.devMode, let start = self.stageStartTime {
                 let ms = Int(Date().timeIntervalSince(start) * 1000)
@@ -1123,7 +1136,8 @@ class AppState: ObservableObject {
 
         log("VAD: inference triggered (\(snapshot.count) samples, \(String(format: "%.1f", Double(snapshot.count) / 16000))s)")
 
-        whisperBridge.transcribe(samples: snapshot, language: "auto") { [weak self] text in
+        let normalized = normalizeAudio(snapshot)
+        whisperBridge.transcribe(samples: normalized, language: "auto") { [weak self] text in
             guard let self else { return }
             self.vadIsInferring = false
             guard self.isRecording else { return }

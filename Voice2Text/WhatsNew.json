@@ -1,5 +1,16 @@
 [
     {
+        "version": "2.6.1",
+        "changes": {
+            "en": [
+                "Improved: Audio normalization — automatically adjusts volume before Whisper inference for consistent accuracy regardless of microphone level"
+            ],
+            "zh": [
+                "改进：音频正规化 — Whisper 推理前自动调整音量，无论麦克风音量高低均保持稳定准确度"
+            ]
+        }
+    },
+    {
         "version": "2.6.0",
         "changes": {
             "en": [

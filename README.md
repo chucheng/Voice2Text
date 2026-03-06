@@ -323,6 +323,10 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v2.6.1
+
+- Improved: Audio normalization — automatically adjusts volume to target RMS before Whisper inference, consistent accuracy regardless of microphone level
+
 ### v2.6.0
 
 - New: Global hotkey live typing — text appears at cursor while recording with `...▍` indicator, replaced by final LLM-revised result on release

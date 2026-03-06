@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.6.0** — VAD-based streaming + global hotkey live typing with cursor indicator; What's New 5s auto-dismiss.
+**Version: 2.6.1** — VAD-based streaming + global hotkey live typing + audio normalization; What's New 5s auto-dismiss.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
