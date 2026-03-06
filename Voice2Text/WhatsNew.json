@@ -1,5 +1,20 @@
 [
     {
+        "version": "2.5.0",
+        "changes": {
+            "en": [
+                "New: VAD-based streaming — detects sentence boundaries by silence, transcribes each chunk independently (text only grows, never jumps)",
+                "Improved: Faster final result after release — most audio already transcribed during recording",
+                "Improved: 5-second fallback timer for continuous speech without pauses"
+            ],
+            "zh": [
+                "新功能：VAD 智能串流 — 根据静音检测句子边界，逐句独立转录（文字只增不跳）",
+                "改进：放开按键后更快出结果 — 录音中已完成大部分转录",
+                "改进：连续说话无停顿时 5 秒强制切段保底"
+            ]
+        }
+    },
+    {
         "version": "2.4.0",
         "changes": {
             "en": [

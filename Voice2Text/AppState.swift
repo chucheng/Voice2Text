@@ -327,6 +327,7 @@ class AppState: ObservableObject {
         // Wire audio level callback
         audioRecorder.onAudioLevel = { [weak self] level in
             self?.audioLevel = level
+            self?.vadProcessAudioLevel(level)
             if self?.isGlobalHotkeyActive == true {
                 FloatingRecordingPanel.shared.updateAudioLevel(level)
             }
@@ -477,7 +478,7 @@ class AppState: ObservableObject {
                     self?.isStarting = false
                     self?.isRecording = success
                     if success {
-                        self?.startStreamingTimer()
+                        self?.vadStartRecording()
                     }
                 }
             }
@@ -487,7 +488,7 @@ class AppState: ObservableObject {
     // MARK: - Whisper
 
     private func stopAndTranscribe() {
-        stopStreamingTimer()
+        vadStopRecording()
         pipelineStartTime = Date()
         let samples = audioRecorder.stopRecording()
         isRecording = false
@@ -518,7 +519,35 @@ class AppState: ObservableObject {
 
         isTranscribing = true
         stageStartTime = Date()
-        transcribe(samples: samples, language: "auto")
+
+        // Only transcribe the remaining chunk after last VAD-committed offset
+        let remainingOffset = vadLastChunkOffset
+        if remainingOffset >= samples.count {
+            // All audio already committed via VAD chunks
+            log("VAD: all audio already chunked, skipping final Whisper pass")
+            isTranscribing = false
+            let combinedText = vadCommittedText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if combinedText.isEmpty {
+                transcriptionText = ""
+                performAutoPaste("")
+            } else {
+                rawTranscription = combinedText
+                postProcess(combinedText)
+            }
+            return
+        }
+
+        let remainingSamples = Array(samples[remainingOffset...])
+        if remainingSamples.count < vadMinChunkSamples && !vadCommittedText.isEmpty {
+            // Remaining chunk too short and we have committed text — skip it
+            log("VAD: remaining chunk too short (\(remainingSamples.count) samples), using committed text only")
+            isTranscribing = false
+            rawTranscription = vadCommittedText
+            postProcess(vadCommittedText)
+            return
+        }
+
+        transcribe(samples: remainingSamples, language: "auto")
     }
 
     // MARK: - Apple Speech
@@ -626,9 +655,14 @@ class AppState: ObservableObject {
                 return
             }
 
-            self.rawTranscription = text
+            // Combine VAD committed text with final chunk result
+            var fullText = text
+            if !self.vadCommittedText.isEmpty {
+                fullText = self.vadCommittedText + text
+            }
+            self.rawTranscription = fullText
             self.isTranscribing = false
-            self.postProcess(text)
+            self.postProcess(fullText)
         }
     }
 
@@ -1063,35 +1097,113 @@ class AppState: ObservableObject {
         }
     }
 
-    // MARK: - Whisper Streaming (Progressive Transcription)
+    // MARK: - VAD Streaming (Sentence-Level Chunking)
 
-    private var streamingTimer: Timer?
-    private var isStreamingInference = false
+    private var vadState: VADState = .idle
+    private var vadSilenceStart: Date?
+    private var vadLastChunkOffset: Int = 0
+    private var vadCommittedText: String = ""
+    private var vadIsInferring = false
+    private var vadFallbackTimer: Timer?
 
-    private func startStreamingTimer() {
-        streamingTimer?.invalidate()
-        streamingTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            guard let self, self.isRecording, !self.isStreamingInference else { return }
-            let snapshot = self.audioRecorder.accumulatedSamples
-            // Need at least 1s of audio for Whisper to produce useful output
-            guard snapshot.count >= 16000 else { return }
-            self.isStreamingInference = true
-            self.log("Whisper streaming: partial inference (\(snapshot.count) samples, \(String(format: "%.1f", Double(snapshot.count) / 16000))s)")
-            self.whisperBridge.transcribe(samples: snapshot, language: "auto") { [weak self] text in
-                guard let self else { return }
-                self.isStreamingInference = false
-                // Only update if still recording (final inference will overwrite)
-                guard self.isRecording else { return }
-                let display = self.convertScript(text)
-                self.transcriptionText = display
-                self.log("Whisper streaming: partial result (\(text.count) chars)")
+    private enum VADState {
+        case idle
+        case speaking
+        case maybeSilent
+    }
+
+    private let vadSilenceThreshold: Float = 0.05
+    private let vadSilenceDuration: TimeInterval = 0.5
+    private let vadMaxChunkDuration: TimeInterval = 5.0
+    private let vadMinChunkSamples: Int = 8000  // 0.5s at 16kHz
+
+    private func vadProcessAudioLevel(_ level: Float) {
+        guard isRecording, sttEngine == .whisper else { return }
+
+        let currentSamples = audioRecorder.accumulatedSamples.count
+
+        switch vadState {
+        case .idle:
+            break
+        case .speaking:
+            if level < vadSilenceThreshold {
+                vadState = .maybeSilent
+                vadSilenceStart = Date()
+            }
+        case .maybeSilent:
+            if level >= vadSilenceThreshold {
+                vadState = .speaking
+                vadSilenceStart = nil
+            } else if let start = vadSilenceStart,
+                      Date().timeIntervalSince(start) >= vadSilenceDuration {
+                vadState = .speaking
+                vadSilenceStart = nil
+                vadTranscribeChunk(endOffset: currentSamples)
             }
         }
     }
 
-    private func stopStreamingTimer() {
-        streamingTimer?.invalidate()
-        streamingTimer = nil
+    private func vadTranscribeChunk(endOffset: Int) {
+        let startOffset = vadLastChunkOffset
+        guard endOffset > startOffset else { return }
+
+        let chunkSamples = Array(audioRecorder.accumulatedSamples[startOffset..<endOffset])
+        guard chunkSamples.count >= vadMinChunkSamples else { return }
+        guard !vadIsInferring else { return }
+
+        vadLastChunkOffset = endOffset
+        vadIsInferring = true
+
+        vadFallbackTimer?.invalidate()
+        vadFallbackTimer = nil
+
+        log("VAD: chunk [\(startOffset)..\(endOffset)] (\(String(format: "%.1f", Double(chunkSamples.count) / 16000))s)")
+
+        whisperBridge.transcribe(samples: chunkSamples, language: "auto") { [weak self] text in
+            guard let self else { return }
+            self.vadIsInferring = false
+            guard self.isRecording else { return }
+
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                if self.vadCommittedText.isEmpty {
+                    self.vadCommittedText = trimmed
+                } else {
+                    self.vadCommittedText += trimmed
+                }
+                self.transcriptionText = self.convertScript(self.vadCommittedText)
+                self.log("VAD: partial committed (\(trimmed.count) chars, total: \(self.vadCommittedText.count))")
+            }
+
+            self.startVADFallbackTimer()
+        }
+    }
+
+    private func startVADFallbackTimer() {
+        vadFallbackTimer?.invalidate()
+        vadFallbackTimer = Timer.scheduledTimer(withTimeInterval: vadMaxChunkDuration, repeats: false) { [weak self] _ in
+            guard let self, self.isRecording else { return }
+            let currentSamples = self.audioRecorder.accumulatedSamples.count
+            self.log("VAD: fallback — 5s continuous speech, force-cutting chunk")
+            self.vadTranscribeChunk(endOffset: currentSamples)
+        }
+    }
+
+    private func vadStartRecording() {
+        vadState = .speaking
+        vadSilenceStart = nil
+        vadLastChunkOffset = 0
+        vadCommittedText = ""
+        vadIsInferring = false
+        transcriptionText = ""
+        startVADFallbackTimer()
+    }
+
+    private func vadStopRecording() {
+        vadFallbackTimer?.invalidate()
+        vadFallbackTimer = nil
+        vadState = .idle
+        vadSilenceStart = nil
     }
 
     private var reviseFailedTimer: DispatchWorkItem?

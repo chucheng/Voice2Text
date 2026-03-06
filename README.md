@@ -166,7 +166,7 @@ Mic → AVAudioEngine → AVAudioConverter (16kHz mono) ─┬─→ Whisper inf
 
 | Engine | Requires | Mode | Best For |
 |--------|----------|------|----------|
-| Whisper | Downloaded model | Streaming partials + final batch | Offline use, accuracy |
+| Whisper | Downloaded model | VAD-based sentence chunking + final batch | Offline use, accuracy |
 | Apple Speech | Network connection | Streaming (real-time) | Quick dictation, live preview |
 
 Both engines currently support mixed Chinese + English speech.
@@ -322,6 +322,12 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v2.5.0
+
+- New: VAD-based streaming — detects sentence boundaries by silence, transcribes each chunk independently (text only grows, never jumps)
+- Improved: Faster final result after release — most audio already transcribed during recording
+- Improved: 5-second fallback timer for continuous speech without pauses
 
 ### v2.4.0
 
