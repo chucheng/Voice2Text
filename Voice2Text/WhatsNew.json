@@ -1,5 +1,20 @@
 [
     {
+        "version": "2.6.0",
+        "changes": {
+            "en": [
+                "New: Global hotkey live typing — text appears at cursor while recording, replaced by final LLM result on release",
+                "New: Cursor indicator (▍) shows processing is ongoing during global hotkey recording",
+                "Improved: VAD streaming sends full audio for better accuracy (text naturally grows at the end)"
+            ],
+            "zh": [
+                "新功能：全局快捷键实时输入 — 录音时文字逐步出现在光标位置，放开后替换为 LLM 润稿结果",
+                "新功能：录音中光标符号（▍）提示正在处理",
+                "改进：VAD 串流发送完整音频以提升准确度（文字自然在末尾增长）"
+            ]
+        }
+    },
+    {
         "version": "2.5.0",
         "changes": {
             "en": [

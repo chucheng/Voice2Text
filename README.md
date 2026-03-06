@@ -323,6 +323,12 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v2.6.0
+
+- New: Global hotkey live typing — text appears at cursor while recording, replaced by final LLM-revised result on release
+- New: Cursor indicator (▍) shows processing is ongoing during global hotkey recording
+- Improved: VAD streaming sends full audio for better accuracy (text naturally grows at the end)
+
 ### v2.5.0
 
 - New: VAD-based streaming — detects sentence boundaries by silence, transcribes each chunk independently (text only grows, never jumps)

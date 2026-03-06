@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.5.0** — VAD-based streaming (sentence-level chunking by silence detection); What's New 5s auto-dismiss.
+**Version: 2.6.0** — VAD-based streaming + global hotkey live typing with cursor indicator; What's New 5s auto-dismiss.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -141,7 +141,8 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - Carbon events dispatched to main thread via `DispatchQueue.main.async`
 - `kEventHotKeyPressed` → `AppState.globalHotkeyDown()` → start recording + show floating panel
 - `kEventHotKeyReleased` → `AppState.globalHotkeyUp()` → stop recording + transcribe
-- After transcription: `performAutoPaste()` → clipboard + CGEvent ⌘V (if Accessibility granted)
+- During recording: VAD triggers incremental typing at cursor via CGEvent (diff-based: backspace changed suffix + type new suffix) with ▍ cursor indicator
+- After transcription: `performAutoPaste()` → backspace streaming text → clipboard + CGEvent ⌘V (if Accessibility granted)
 - `FloatingRecordingPanel`: NSPanel with `.nonactivatingPanel` + `.hudWindow` — does NOT steal focus from target app
 - `isGlobalHotkeyActive` flag distinguishes global hotkey flow from in-app recording (auto-paste only runs for global)
 - In-app recording (Spacebar/button) and global hotkey recording are mutually exclusive via `canToggle` + `isRecording` guards
