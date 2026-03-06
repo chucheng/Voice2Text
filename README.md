@@ -232,7 +232,7 @@ On-device post-editing uses [Qwen](https://huggingface.co/Qwen) models in GGUF f
 | Qwen 3.5 2B | ~1.3 GB | Great balance | **Recommended for most users** |
 | Qwen 3.5 4B | ~2.5 GB | Excellent quality | 16 GB+ RAM |
 
-Qwen 3.5 is the latest generation with improved instruction-following and multilingual performance. `/no_think` is automatically prepended to disable reasoning mode for clean output.
+Qwen 3.5 is the latest generation with improved instruction-following and multilingual performance. Reasoning mode is automatically disabled for clean output.
 
 ### Qwen 2.5 (Legacy)
 
@@ -325,7 +325,7 @@ project.yml                      # XcodeGen spec
 ### v2.2.0
 
 - New: Qwen 3.5 model support (0.8B / 2B / 4B) — latest generation on-device LLM with improved post-editing quality
-- New: `/no_think` auto-prepended for Qwen 3.5 to disable reasoning mode and output clean text
+- New: Reasoning mode automatically disabled for Qwen 3.5 (empty `<think>` block in prompt) for clean output
 - New: `<think>` tag stripping as safety net for Qwen 3.5 output
 - Changed: Default recommended model updated from Qwen 2.5 1.5B to Qwen 3.5 2B
 
