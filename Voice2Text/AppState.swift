@@ -183,6 +183,7 @@ class AppState: ObservableObject {
     @Published var apiCheckState: APICheckResult = .unchecked
     @Published var reviseFailed = false
     @Published var reviseFailedWithFallback = false
+    @Published var lowAudioWarning = false
     @Published var customRevisePrompt: String = {
         let stored = UserDefaults.standard.string(forKey: "customRevisePrompt")
         // Migrate: empty or matching a known old default → use current default
@@ -502,6 +503,15 @@ class AppState: ObservableObject {
         }
 
         log("Audio recorded: \(samples.count) samples (\(String(format: "%.1f", Double(samples.count) / 16000))s @ 16kHz)")
+
+        // Check for low audio level (wrong mic / near-silence)
+        let sumOfSquares = samples.reduce(Float(0)) { $0 + $1 * $1 }
+        let rms = sqrt(sumOfSquares / Float(samples.count))
+        if rms < 0.005 {
+            log("⚠️ Low audio level detected: RMS=\(String(format: "%.6f", rms)) — check microphone settings")
+            showLowAudioWarning()
+        }
+
         isTranscribing = true
         stageStartTime = Date()
         transcribe(samples: samples, language: "auto")
@@ -601,7 +611,7 @@ class AppState: ObservableObject {
             guard let self else { return }
             if self.devMode, let start = self.stageStartTime {
                 let ms = Int(Date().timeIntervalSince(start) * 1000)
-                self.log("⏱ Whisper: \(ms)ms")
+                self.log("⏱ Whisper STT: \(ms)ms")
             }
             self.log("Whisper: inference complete, result: \(text.count) chars")
 
@@ -731,7 +741,7 @@ class AppState: ObservableObject {
                 guard let self else { return }
                 if self.devMode, let start = self.stageStartTime {
                     let ms = Int(Date().timeIntervalSince(start) * 1000)
-                    self.log("⏱ BERT: \(ms)ms")
+                    self.log("⏱ BERT punctuation: \(ms)ms")
                 }
                 if let restored {
                     self.log("BERT punctuation restore: success (\(restored.count) chars)")
@@ -807,7 +817,7 @@ class AppState: ObservableObject {
             guard let self else { return }
             if self.devMode {
                 let ms = Int(Date().timeIntervalSince(llmStart) * 1000)
-                self.log("⏱ Local LLM: \(ms)ms")
+                self.log("⏱ Local LLM round-trip: \(ms)ms")
             }
             if let result, !result.isEmpty {
                 // Strip <think>...</think> blocks (safety net for Qwen 3.5)
@@ -843,7 +853,7 @@ class AppState: ObservableObject {
     private func logPipelineTotal() {
         if devMode, let start = pipelineStartTime {
             let ms = Int(Date().timeIntervalSince(start) * 1000)
-            log("⏱ Total pipeline: \(ms)ms")
+            log("⏱ Total (release → done): \(ms)ms")
         }
     }
 
@@ -890,7 +900,7 @@ class AppState: ObservableObject {
                 guard let self else { return }
                 if self.devMode {
                     let ms = Int(Date().timeIntervalSince(apiStart) * 1000)
-                    self.log("⏱ Cloud API: \(ms)ms")
+                    self.log("⏱ Cloud API round-trip: \(ms)ms")
                 }
                 if let result {
                     self.log("Post-Edit Revise: success (\(result.count) chars)")
@@ -1057,6 +1067,17 @@ class AppState: ObservableObject {
             withAnimation { self?.reviseFailed = false }
         }
         reviseFailedTimer = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: item)
+    }
+
+    private var lowAudioWarningTimer: DispatchWorkItem?
+    private func showLowAudioWarning() {
+        lowAudioWarningTimer?.cancel()
+        withAnimation { lowAudioWarning = true }
+        let item = DispatchWorkItem { [weak self] in
+            withAnimation { self?.lowAudioWarning = false }
+        }
+        lowAudioWarningTimer = item
         DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: item)
     }
 

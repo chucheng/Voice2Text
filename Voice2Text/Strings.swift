@@ -489,6 +489,9 @@ enum L {
     static var reviseFailedFallbackBanner: String {
         lang == .english ? "Revise failed — fell back to punctuation restore" : "修订失败 — 已回退到标点修复"
     }
+    static var lowAudioBanner: String {
+        lang == .english ? "Audio level very low — check your microphone settings" : "音量极低 — 请检查麦克风设置"
+    }
     static var customPromptLabel: String {
         lang == .english ? "Custom Prompt" : "自定义提示词"
     }

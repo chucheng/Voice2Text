@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.2.1** — Pipeline timing in Dev Mode; logging only when Dev Mode enabled.
+**Version: 2.3.0** — Low audio warning; clearer pipeline timing labels.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)

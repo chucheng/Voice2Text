@@ -67,7 +67,17 @@ struct ContentView: View {
                 .padding(.vertical, 10)
         }
         .overlay(alignment: .bottom) {
-            if appState.reviseFailed {
+            if appState.lowAudioWarning {
+                Text(L.lowAudioBanner)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(Color.yellow))
+                    .padding(.bottom, 52)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if appState.reviseFailed {
                 Text(L.reviseFailedBanner)
                     .font(.caption)
                     .fontWeight(.medium)

@@ -1,5 +1,18 @@
 [
     {
+        "version": "2.3.0",
+        "changes": {
+            "en": [
+                "New: Low audio warning — yellow banner alerts when microphone level is near-silent (wrong mic selected)",
+                "Improved: Pipeline timing labels now clearer — Whisper STT, BERT punctuation, Local LLM round-trip, Cloud API round-trip, Total (release → done)"
+            ],
+            "zh": [
+                "新功能：低音量警告 — 当麦克风音量极低时显示黄色提示（可能选错麦克风）",
+                "改进：流水线计时标签更清晰 — Whisper STT、BERT 标点、Local LLM 往返、Cloud API 往返、总计（释放 → 完成）"
+            ]
+        }
+    },
+    {
         "version": "2.2.1",
         "changes": {
             "en": [
