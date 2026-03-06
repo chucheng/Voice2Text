@@ -1,5 +1,18 @@
 [
     {
+        "version": "2.8.0",
+        "changes": {
+            "en": [
+                "New: Dual model streaming — uses smallest downloaded model (tiny/base) for fast VAD partials, user-selected model for final transcription",
+                "Improved: Streaming inference is faster without sacrificing final accuracy"
+            ],
+            "zh": [
+                "新功能：双模型串流 — 使用最小已下载模型（tiny/base）加速 VAD 部分转录，用户选择的模型用于最终转录",
+                "改进：串流推理更快，不牺牲最终准确度"
+            ]
+        }
+    },
+    {
         "version": "2.7.0",
         "changes": {
             "en": [

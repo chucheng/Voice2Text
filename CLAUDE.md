@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.7.0** — VAD streaming with beam search, sliding window, noise calibration, high-pass filter; global hotkey live typing; What's New 5s auto-dismiss.
+**Version: 2.8.0** — Dual model streaming (tiny for VAD partials, user-selected for final); VAD with beam search, sliding window, noise calibration, high-pass filter; global hotkey live typing; What's New 5s auto-dismiss.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -124,6 +124,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - Revise failure: falls back to BERT (if available + Chinese) then to raw text + transient orange banner (4s) + debug log entry; never permanently disables
 - Custom revise prompt: persisted in UserDefaults (key: `"customRevisePrompt"`). Empty = use default. Reset to Default button in UI
 - Whisper VAD streaming: 300ms noise calibration at start → dynamic silence threshold (noise floor × 2.5, clamped 0.03–0.15); silence detection (500ms) triggers full-audio inference; 30s sliding window caps inference time for long recordings; `initial_prompt` passes previous transcription for context; beam search (beam_size=5) + temperature fallback; high-pass filter (80Hz) + RMS normalization via Accelerate/vDSP; 5s fallback timer force-cuts continuous speech; `vadIsInferring` guard prevents concurrent partials
+- Dual model streaming: `streamingWhisperBridge` loads smallest downloaded model (tiny > base) smaller than user-selected model for fast VAD partials; main `whisperBridge` uses user-selected model for final transcription; `loadStreamingModelIfAvailable()` called after main model load or new model download; if no smaller model available, streaming falls back to main model
 - What's New: `lastSeenVersion` tracked via `@AppStorage`. `WhatsNew.json` loaded from bundle. WhatsNewView auto-dismisses after 5s countdown, tap to dismiss early
 - Keyboard shortcuts: Spacebar push-to-talk, Cmd+C copies full transcription (or selection if any)
 - Punctuation restore enabled by default when model is loaded; greyed out when model not downloaded; auto-skipped for non-Chinese text

@@ -323,6 +323,11 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v2.8.0
+
+- New: Dual model streaming — uses smallest downloaded model (tiny/base) for fast VAD partials, user-selected model for accurate final transcription
+- Improved: Streaming inference is faster without sacrificing final accuracy — tiny model handles real-time partials while large model produces the final result
+
 ### v2.7.0
 
 - New: Whisper initial prompt — uses previous transcription as context for better accuracy

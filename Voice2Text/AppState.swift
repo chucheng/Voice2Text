@@ -289,7 +289,9 @@ class AppState: ObservableObject {
     weak var mainWindow: NSWindow?
 
     let audioRecorder = AudioRecorder()
-    let whisperBridge = WhisperBridge()
+    let whisperBridge = WhisperBridge()        // main model (user-selected, for final transcription)
+    let streamingWhisperBridge = WhisperBridge()  // streaming model (smallest available, for VAD partials)
+    private(set) var streamingModel: WhisperModel?  // which model is loaded for streaming (nil = use main)
     let llamaBridge = LlamaBridge()
     let appleSpeech = AppleSpeechRecognizer()
     private(set) var anthropicClient: AnthropicClient?
@@ -1204,7 +1206,9 @@ class AppState: ObservableObject {
         }
 
         let preprocessed = preprocessAudio(windowSamples)
-        whisperBridge.transcribe(samples: preprocessed, language: "auto", initialPrompt: prompt) { [weak self] text in
+        // Use streaming model (tiny/base) if available, otherwise fall back to main model
+        let bridge = streamingModel != nil ? streamingWhisperBridge : whisperBridge
+        bridge.transcribe(samples: preprocessed, language: "auto", initialPrompt: prompt) { [weak self] text in
             guard let self else { return }
             self.vadIsInferring = false
             guard self.isRecording else { return }
@@ -1454,9 +1458,54 @@ class AppState: ObservableObject {
                 self.loadedModelName = success ? model.displayName : ""
                 if success {
                     self.log("Whisper: model \(model.rawValue) loaded successfully")
+                    self.loadStreamingModelIfAvailable()
                 } else {
                     self.log("Whisper: model \(model.rawValue) failed to load — deleting corrupt file")
                     try? FileManager.default.removeItem(at: path)
+                }
+            }
+        }
+    }
+
+    /// Load the smallest available Whisper model for streaming (if smaller than selected model).
+    /// Only uses models the user has already downloaded — never auto-downloads.
+    private func loadStreamingModelIfAvailable() {
+        // Streaming model candidates: tiny, base (small enough for fast streaming)
+        let candidates: [WhisperModel] = [.tiny, .base]
+        let selectedIndex = WhisperModel.allCases.firstIndex(of: selectedModel) ?? 0
+
+        // Find smallest downloaded model that's smaller than the selected model
+        var bestCandidate: WhisperModel?
+        for candidate in candidates {
+            guard let candidateIndex = WhisperModel.allCases.firstIndex(of: candidate),
+                  candidateIndex < selectedIndex,
+                  isModelDownloaded(candidate) else { continue }
+            bestCandidate = candidate
+            break  // tiny is preferred over base
+        }
+
+        guard let streaming = bestCandidate else {
+            // No smaller model available — streaming will use main model
+            streamingModel = nil
+            log("Streaming model: none available (will use main model for VAD)")
+            return
+        }
+
+        // Already loaded?
+        if streamingModel == streaming { return }
+
+        let path = modelPath(for: streaming)
+        log("Streaming model: loading \(streaming.rawValue) for VAD partials...")
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            let success = self.streamingWhisperBridge.loadModel(path: path.path)
+            DispatchQueue.main.async {
+                if success {
+                    self.streamingModel = streaming
+                    self.log("Streaming model: \(streaming.rawValue) loaded (main=\(self.selectedModel.rawValue) for final)")
+                } else {
+                    self.streamingModel = nil
+                    self.log("Streaming model: \(streaming.rawValue) failed to load")
                 }
             }
         }
@@ -1504,6 +1553,9 @@ class AppState: ObservableObject {
                     try FileManager.default.moveItem(at: tmpURL, to: destPath)
                     if self.selectedModel == model {
                         self.loadModelIfAvailable()
+                    } else {
+                        // Might be a tiny/base model useful for streaming
+                        self.loadStreamingModelIfAvailable()
                     }
                 } catch {
                     print("Failed to save model: \(error.localizedDescription)")

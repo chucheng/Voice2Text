@@ -17,9 +17,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Hide floating panel
         FloatingRecordingPanel.shared.hide()
 
-        // Free whisper model synchronously on inference queue
+        // Free whisper models synchronously on inference queue
         // to avoid race with in-flight transcription
         appState.whisperBridge.freeModelSync()
+        appState.streamingWhisperBridge.freeModelSync()
 
         // Free llama model synchronously on inference queue
         appState.llamaBridge.freeModelSync()
