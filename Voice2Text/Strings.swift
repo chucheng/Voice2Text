@@ -426,7 +426,10 @@ enum L {
         lang == .english ? "Local LLM inference will be available in a future update." : "本地 LLM 推理将在后续版本中提供。"
     }
     static var localLLMDownloadPrompt: String {
-        lang == .english ? "Download a model to enable local post-editing. The recommended model (1.5B) offers a good balance of quality and speed." : "下载模型以启用本地后编辑。推荐的 1.5B 模型在质量和速度之间取得了良好的平衡。"
+        lang == .english ? "Download a model to enable local post-editing. The recommended model (Qwen 3.5 2B) offers a good balance of quality and speed." : "下载模型以启用本地后编辑。推荐的 Qwen 3.5 2B 模型在质量和速度之间取得了良好的平衡。"
+    }
+    static var qwen35NoThinkNote: String {
+        lang == .english ? "/no_think is automatically prepended to disable reasoning mode." : "自动添加 /no_think 以禁用推理模式。"
     }
     static var downloadRecommended: String {
         lang == .english ? "Download Recommended Model" : "下载推荐模型"

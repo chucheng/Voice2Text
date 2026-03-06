@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.1.1** — Tap AI badge to pause/resume post-editing.
+**Version: 2.2.0** — Qwen 3.5 support with /no_think reasoning mode disabled.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -109,7 +109,8 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - `textContainsChinese()` helper gates both retry logic and punctuation model usage
 - Apple Speech uses `zh-Hant` locale which handles mixed Chinese+English natively
 - Apple Speech requires network — NWPathMonitor detects connectivity in real-time
-- Post-processing pipeline: when LLM enabled: STT output → Post-Edit Revise (LLM handles punctuation) → on failure: BERT fallback → script conversion. When LLM disabled: STT output → BERT punctuation (optional, Chinese, CoreML) → script conversion
+- Post-processing pipeline: when LLM enabled: STT output → prepend `/no_think` (Qwen 3.5 only) → Post-Edit Revise (LLM handles punctuation) → strip `<think>` tags (safety net) → on failure: BERT fallback → script conversion. When LLM disabled: STT output → BERT punctuation (optional, Chinese, CoreML) → script conversion
+- Qwen 3.5 models: `/no_think` auto-prepended to user message to disable reasoning mode; `<think>...</think>` tags stripped from output as safety net
 - Punctuation model downloaded on-demand to `~/Library/Application Support/Voice2Text/zh-punctuation-bert.mlpackage`
 - Script conversion uses Foundation `StringTransform` (`Hans-Hant` / `Hant-Hans`) — zero dependencies
 - Model selection persisted via `UserDefaults`

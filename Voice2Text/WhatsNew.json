@@ -1,5 +1,20 @@
 [
     {
+        "version": "2.2.0",
+        "changes": {
+            "en": [
+                "New: Qwen 3.5 model support (0.8B / 2B / 4B) — latest generation on-device LLM for better post-editing quality",
+                "New: /no_think auto-prepended for Qwen 3.5 to disable reasoning mode and output clean text",
+                "New: <think> tag stripping as safety net for Qwen 3.5 output"
+            ],
+            "zh": [
+                "新功能：支持 Qwen 3.5 模型（0.8B / 2B / 4B）— 最新一代设备端 LLM，润稿质量更佳",
+                "新功能：Qwen 3.5 自动添加 /no_think 禁用推理模式，输出干净文本",
+                "新功能：Qwen 3.5 输出自动过滤 <think> 标签作为安全防护"
+            ]
+        }
+    },
+    {
         "version": "2.1.1",
         "changes": {
             "en": [

@@ -34,7 +34,7 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 - **Multiple whisper models** — tiny, base, small, medium, large-v3-turbo (downloaded on-demand)
 - **Push-to-talk** — hold Spacebar to record in-app, release to transcribe
 - **Floating indicator** — compact pill shows recording/transcribing/done status
-- **Local LLM post-editing** — on-device Qwen 2.5 models (0.5B/1.5B/3B/7B) add punctuation and polish transcription — no internet needed
+- **Local LLM post-editing** — on-device Qwen 3.5 / 2.5 models add punctuation and polish transcription — no internet needed
 - **Cloud API option** — optional Anthropic Claude integration for users who prefer cloud-based post-editing
 - **Language-aware editing** — non-English: focus on adding punctuation; English: detailed grammar/spelling fixes; mixed: per-segment rules
 - **Punctuation restoration** — built-in CoreML BERT model adds punctuation for Chinese text (fallback when no LLM active)
@@ -136,7 +136,7 @@ This will regenerate the Xcode project, build a Release archive, ad-hoc sign it,
            ▼                  ▼                  ▼
   ┌─────────────────┐ ┌─────────────┐ ┌─────────────┐ ┌──────────────────┐
   │  Punctuation    │ │  Local LLM  │ │  Anthropic  │ │   StringTransform │
-  │  Restorer       │ │  (Qwen 2.5  │ │  Client     │ │   (Hans↔Hant)     │
+  │  Restorer       │ │  (Qwen 3.5/ │ │  Client     │ │   (Hans↔Hant)     │
   │  (CoreML BERT)  │ │  on-device) │ │ (Cloud API) │ │                    │
   │  in-process     │ │             │ │             │ │                    │
   └─────────────────┘ └─────────────┘ └─────────────┘ └──────────────────┘
@@ -222,12 +222,24 @@ Models are downloaded from [ggerganov/whisper.cpp on HuggingFace](https://huggin
 
 ## Available Qwen LLM Models (Optional)
 
-On-device post-editing uses [Qwen 2.5 Instruct](https://huggingface.co/Qwen) models in GGUF format, powered by [llama.cpp](https://github.com/ggerganov/llama.cpp). Select and download from Settings > AI Services > Local LLM.
+On-device post-editing uses [Qwen](https://huggingface.co/Qwen) models in GGUF format, powered by [llama.cpp](https://github.com/ggerganov/llama.cpp). Select and download from Settings > AI Services > Local LLM.
+
+### Qwen 3.5 (Recommended)
+
+| Model | Size | Quality | Recommendation |
+|-------|------|---------|----------------|
+| Qwen 3.5 0.8B | ~500 MB | Good punctuation | Low-end Macs |
+| Qwen 3.5 2B | ~1.3 GB | Great balance | **Recommended for most users** |
+| Qwen 3.5 4B | ~2.5 GB | Excellent quality | 16 GB+ RAM |
+
+Qwen 3.5 is the latest generation with improved instruction-following and multilingual performance. `/no_think` is automatically prepended to disable reasoning mode for clean output.
+
+### Qwen 2.5 (Legacy)
 
 | Model | Size | Quality | Recommendation |
 |-------|------|---------|----------------|
 | Qwen 2.5 0.5B | ~400 MB | Basic punctuation | Low-end Macs |
-| Qwen 2.5 1.5B | ~1.0 GB | Good balance | Recommended for most users |
+| Qwen 2.5 1.5B | ~1.0 GB | Good balance | General use |
 | Qwen 2.5 3B | ~2.0 GB | Better grammar fixes | 16 GB+ RAM |
 | Qwen 2.5 7B | ~3.5 GB | Best quality | 32 GB+ RAM |
 
@@ -310,6 +322,13 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v2.2.0
+
+- New: Qwen 3.5 model support (0.8B / 2B / 4B) — latest generation on-device LLM with improved post-editing quality
+- New: `/no_think` auto-prepended for Qwen 3.5 to disable reasoning mode and output clean text
+- New: `<think>` tag stripping as safety net for Qwen 3.5 output
+- Changed: Default recommended model updated from Qwen 2.5 1.5B to Qwen 3.5 2B
+
 ### v2.1.1
 
 - Docs: Update Getting Started guide — add Local LLM option to AI post-edit section, fix bilingual tab names in Settings table, update version to 2.1.1
@@ -329,7 +348,7 @@ project.yml                      # XcodeGen spec
 ### v2.0.0 — What's New Since 1.0
 
 **On-Device AI Post-Editing**
-- Local LLM inference via [llama.cpp](https://github.com/ggerganov/llama.cpp) — Qwen 2.5 models (0.5B / 1.5B / 3B / 7B) run entirely on your Mac
+- Local LLM inference via [llama.cpp](https://github.com/ggerganov/llama.cpp) — Qwen 3.5 / 2.5 models run entirely on your Mac
 - Language-aware editing: adds punctuation for Chinese, fixes grammar for English
 - Built-in CoreML BERT punctuation restoration as fallback (no external server)
 - Optional Cloud API (Anthropic Claude) for users who prefer it
@@ -369,7 +388,7 @@ Full license texts are available in [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES).
 | [whisper.cpp](https://github.com/ggerganov/whisper.cpp) | MIT | Yes (static lib) |
 | [llama.cpp](https://github.com/ggerganov/llama.cpp) | MIT | Yes (static lib) |
 | [OpenAI Whisper models](https://github.com/openai/whisper) | MIT | Downloaded at runtime |
-| [Qwen 2.5 models](https://huggingface.co/Qwen) | Apache 2.0 | Downloaded at runtime (GGUF, opt-in) |
+| [Qwen 3.5 / 2.5 models](https://huggingface.co/Qwen) | Apache 2.0 | Downloaded at runtime (GGUF, opt-in) |
 | [zh-wiki-punctuation-restore](https://huggingface.co/p208p2002/zh-wiki-punctuation-restore) | Not specified | Downloaded at runtime (CoreML, Chinese only, opt-in) |
 | [XcodeGen](https://github.com/yonaskolb/XcodeGen) | MIT | Build tool only |
 | Apple Frameworks (SwiftUI, AVFoundation, Speech, Carbon, CoreML) | Apple SDK | OS-provided |

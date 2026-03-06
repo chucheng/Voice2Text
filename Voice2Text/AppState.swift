@@ -53,6 +53,11 @@ enum PostEditProvider: String, CaseIterable, Identifiable {
 }
 
 enum LocalLLMModel: String, CaseIterable, Identifiable {
+    // Qwen 3.5 (recommended, shown first in UI)
+    case qwen35_08B = "qwen3.5-0.8b"
+    case qwen35_2B  = "qwen3.5-2b"
+    case qwen35_4B  = "qwen3.5-4b"
+    // Qwen 2.5 (legacy)
     case qwen05B = "qwen2.5-0.5b"
     case qwen15B = "qwen2.5-1.5b"
     case qwen3B  = "qwen2.5-3b"
@@ -62,35 +67,61 @@ enum LocalLLMModel: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .qwen05B: return "Qwen 2.5 0.5B (~400 MB)"
-        case .qwen15B: return "Qwen 2.5 1.5B (~1.0 GB)"
-        case .qwen3B:  return "Qwen 2.5 3B (~2.0 GB)"
-        case .qwen7B:  return "Qwen 2.5 7B (~3.5 GB)"
+        case .qwen05B:    return "Qwen 2.5 0.5B (~400 MB)"
+        case .qwen15B:    return "Qwen 2.5 1.5B (~1.0 GB)"
+        case .qwen3B:     return "Qwen 2.5 3B (~2.0 GB)"
+        case .qwen7B:     return "Qwen 2.5 7B (~3.5 GB)"
+        case .qwen35_08B: return "Qwen 3.5 0.8B (~500 MB)"
+        case .qwen35_2B:  return "Qwen 3.5 2B (~1.3 GB)"
+        case .qwen35_4B:  return "Qwen 3.5 4B (~2.5 GB)"
         }
     }
 
-    var isRecommended: Bool { self == .qwen15B }
+    var isRecommended: Bool { self == .qwen35_2B }
+
+    var isQwen35: Bool {
+        switch self {
+        case .qwen35_08B, .qwen35_2B, .qwen35_4B: return true
+        default: return false
+        }
+    }
 
     var fileName: String {
         switch self {
-        case .qwen05B: return "qwen2.5-0.5b-instruct-q4_k_m.gguf"
-        case .qwen15B: return "qwen2.5-1.5b-instruct-q4_k_m.gguf"
-        case .qwen3B:  return "qwen2.5-3b-instruct-q4_k_m.gguf"
-        case .qwen7B:  return "qwen2.5-7b-instruct-q3_k_m.gguf"
-        }
-    }
-
-    var repoName: String {
-        switch self {
-        case .qwen05B: return "Qwen2.5-0.5B-Instruct-GGUF"
-        case .qwen15B: return "Qwen2.5-1.5B-Instruct-GGUF"
-        case .qwen3B:  return "Qwen2.5-3B-Instruct-GGUF"
-        case .qwen7B:  return "Qwen2.5-7B-Instruct-GGUF"
+        case .qwen05B:    return "qwen2.5-0.5b-instruct-q4_k_m.gguf"
+        case .qwen15B:    return "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+        case .qwen3B:     return "qwen2.5-3b-instruct-q4_k_m.gguf"
+        case .qwen7B:     return "qwen2.5-7b-instruct-q3_k_m.gguf"
+        case .qwen35_08B: return "Qwen3.5-0.8B-Q4_K_M.gguf"
+        case .qwen35_2B:  return "Qwen3.5-2B-Q4_K_M.gguf"
+        case .qwen35_4B:  return "Qwen3.5-4B-Q4_K_M.gguf"
         }
     }
 
     var downloadURL: URL {
-        URL(string: "https://huggingface.co/Qwen/\(repoName)/resolve/main/\(fileName)")!
+        switch self {
+        case .qwen05B, .qwen15B, .qwen3B, .qwen7B:
+            // Qwen 2.5 — official Qwen GGUF repos
+            let repoName: String
+            switch self {
+            case .qwen05B: repoName = "Qwen2.5-0.5B-Instruct-GGUF"
+            case .qwen15B: repoName = "Qwen2.5-1.5B-Instruct-GGUF"
+            case .qwen3B:  repoName = "Qwen2.5-3B-Instruct-GGUF"
+            case .qwen7B:  repoName = "Qwen2.5-7B-Instruct-GGUF"
+            default: fatalError()
+            }
+            return URL(string: "https://huggingface.co/Qwen/\(repoName)/resolve/main/\(fileName)")!
+        case .qwen35_08B, .qwen35_2B, .qwen35_4B:
+            // Qwen 3.5 — unsloth community GGUF repos
+            let repoName: String
+            switch self {
+            case .qwen35_08B: repoName = "Qwen3.5-0.8B-GGUF"
+            case .qwen35_2B:  repoName = "Qwen3.5-2B-GGUF"
+            case .qwen35_4B:  repoName = "Qwen3.5-4B-GGUF"
+            default: fatalError()
+            }
+            return URL(string: "https://huggingface.co/unsloth/\(repoName)/resolve/main/\(fileName)")!
+        }
     }
 }
 
@@ -198,7 +229,7 @@ class AppState: ObservableObject {
            let model = LocalLLMModel(rawValue: saved) {
             return model
         }
-        return .qwen15B
+        return .qwen35_2B
     }() {
         didSet { UserDefaults.standard.set(selectedLocalLLMModel.rawValue, forKey: "selectedLocalLLMModel") }
     }
@@ -756,19 +787,28 @@ class AppState: ObservableObject {
     /// Run inference on the loaded Local LLM model.
     private func runLocalLLMInference(_ text: String) {
         let prompt = customRevisePrompt
-        log("Local LLM: sending \(text.count) chars for revision")
+        // Qwen 3.5: prepend /no_think to disable reasoning mode
+        let inputText = selectedLocalLLMModel.isQwen35 ? "/no_think\n\(text)" : text
+        log("Local LLM: sending \(text.count) chars for revision\(selectedLocalLLMModel.isQwen35 ? " (with /no_think)" : "")")
         if devMode {
-            log("  → Input: \(text)")
+            log("  → Input: \(inputText)")
         }
-        llamaBridge.generate(text: text, systemPrompt: prompt) { [weak self] result in
+        llamaBridge.generate(text: inputText, systemPrompt: prompt) { [weak self] result in
             guard let self else { return }
             if let result, !result.isEmpty {
-                self.log("Local LLM: success (\(result.count) chars)")
-                if self.devMode {
-                    self.log("  ← Output: \(result)")
+                // Strip <think>...</think> blocks (safety net for Qwen 3.5)
+                let cleaned = Self.stripThinkTags(result)
+                if cleaned.isEmpty {
+                    self.log("Local LLM: output was only <think> tags, falling back to BERT")
+                    self.applyBERTFallbackAndConvert(text)
+                    return
                 }
-                self.rawTranscription = result
-                self.transcriptionText = self.convertScript(result)
+                self.log("Local LLM: success (\(cleaned.count) chars)")
+                if self.devMode {
+                    self.log("  ← Output: \(cleaned)")
+                }
+                self.rawTranscription = cleaned
+                self.transcriptionText = self.convertScript(cleaned)
                 self.isReformatting = false
                 self.performAutoPaste(self.transcriptionText)
             } else {
@@ -776,6 +816,12 @@ class AppState: ObservableObject {
                 self.applyBERTFallbackAndConvert(text)
             }
         }
+    }
+
+    /// Strip `<think>...</think>` blocks from LLM output (Qwen 3.5 reasoning mode safety net).
+    static func stripThinkTags(_ text: String) -> String {
+        text.replacingOccurrences(of: "<think>[\\s\\S]*?</think>", with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Try BERT punctuation as best-effort, then script-convert and finish.

@@ -399,8 +399,8 @@ private struct AIServicesTab: View {
                                 .foregroundColor(.secondary)
 
                             Button(L.downloadRecommended) {
-                                appState.selectLocalLLMModel(.qwen15B)
-                                appState.downloadLocalLLMModel(.qwen15B)
+                                appState.selectLocalLLMModel(.qwen35_2B)
+                                appState.downloadLocalLLMModel(.qwen35_2B)
                             }
                             .controlSize(.small)
                             .buttonStyle(.borderedProminent)
@@ -427,6 +427,16 @@ private struct AIServicesTab: View {
                         }
                     }
 
+                    // Qwen 3.5 /no_think note
+                    if appState.selectedLocalLLMModel.isQwen35 {
+                        HStack(spacing: 6) {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(.blue)
+                            Text("Qwen 3.5: \(L.qwen35NoThinkNote)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
             }
 
