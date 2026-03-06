@@ -196,6 +196,38 @@ class GlobalHotkeyManager {
         keyUp.flags = .maskCommand
         keyUp.post(tap: .cghidEventTap)
     }
+
+    // MARK: - Incremental Typing
+
+    /// Type Unicode text at cursor via CGEvent. Flags cleared so held modifiers (e.g. ⌘) don't interfere.
+    static func typeText(_ text: String) {
+        guard isAccessibilityGranted else { return }
+        for char in text {
+            var utf16 = Array(String(char).utf16)
+            guard let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true) else { continue }
+            keyDown.flags = []
+            keyDown.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: &utf16)
+            keyDown.post(tap: .cghidEventTap)
+
+            guard let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: false) else { continue }
+            keyUp.flags = []
+            keyUp.post(tap: .cghidEventTap)
+        }
+    }
+
+    /// Simulate Delete (Backspace) key `count` times. Flags cleared so held modifiers don't interfere.
+    static func pressBackspace(count: Int) {
+        guard isAccessibilityGranted, count > 0 else { return }
+        for _ in 0..<count {
+            guard let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(kVK_Delete), keyDown: true) else { continue }
+            keyDown.flags = []
+            keyDown.post(tap: .cghidEventTap)
+
+            guard let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(kVK_Delete), keyDown: false) else { continue }
+            keyUp.flags = []
+            keyUp.post(tap: .cghidEventTap)
+        }
+    }
 }
 
 // MARK: - Helpers

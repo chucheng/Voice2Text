@@ -1071,6 +1071,8 @@ class AppState: ObservableObject {
     private var vadIsInferring = false
     private var vadFallbackTimer: Timer?
     private var vadLastSampleCount: Int = 0  // track if new audio since last inference
+    private var vadGlobalPastedText: String = ""  // text currently typed at cursor in target app
+    private let vadCursorSymbol = "▍"
 
     private enum VADState {
         case idle
@@ -1130,6 +1132,11 @@ class AppState: ObservableObject {
             self.transcriptionText = display
             self.log("VAD: partial result (\(text.count) chars)")
 
+            // Incremental typing for global hotkey
+            if self.isGlobalHotkeyActive && GlobalHotkeyManager.isAccessibilityGranted {
+                self.vadIncrementalPaste(newText: display)
+            }
+
             self.startVADFallbackTimer()
         }
     }
@@ -1148,6 +1155,7 @@ class AppState: ObservableObject {
         vadSilenceStart = nil
         vadLastSampleCount = 0
         vadIsInferring = false
+        vadGlobalPastedText = ""
         transcriptionText = ""
         startVADFallbackTimer()
     }
@@ -1157,6 +1165,29 @@ class AppState: ObservableObject {
         vadFallbackTimer = nil
         vadState = .idle
         vadSilenceStart = nil
+    }
+
+    /// Incrementally type text at cursor in target app during global hotkey recording.
+    /// Computes diff with previously typed text, backspaces the changed suffix, types the new suffix.
+    /// Appends a cursor symbol (▍) at the end to indicate "still processing".
+    private func vadIncrementalPaste(newText: String) {
+        let newWithCursor = newText + vadCursorSymbol
+        let old = vadGlobalPastedText
+
+        // Find common prefix length
+        let commonLen = zip(old, newWithCursor).prefix(while: { $0 == $1 }).count
+        let deleteCount = old.count - commonLen
+        let addText = String(newWithCursor.dropFirst(commonLen))
+
+        if deleteCount > 0 {
+            GlobalHotkeyManager.pressBackspace(count: deleteCount)
+        }
+        if !addText.isEmpty {
+            GlobalHotkeyManager.typeText(addText)
+        }
+
+        vadGlobalPastedText = newWithCursor
+        log("VAD global: incremental paste (del \(deleteCount), add \(addText.count), total \(newWithCursor.count) chars)")
     }
 
     private var reviseFailedTimer: DispatchWorkItem?
@@ -1601,7 +1632,14 @@ class AppState: ObservableObject {
         guard isGlobalHotkeyActive else { return }
         isGlobalHotkeyActive = false
 
+        // Clear streaming text typed during recording
+        let streamingText = vadGlobalPastedText
+        vadGlobalPastedText = ""
+
         guard !text.isEmpty else {
+            if !streamingText.isEmpty {
+                GlobalHotkeyManager.pressBackspace(count: streamingText.count)
+            }
             FloatingRecordingPanel.shared.hide()
             return
         }
@@ -1611,12 +1649,17 @@ class AppState: ObservableObject {
         log("Global hotkey: result copied to clipboard (\(text.count) chars)")
 
         if GlobalHotkeyManager.isAccessibilityGranted {
-            // Small delay to ensure clipboard is ready
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            if !streamingText.isEmpty {
+                // Delete streaming text, then paste final result
+                GlobalHotkeyManager.pressBackspace(count: streamingText.count)
+                log("Global hotkey: cleared \(streamingText.count) streaming chars")
+            }
+            // Small delay to ensure backspaces are processed before paste
+            let delay = streamingText.isEmpty ? 0.05 : 0.1
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                 GlobalHotkeyManager.pasteFromClipboard()
                 FloatingRecordingPanel.shared.showDoneAndHide()
                 self.log("Global hotkey: auto-pasted via ⌘V to frontmost app")
-                // Security: clear clipboard after paste to reduce exposure window
                 self.scheduleClipboardClear()
             }
         } else {
