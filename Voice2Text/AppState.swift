@@ -1072,7 +1072,7 @@ class AppState: ObservableObject {
     private var vadFallbackTimer: Timer?
     private var vadLastSampleCount: Int = 0  // track if new audio since last inference
     private var vadGlobalPastedText: String = ""  // text currently typed at cursor in target app
-    private let vadCursorSymbol = "▍"
+    private let vadCursorSymbol = " ...▍"
 
     private enum VADState {
         case idle
