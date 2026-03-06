@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.3.0** — Low audio warning; clearer pipeline timing labels.
+**Version: 2.4.0** — Whisper streaming (progressive transcription); What's New 5s auto-dismiss.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -21,12 +21,12 @@ Full voice-to-text pipeline with two recording modes:
 - **Global hotkey (⌘;)**: Hold from any app → floating panel → release → transcribe → auto-paste at cursor
 
 STT engines:
-- **Whisper**: record → resample → whisper inference → punctuation restore (Chinese only) → Post-Edit Revise (optional) → script conversion → display/paste
+- **Whisper**: record → resample → streaming partial inference every 2s (rolling text) → release → final whisper inference → punctuation restore (Chinese only) → Post-Edit Revise (optional) → script conversion → display/paste
 - **Apple Speech**: record → stream buffers → real-time recognition → script conversion → display/paste
 
 **Post-Edit Revise** (optional): after transcription, send text through Claude API to improve clarity and flow. Configured in Settings > AI Services tab. API token stored in macOS Keychain. Custom prompt support. When enabled, BERT punctuation is skipped (LLM handles it). On LLM failure, falls back to BERT if available, then to raw text.
 
-**What's New** screen: shown once after version update with 8-second countdown auto-dismiss. Reads from bundled `WhatsNew.json` (bilingual en/zh).
+**What's New** screen: shown once after version update with 5-second countdown auto-dismiss. Reads from bundled `WhatsNew.json` (bilingual en/zh).
 
 **Debug Log Window**: separate resizable window (opened from Settings > Advanced > Dev Mode). Logs only collected when Dev Mode is enabled (reduces overhead). Pipeline timing shows duration of each stage (Whisper, BERT, LLM, total). Copy All button for easy export.
 
@@ -72,7 +72,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `Voice2Text/PunctuationRestorer.swift` | CoreML BERT inference for Chinese punctuation restoration, chunking for long text |
 | `Voice2Text/vocab.txt` | WordPiece vocabulary (21K tokens) bundled in app for tokenizer |
 | `Voice2Text/AnthropicClient.swift` | Claude API client: APICheckResult enum, checkAPI(), reviseText(prompt:), configurable base URL/model/token |
-| `Voice2Text/WhatsNewView.swift` | What's New overlay: version changelog display with 8s countdown auto-dismiss |
+| `Voice2Text/WhatsNewView.swift` | What's New overlay: version changelog display with 5s countdown auto-dismiss |
 | `Voice2Text/WhatsNew.json` | Bundled changelog data (bilingual en/zh, all versions) |
 | `Voice2Text/DebugLogWindow.swift` | Separate debug log window with Copy All, text selection |
 | `Voice2Text/KeychainHelper.swift` | Minimal macOS Keychain wrapper: saveToken, loadToken, deleteToken |
@@ -123,7 +123,8 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - API check state machine: Unchecked → Checking → Valid(latencyMs) / Invalid(message); field changes reset to Unchecked
 - Revise failure: falls back to BERT (if available + Chinese) then to raw text + transient orange banner (4s) + debug log entry; never permanently disables
 - Custom revise prompt: persisted in UserDefaults (key: `"customRevisePrompt"`). Empty = use default. Reset to Default button in UI
-- What's New: `lastSeenVersion` tracked via `@AppStorage`. `WhatsNew.json` loaded from bundle. WhatsNewView auto-dismisses after 3s countdown, tap to dismiss early
+- Whisper streaming: 2s repeating timer runs partial inference on accumulated samples during recording; partial results show as rolling text; skipped if < 1s audio; `isStreamingInference` guard prevents concurrent partials; timer stopped on release before final inference
+- What's New: `lastSeenVersion` tracked via `@AppStorage`. `WhatsNew.json` loaded from bundle. WhatsNewView auto-dismisses after 5s countdown, tap to dismiss early
 - Keyboard shortcuts: Spacebar push-to-talk, Cmd+C copies full transcription (or selection if any)
 - Punctuation restore enabled by default when model is loaded; greyed out when model not downloaded; auto-skipped for non-Chinese text
 - Output script (Simplified/Traditional Chinese) persisted via UserDefaults, default: Simplified

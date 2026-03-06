@@ -43,7 +43,7 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 - **Cmd+C smart copy** — copies full transcription when nothing selected
 - **Custom Revise Prompt** — customize what the LLM does with your transcript
 - **Secure API Key storage** — API Key stored in macOS Keychain, never in plaintext
-- **What's New screen** — shows changes after version update, auto-dismisses in 8 seconds
+- **What's New screen** — shows changes after version update, auto-dismisses in 5 seconds
 - **Debug log window** — separate resizable window with Copy All for troubleshooting
 - **Low audio warning** — yellow banner alerts when microphone level is near-silent (wrong mic selected)
 - **Dev mode** — logging + pipeline timing (Whisper STT/BERT punctuation/LLM round-trip/total) only when enabled; viewable in debug log window
@@ -166,7 +166,7 @@ Mic → AVAudioEngine → AVAudioConverter (16kHz mono) ─┬─→ Whisper inf
 
 | Engine | Requires | Mode | Best For |
 |--------|----------|------|----------|
-| Whisper | Downloaded model | Batch (record then transcribe) | Offline use, accuracy |
+| Whisper | Downloaded model | Streaming partials + final batch | Offline use, accuracy |
 | Apple Speech | Network connection | Streaming (real-time) | Quick dictation, live preview |
 
 Both engines currently support mixed Chinese + English speech.
@@ -293,7 +293,7 @@ Voice2Text/
 ├── vocab.txt                    # WordPiece vocabulary (21K tokens) bundled for tokenizer
 ├── AnthropicClient.swift        # Claude API client: API check, Post-Edit Revise, custom prompt
 ├── LlamaBridge.swift            # Swift wrapper around llama.cpp C API for local LLM inference
-├── WhatsNewView.swift           # What's New overlay with 8s countdown auto-dismiss
+├── WhatsNewView.swift           # What's New overlay with 5s countdown auto-dismiss
 ├── WhatsNew.json                # Bundled changelog (bilingual en/zh)
 ├── DebugLogWindow.swift         # Separate debug log window with Copy All
 ├── KeychainHelper.swift         # macOS Keychain wrapper for API token storage
@@ -322,6 +322,11 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v2.4.0
+
+- New: Whisper streaming — partial transcription appears every 2 seconds while recording (rolling text UX)
+- Improved: What's New auto-dismiss reduced from 8 seconds to 5 seconds
 
 ### v2.3.0
 

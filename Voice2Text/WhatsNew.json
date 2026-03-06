@@ -1,5 +1,18 @@
 [
     {
+        "version": "2.4.0",
+        "changes": {
+            "en": [
+                "New: Whisper streaming — partial transcription appears every 2 seconds while recording (rolling text)",
+                "Improved: What's New auto-dismiss reduced from 8 seconds to 5 seconds"
+            ],
+            "zh": [
+                "新功能：Whisper 串流转录 — 录音中每 2 秒显示部分转录结果（滚动文字）",
+                "改进：新功能提示自动关闭时间从 8 秒缩短为 5 秒"
+            ]
+        }
+    },
+    {
         "version": "2.3.0",
         "changes": {
             "en": [

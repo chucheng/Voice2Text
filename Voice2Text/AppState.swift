@@ -476,6 +476,9 @@ class AppState: ObservableObject {
                 audioRecorder.startRecording { [weak self] success in
                     self?.isStarting = false
                     self?.isRecording = success
+                    if success {
+                        self?.startStreamingTimer()
+                    }
                 }
             }
         }
@@ -484,6 +487,7 @@ class AppState: ObservableObject {
     // MARK: - Whisper
 
     private func stopAndTranscribe() {
+        stopStreamingTimer()
         pipelineStartTime = Date()
         let samples = audioRecorder.stopRecording()
         isRecording = false
@@ -1057,6 +1061,37 @@ class AppState: ObservableObject {
                 break
             }
         }
+    }
+
+    // MARK: - Whisper Streaming (Progressive Transcription)
+
+    private var streamingTimer: Timer?
+    private var isStreamingInference = false
+
+    private func startStreamingTimer() {
+        streamingTimer?.invalidate()
+        streamingTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            guard let self, self.isRecording, !self.isStreamingInference else { return }
+            let snapshot = self.audioRecorder.accumulatedSamples
+            // Need at least 1s of audio for Whisper to produce useful output
+            guard snapshot.count >= 16000 else { return }
+            self.isStreamingInference = true
+            self.log("Whisper streaming: partial inference (\(snapshot.count) samples, \(String(format: "%.1f", Double(snapshot.count) / 16000))s)")
+            self.whisperBridge.transcribe(samples: snapshot, language: "auto") { [weak self] text in
+                guard let self else { return }
+                self.isStreamingInference = false
+                // Only update if still recording (final inference will overwrite)
+                guard self.isRecording else { return }
+                let display = self.convertScript(text)
+                self.transcriptionText = display
+                self.log("Whisper streaming: partial result (\(text.count) chars)")
+            }
+        }
+    }
+
+    private func stopStreamingTimer() {
+        streamingTimer?.invalidate()
+        streamingTimer = nil
     }
 
     private var reviseFailedTimer: DispatchWorkItem?
