@@ -27,7 +27,7 @@ final class LlamaBridge {
 
             var cparams = llama_context_default_params()
             cparams.n_ctx = 2048
-            cparams.n_batch = 512
+            cparams.n_batch = 2048  // Match n_ctx to avoid batch size assertion on long prompts
             cparams.n_threads = Int32(max(1, ProcessInfo.processInfo.activeProcessorCount - 1))
             cparams.n_threads_batch = cparams.n_threads
 
@@ -96,13 +96,18 @@ final class LlamaBridge {
             llama_sampler_chain_add(smpl, llama_sampler_init_temp(0.3))
             llama_sampler_chain_add(smpl, llama_sampler_init_dist(UInt32.random(in: 0..<UInt32.max)))
 
-            // Decode prompt — use withUnsafeMutableBufferPointer to ensure pointer
-            // stays valid through llama_decode (llama_batch_get_one stores the pointer)
+            // Decode prompt in chunks of n_batch to avoid assertion failures
+            let nBatch = Int(llama_n_batch(ctx))
             var promptTokensCopy = promptTokens
-            var decodeResult: Int32 = -1
-            promptTokensCopy.withUnsafeMutableBufferPointer { buf in
-                let batch = llama_batch_get_one(buf.baseAddress!, Int32(buf.count))
-                decodeResult = llama_decode(ctx, batch)
+            var decodeResult: Int32 = 0
+            var offset = 0
+            while offset < promptTokensCopy.count && decodeResult == 0 {
+                let chunkSize = min(nBatch, promptTokensCopy.count - offset)
+                promptTokensCopy.withUnsafeMutableBufferPointer { buf in
+                    let batch = llama_batch_get_one(buf.baseAddress! + offset, Int32(chunkSize))
+                    decodeResult = llama_decode(ctx, batch)
+                }
+                offset += chunkSize
             }
             if decodeResult != 0 {
                 llama_sampler_free(smpl)
