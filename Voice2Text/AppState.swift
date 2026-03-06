@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import AVFoundation
+import Accelerate
 import Network
 import Speech
 
@@ -610,22 +611,54 @@ class AppState: ObservableObject {
         }
     }
 
-    /// Normalize audio to target RMS level (~-20 dBFS) for consistent Whisper accuracy regardless of mic volume.
-    private func normalizeAudio(_ samples: [Float]) -> [Float] {
+    // MARK: - Audio Preprocessing (High-Pass Filter + RMS Normalization)
+
+    /// Single-pole high-pass filter state (persists across calls for streaming)
+    private var hpFilterState: Float = 0.0
+
+    /// Preprocess audio: high-pass filter (80Hz) to remove low-freq noise, then RMS normalize to ~-20 dBFS.
+    private func preprocessAudio(_ samples: [Float]) -> [Float] {
         guard !samples.isEmpty else { return samples }
-        let sumOfSquares = samples.reduce(Float(0)) { $0 + $1 * $1 }
-        let rms = sqrt(sumOfSquares / Float(samples.count))
-        guard rms > 0.0001 else { return samples }  // near-silence, don't amplify noise
-        let targetRMS: Float = 0.1  // ~-20 dBFS
+
+        // 1. High-pass filter (~80Hz cutoff at 16kHz sample rate)
+        // Single-pole IIR: y[n] = alpha * (y[n-1] + x[n] - x[n-1])
+        // alpha = 1 / (1 + 2π * fc / fs) ≈ 0.969 for 80Hz at 16kHz
+        let alpha: Float = 0.969
+        var filtered = [Float](repeating: 0, count: samples.count)
+        var prev_x: Float = samples[0]
+        var prev_y: Float = hpFilterState
+        for i in 0..<samples.count {
+            prev_y = alpha * (prev_y + samples[i] - prev_x)
+            prev_x = samples[i]
+            filtered[i] = prev_y
+        }
+        hpFilterState = prev_y
+
+        // 2. RMS normalization to target ~-20 dBFS
+        var sumSq: Float = 0
+        vDSP_measqv(filtered, 1, &sumSq, vDSP_Length(filtered.count))
+        let rms = sqrt(sumSq)
+        guard rms > 0.0001 else { return filtered }  // near-silence, don't amplify noise
+
+        let targetRMS: Float = 0.1
         let scale = targetRMS / rms
-        if devMode { log("Audio normalize: RMS=\(String(format: "%.4f", rms)) → scale=\(String(format: "%.2f", scale))x") }
-        return samples.map { min(max($0 * scale, -1.0), 1.0) }
+        if devMode { log("Audio preprocess: RMS=\(String(format: "%.4f", rms)) → scale=\(String(format: "%.2f", scale))x") }
+
+        var result = [Float](repeating: 0, count: filtered.count)
+        var s = scale
+        vDSP_vsmul(filtered, 1, &s, &result, 1, vDSP_Length(filtered.count))
+        // Clamp to [-1, 1]
+        var lo: Float = -1.0
+        var hi: Float = 1.0
+        vDSP_vclip(result, 1, &lo, &hi, &result, 1, vDSP_Length(result.count))
+        return result
     }
 
     private func transcribe(samples: [Float], language: String) {
-        let normalized = normalizeAudio(samples)
-        log("Whisper: inference started (language=\(language), model=\(selectedModel.rawValue))")
-        whisperBridge.transcribe(samples: normalized, language: language) { [weak self] text in
+        let preprocessed = preprocessAudio(samples)
+        let prompt = vadLastTranscription.isEmpty ? nil : vadLastTranscription
+        log("Whisper: final inference (language=\(language), model=\(selectedModel.rawValue), prompt=\(prompt?.count ?? 0) chars)")
+        whisperBridge.transcribe(samples: preprocessed, language: language, initialPrompt: prompt) { [weak self] text in
             guard let self else { return }
             if self.devMode, let start = self.stageStartTime {
                 let ms = Int(Date().timeIntervalSince(start) * 1000)
@@ -1086,17 +1119,26 @@ class AppState: ObservableObject {
     private var vadLastSampleCount: Int = 0  // track if new audio since last inference
     private var vadGlobalPastedText: String = ""  // text currently typed at cursor in target app
     private let vadCursorSymbol = " ...▍"
+    private var vadLastTranscription: String = ""  // previous result for initial_prompt context
+
+    // Noise calibration
+    private var vadCalibrated = false
+    private var vadNoiseFloor: Float = 0.0
+    private var vadCalibrationSamples: [Float] = []
+    private var vadDynamicThreshold: Float = 0.05  // will be updated after calibration
 
     private enum VADState {
         case idle
+        case calibrating  // measuring ambient noise
         case speaking
         case maybeSilent
     }
 
-    private let vadSilenceThreshold: Float = 0.05
     private let vadSilenceDuration: TimeInterval = 0.5
     private let vadMaxChunkDuration: TimeInterval = 5.0
     private let vadMinSamples: Int = 16000  // need at least 1s for useful output
+    private let vadCalibrationDuration: TimeInterval = 0.3  // 300ms noise measurement
+    private let vadSlidingWindowSamples: Int = 30 * 16000  // 30 seconds at 16kHz
 
     private func vadProcessAudioLevel(_ level: Float) {
         guard isRecording, sttEngine == .whisper else { return }
@@ -1104,13 +1146,27 @@ class AppState: ObservableObject {
         switch vadState {
         case .idle:
             break
+        case .calibrating:
+            vadCalibrationSamples.append(level)
+            // After calibration period, compute noise floor and set threshold
+            if let start = vadSilenceStart, Date().timeIntervalSince(start) >= vadCalibrationDuration {
+                let avgNoise = vadCalibrationSamples.reduce(0, +) / Float(vadCalibrationSamples.count)
+                vadNoiseFloor = avgNoise
+                // Threshold = noise floor × 2.5 (must be at least 0.03, at most 0.15)
+                vadDynamicThreshold = min(max(avgNoise * 2.5, 0.03), 0.15)
+                vadCalibrated = true
+                vadCalibrationSamples = []
+                vadState = .speaking
+                vadSilenceStart = nil
+                log("VAD calibration: noise floor=\(String(format: "%.4f", avgNoise)), threshold=\(String(format: "%.4f", vadDynamicThreshold))")
+            }
         case .speaking:
-            if level < vadSilenceThreshold {
+            if level < vadDynamicThreshold {
                 vadState = .maybeSilent
                 vadSilenceStart = Date()
             }
         case .maybeSilent:
-            if level >= vadSilenceThreshold {
+            if level >= vadDynamicThreshold {
                 vadState = .speaking
                 vadSilenceStart = nil
             } else if let start = vadSilenceStart,
@@ -1123,25 +1179,37 @@ class AppState: ObservableObject {
     }
 
     private func vadTriggerInference() {
-        let snapshot = audioRecorder.accumulatedSamples
-        guard snapshot.count >= vadMinSamples else { return }
-        guard snapshot.count > vadLastSampleCount else { return }  // no new audio
+        let allSamples = audioRecorder.accumulatedSamples
+        guard allSamples.count >= vadMinSamples else { return }
+        guard allSamples.count > vadLastSampleCount else { return }  // no new audio
         guard !vadIsInferring else { return }
 
         vadIsInferring = true
-        vadLastSampleCount = snapshot.count
+        vadLastSampleCount = allSamples.count
 
         vadFallbackTimer?.invalidate()
         vadFallbackTimer = nil
 
-        log("VAD: inference triggered (\(snapshot.count) samples, \(String(format: "%.1f", Double(snapshot.count) / 16000))s)")
+        // Sliding window: send last 30s max, use previous transcription as context
+        let windowSamples: [Float]
+        let prompt: String?
+        if allSamples.count > vadSlidingWindowSamples {
+            windowSamples = Array(allSamples.suffix(vadSlidingWindowSamples))
+            prompt = vadLastTranscription.isEmpty ? nil : vadLastTranscription
+            log("VAD: sliding window (\(windowSamples.count) of \(allSamples.count) samples, \(String(format: "%.1f", Double(windowSamples.count) / 16000))s, prompt=\(prompt?.count ?? 0) chars)")
+        } else {
+            windowSamples = allSamples
+            prompt = vadLastTranscription.isEmpty ? nil : vadLastTranscription
+            log("VAD: full audio (\(windowSamples.count) samples, \(String(format: "%.1f", Double(windowSamples.count) / 16000))s, prompt=\(prompt?.count ?? 0) chars)")
+        }
 
-        let normalized = normalizeAudio(snapshot)
-        whisperBridge.transcribe(samples: normalized, language: "auto") { [weak self] text in
+        let preprocessed = preprocessAudio(windowSamples)
+        whisperBridge.transcribe(samples: preprocessed, language: "auto", initialPrompt: prompt) { [weak self] text in
             guard let self else { return }
             self.vadIsInferring = false
             guard self.isRecording else { return }
 
+            self.vadLastTranscription = text
             let display = self.convertScript(text)
             self.transcriptionText = display
             self.log("VAD: partial result (\(text.count) chars)")
@@ -1165,11 +1233,17 @@ class AppState: ObservableObject {
     }
 
     private func vadStartRecording() {
-        vadState = .speaking
-        vadSilenceStart = nil
+        // Start with calibration phase to measure ambient noise
+        vadState = .calibrating
+        vadSilenceStart = Date()
+        vadCalibrationSamples = []
+        vadCalibrated = false
+        vadDynamicThreshold = 0.05  // fallback default
         vadLastSampleCount = 0
         vadIsInferring = false
         vadGlobalPastedText = ""
+        vadLastTranscription = ""
+        hpFilterState = 0.0
         transcriptionText = ""
         startVADFallbackTimer()
     }

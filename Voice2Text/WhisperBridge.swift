@@ -35,7 +35,7 @@ final class WhisperBridge {
         "sn", "ln", "fo", "mi", "yi", "la", "haw", "sd", "ug", "tk"
     ]
 
-    func transcribe(samples: [Float], language: String, completion: @escaping (String) -> Void) {
+    func transcribe(samples: [Float], language: String, initialPrompt: String? = nil, completion: @escaping (String) -> Void) {
         guard let ctx else {
             DispatchQueue.main.async { completion("") }
             return
@@ -45,7 +45,7 @@ final class WhisperBridge {
         let safeLanguage = Self.allowedLanguages.contains(language) ? language : "auto"
 
         inferenceQueue.async {
-            var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
+            var params = whisper_full_default_params(WHISPER_SAMPLING_BEAM_SEARCH)
             params.print_realtime = false
             params.print_progress = false
             params.print_special = false
@@ -55,12 +55,30 @@ final class WhisperBridge {
             params.no_timestamps = true
             params.n_threads = max(1, Int32(ProcessInfo.processInfo.activeProcessorCount - 1))
 
+            // Beam search for better accuracy
+            params.beam_search.beam_size = 5
+
+            // Temperature fallback: start at 0 (greedy), increment if quality is poor
+            params.temperature = 0.0
+            params.temperature_inc = 0.2
+            params.entropy_thold = 2.4
+            params.logprob_thold = -1.0
+
+            // Use previous transcription as context for better accuracy
+            let promptCString = initialPrompt.flatMap { $0.isEmpty ? nil : strdup($0) }
+            if let ptr = promptCString {
+                params.initial_prompt = UnsafePointer(ptr)
+            }
+
             let result = safeLanguage.withCString { langPtr in
                 params.language = langPtr
                 return samples.withUnsafeBufferPointer { buf in
                     whisper_full(ctx, params, buf.baseAddress, Int32(buf.count))
                 }
             }
+
+            // Free strdup'd prompt
+            if let ptr = promptCString { free(ptr) }
 
             var text = ""
             if result == 0 {

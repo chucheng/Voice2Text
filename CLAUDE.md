@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.6.1** — VAD-based streaming + global hotkey live typing + audio normalization; What's New 5s auto-dismiss.
+**Version: 2.7.0** — VAD streaming with beam search, sliding window, noise calibration, high-pass filter; global hotkey live typing; What's New 5s auto-dismiss.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -21,7 +21,7 @@ Full voice-to-text pipeline with two recording modes:
 - **Global hotkey (⌘;)**: Hold from any app → floating panel → release → transcribe → auto-paste at cursor
 
 STT engines:
-- **Whisper**: record → resample → VAD detects silence boundaries → transcribe each sentence chunk independently (text only grows) → release → transcribe remaining chunk → combine all → punctuation restore (Chinese only) → Post-Edit Revise (optional) → script conversion → display/paste
+- **Whisper**: record → resample → noise calibration (300ms) → VAD detects silence → high-pass filter + RMS normalize → beam search inference (30s sliding window + initial_prompt context) → release → final full-audio inference → punctuation restore (Chinese only) → Post-Edit Revise (optional) → script conversion → display/paste
 - **Apple Speech**: record → stream buffers → real-time recognition → script conversion → display/paste
 
 **Post-Edit Revise** (optional): after transcription, send text through Claude API to improve clarity and flow. Configured in Settings > AI Services tab. API token stored in macOS Keychain. Custom prompt support. When enabled, BERT punctuation is skipped (LLM handles it). On LLM failure, falls back to BERT if available, then to raw text.
@@ -123,7 +123,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - API check state machine: Unchecked → Checking → Valid(latencyMs) / Invalid(message); field changes reset to Unchecked
 - Revise failure: falls back to BERT (if available + Chinese) then to raw text + transient orange banner (4s) + debug log entry; never permanently disables
 - Custom revise prompt: persisted in UserDefaults (key: `"customRevisePrompt"`). Empty = use default. Reset to Default button in UI
-- Whisper VAD streaming: silence detection (500ms below threshold) triggers sentence chunk transcription; 5s fallback timer force-cuts continuous speech; `vadIsInferring` guard prevents concurrent partials; text only grows (never re-processes earlier audio); on release, only remaining chunk transcribed and combined with committed text
+- Whisper VAD streaming: 300ms noise calibration at start → dynamic silence threshold (noise floor × 2.5, clamped 0.03–0.15); silence detection (500ms) triggers full-audio inference; 30s sliding window caps inference time for long recordings; `initial_prompt` passes previous transcription for context; beam search (beam_size=5) + temperature fallback; high-pass filter (80Hz) + RMS normalization via Accelerate/vDSP; 5s fallback timer force-cuts continuous speech; `vadIsInferring` guard prevents concurrent partials
 - What's New: `lastSeenVersion` tracked via `@AppStorage`. `WhatsNew.json` loaded from bundle. WhatsNewView auto-dismisses after 5s countdown, tap to dismiss early
 - Keyboard shortcuts: Spacebar push-to-talk, Cmd+C copies full transcription (or selection if any)
 - Punctuation restore enabled by default when model is loaded; greyed out when model not downloaded; auto-skipped for non-Chinese text

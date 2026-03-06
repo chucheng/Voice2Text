@@ -1,5 +1,26 @@
 [
     {
+        "version": "2.7.0",
+        "changes": {
+            "en": [
+                "New: Whisper initial prompt — uses previous transcription as context for better accuracy",
+                "New: High-pass filter (80Hz) removes low-frequency noise (fans, AC, rumble)",
+                "New: Beam search (beam_size=5) + temperature fallback for more accurate decoding",
+                "New: VAD noise calibration — auto-measures ambient noise at start, sets dynamic threshold",
+                "New: Sliding window — sends last 30s of audio during streaming (constant speed for long recordings)",
+                "Improved: Audio normalization now combined with high-pass filter using Accelerate/vDSP"
+            ],
+            "zh": [
+                "新功能：Whisper 上下文提示 — 以前段转录作为提示，提升后续准确度",
+                "新功能：高通滤波器（80Hz）去除低频噪音（风扇、空调、隆隆声）",
+                "新功能：Beam search（beam_size=5）+ 温度回退，解码更准确",
+                "新功能：VAD 噪音校准 — 录音开始时自动测量环境噪音，动态设定阈值",
+                "新功能：滑动窗口 — 串流时仅发送最近 30 秒音频（长录音速度恒定）",
+                "改进：音频正规化现与高通滤波器结合，使用 Accelerate/vDSP 加速"
+            ]
+        }
+    },
+    {
         "version": "2.6.1",
         "changes": {
             "en": [
