@@ -498,6 +498,7 @@ class AppState: ObservableObject {
         guard !samples.isEmpty else {
             transcriptionText = ""
             if isGlobalHotkeyActive {
+                updateCursorPlaceholder("")  // delete placeholder
                 isGlobalHotkeyActive = false
                 FloatingRecordingPanel.shared.hide()
             }
@@ -506,6 +507,7 @@ class AppState: ObservableObject {
 
         if isGlobalHotkeyActive {
             FloatingRecordingPanel.shared.show(state: .transcribing)
+            updateCursorPlaceholder(transcribingPlaceholder)
         }
 
         log("Audio recorded: \(samples.count) samples (\(String(format: "%.1f", Double(samples.count) / 16000))s @ 16kHz)")
@@ -590,6 +592,7 @@ class AppState: ObservableObject {
             isReformatting = true
             if isGlobalHotkeyActive {
                 FloatingRecordingPanel.shared.show(state: .transcribing)
+                updateCursorPlaceholder(transcribingPlaceholder)
             }
             // endAudio + finish triggers final result callback
             appleSpeech.stopRecognition()
@@ -742,9 +745,12 @@ class AppState: ObservableObject {
     private func postProcess(_ text: String) {
         isReformatting = true
         let effectiveProvider = isPostEditPaused ? PostEditProvider.none : postEditProvider
-        // Show "Reformatting..." on floating panel during post-processing
-        if isGlobalHotkeyActive && effectiveProvider != .none {
+        let hasPostProcessing = effectiveProvider != .none ||
+            (usePunctuationRestore && isPunctuationModelLoaded && Self.textContainsChinese(text))
+        // Show "Reformatting..." on floating panel and at cursor during post-processing
+        if isGlobalHotkeyActive && hasPostProcessing {
             FloatingRecordingPanel.shared.show(state: .reformatting)
+            updateCursorPlaceholder(reformattingPlaceholder)
         }
         log("Post-process: provider=\(effectiveProvider.rawValue)\(isPostEditPaused ? " (paused)" : ""), input=\(text.count) chars")
         if devMode {
@@ -1092,9 +1098,27 @@ class AppState: ObservableObject {
 
     private var vadState: VADState = .idle
     private var vadSilenceStart: Date?
-    private var vadGlobalPastedText: String = ""  // listening placeholder typed at cursor in target app
+    private var vadGlobalPastedText: String = ""  // status placeholder typed at cursor in target app
     private var vadLastTranscription: String = ""  // previous result for initial_prompt context
+
+    // Status placeholders shown at cursor during global hotkey pipeline
     private let listeningPlaceholder = "(Voice2Text is listening...)"
+    private let transcribingPlaceholder = "(Voice2Text is transcribing...)"
+    private let reformattingPlaceholder = "(Voice2Text is reformatting...)"
+
+    /// Swap the status placeholder at cursor in the target app.
+    /// Backspaces the old text and types the new text.
+    private func updateCursorPlaceholder(_ newText: String) {
+        guard isGlobalHotkeyActive, GlobalHotkeyManager.isAccessibilityGranted else { return }
+        let old = vadGlobalPastedText
+        if !old.isEmpty {
+            GlobalHotkeyManager.pressBackspace(count: old.count)
+        }
+        if !newText.isEmpty {
+            GlobalHotkeyManager.typeText(newText)
+        }
+        vadGlobalPastedText = newText
+    }
 
     // Noise calibration
     private var vadCalibrationSamples: [Float] = []
