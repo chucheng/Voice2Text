@@ -217,7 +217,8 @@ Pull requests for multi-language improvements are welcome.
 | Base | ~142 MB | Good balance |
 | Small | ~466 MB | Better accuracy |
 | Medium | ~1.5 GB | High accuracy |
-| Large v3 Turbo | ~1.6 GB | Best accuracy |
+| Large v3 Turbo | ~1.6 GB | Fast, near-best accuracy |
+| Large v3 | ~3.1 GB | Best accuracy (same as OpenAI API) |
 
 Models are downloaded from [ggerganov/whisper.cpp on HuggingFace](https://huggingface.co/ggerganov/whisper.cpp) to `~/Library/Application Support/Voice2Text/`.
 
@@ -235,12 +236,10 @@ On-device post-editing uses [Qwen](https://huggingface.co/Qwen) models in GGUF f
 
 Qwen 3.5 is the latest generation with improved instruction-following and multilingual performance. Reasoning mode is automatically disabled for clean output.
 
-### Qwen 2.5 (Legacy)
+### Qwen 2.5
 
 | Model | Size | Quality | Recommendation |
 |-------|------|---------|----------------|
-| Qwen 2.5 0.5B | ~400 MB | Basic punctuation | Low-end Macs |
-| Qwen 2.5 1.5B | ~1.0 GB | Good balance | General use |
 | Qwen 2.5 3B | ~2.0 GB | Better grammar fixes | 16 GB+ RAM |
 | Qwen 2.5 7B | ~3.5 GB | Best quality | 32 GB+ RAM |
 
@@ -332,6 +331,11 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v2.9.4
+
+- New: Whisper Large v3 model (~3.1 GB) — best accuracy, same model as OpenAI API
+- Simplified: Removed Qwen 2.5 0.5B and 1.5B models (kept 3B and 7B)
 
 ### v2.9.3
 

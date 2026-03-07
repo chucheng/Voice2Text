@@ -70,7 +70,9 @@ enum L {
         case .medium:
             return lang == .english ? "High accuracy, large download" : "高准确度，下载较大"
         case .largeTurbo:
-            return lang == .english ? "Best accuracy, largest download" : "最高准确度，下载最大"
+            return lang == .english ? "Fast, near-best accuracy" : "快速，接近最高准确度"
+        case .largeV3:
+            return lang == .english ? "Best accuracy (same as OpenAI API)" : "最高准确度（与 OpenAI API 相同）"
         }
     }
 

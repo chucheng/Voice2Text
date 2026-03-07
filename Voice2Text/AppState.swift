@@ -11,6 +11,7 @@ enum WhisperModel: String, CaseIterable, Identifiable {
     case small = "small"
     case medium = "medium"
     case largeTurbo = "large-v3-turbo"
+    case largeV3 = "large-v3"
 
     var id: String { rawValue }
 
@@ -21,6 +22,7 @@ enum WhisperModel: String, CaseIterable, Identifiable {
         case .small: return "Small (~466 MB)"
         case .medium: return "Medium (~1.5 GB)"
         case .largeTurbo: return "Large v3 Turbo (~1.6 GB)"
+        case .largeV3: return "Large v3 (~3.1 GB)"
         }
     }
 
@@ -58,9 +60,7 @@ enum LocalLLMModel: String, CaseIterable, Identifiable {
     case qwen35_08B = "qwen3.5-0.8b"
     case qwen35_2B  = "qwen3.5-2b"
     case qwen35_4B  = "qwen3.5-4b"
-    // Qwen 2.5 (legacy)
-    case qwen05B = "qwen2.5-0.5b"
-    case qwen15B = "qwen2.5-1.5b"
+    // Qwen 2.5
     case qwen3B  = "qwen2.5-3b"
     case qwen7B  = "qwen2.5-7b"
 
@@ -68,8 +68,6 @@ enum LocalLLMModel: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .qwen05B:    return "Qwen 2.5 0.5B (~400 MB)"
-        case .qwen15B:    return "Qwen 2.5 1.5B (~1.0 GB)"
         case .qwen3B:     return "Qwen 2.5 3B (~2.0 GB)"
         case .qwen7B:     return "Qwen 2.5 7B (~3.5 GB)"
         case .qwen35_08B: return "Qwen 3.5 0.8B (~500 MB)"
@@ -89,8 +87,6 @@ enum LocalLLMModel: String, CaseIterable, Identifiable {
 
     var fileName: String {
         switch self {
-        case .qwen05B:    return "qwen2.5-0.5b-instruct-q4_k_m.gguf"
-        case .qwen15B:    return "qwen2.5-1.5b-instruct-q4_k_m.gguf"
         case .qwen3B:     return "qwen2.5-3b-instruct-q4_k_m.gguf"
         case .qwen7B:     return "qwen2.5-7b-instruct-q3_k_m.gguf"
         case .qwen35_08B: return "Qwen3.5-0.8B-Q4_K_M.gguf"
@@ -101,12 +97,10 @@ enum LocalLLMModel: String, CaseIterable, Identifiable {
 
     var downloadURL: URL {
         switch self {
-        case .qwen05B, .qwen15B, .qwen3B, .qwen7B:
+        case .qwen3B, .qwen7B:
             // Qwen 2.5 — official Qwen GGUF repos
             let repoName: String
             switch self {
-            case .qwen05B: repoName = "Qwen2.5-0.5B-Instruct-GGUF"
-            case .qwen15B: repoName = "Qwen2.5-1.5B-Instruct-GGUF"
             case .qwen3B:  repoName = "Qwen2.5-3B-Instruct-GGUF"
             case .qwen7B:  repoName = "Qwen2.5-7B-Instruct-GGUF"
             default: fatalError()

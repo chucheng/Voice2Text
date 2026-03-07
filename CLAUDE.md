@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.9.3** — Flash Attention + optimized threads for faster Whisper; transcription progress in floating panel; dynamic cursor placeholder; improved LLM revise prompt; 130 automated tests.
+**Version: 2.9.4** — Whisper Large v3 model for best Chinese accuracy; Flash Attention + optimized threads; transcription progress in floating panel; dynamic cursor placeholder; improved LLM revise prompt; 130 automated tests.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
