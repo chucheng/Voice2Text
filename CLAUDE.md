@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.8.0** — Dual model streaming (tiny for VAD partials, user-selected for final); VAD with beam search, sliding window, noise calibration, high-pass filter; global hotkey live typing; What's New 5s auto-dismiss.
+**Version: 2.8.1** — Dual model streaming (tiny for VAD partials, user-selected for final); VAD with beam search, sliding window, noise calibration, high-pass filter; global hotkey live typing; unit test infrastructure (57 tests); What's New 5s auto-dismiss.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -86,7 +86,11 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `Whisper/include/` | Header files (whisper.h, ggml*.h) |
 | `LlamaCpp/lib/` | Pre-built static library (libllama.a) for llama.cpp |
 | `LlamaCpp/include/` | Header file (llama.h) |
-| `project.yml` | xcodegen spec with bridging header, library paths, SDK dependencies (incl. Carbon.framework) |
+| `project.yml` | xcodegen spec with bridging header, library paths, SDK dependencies (incl. Carbon.framework), test target |
+| `Voice2TextTests/AnthropicClientTests.swift` | URL validation, API check result, init normalization tests |
+| `Voice2TextTests/HotkeyComboTests.swift` | Codable round-trip, modifier conversion, display string, keyName tests |
+| `Voice2TextTests/AppStateHelperTests.swift` | Chinese detection, unexpected language, script conversion tests |
+| `Voice2TextTests/WhisperBridgeTests.swift` | Language allowlist validation tests |
 | `scripts/convert_punctuation_model.py` | Developer tool: convert PyTorch BERT → CoreML .mlpackage |
 | `scripts/build_llama.sh` | Build llama.cpp (tag b8200) for macOS arm64 with Metal + BLAS |
 | `scripts/build_whisper.sh` | Rebuild whisper.cpp (v1.8.3) against llama.cpp's ggml for ABI compatibility |

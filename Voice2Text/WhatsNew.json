@@ -1,5 +1,18 @@
 [
     {
+        "version": "2.8.1",
+        "changes": {
+            "en": [
+                "New: Onboarding suggests downloading Tiny model for faster streaming previews when a larger model is selected",
+                "Improved: Unit test infrastructure — 57 automated tests for core logic (tokenizer, URL validation, hotkey, Chinese detection)"
+            ],
+            "zh": [
+                "新功能：引导流程建议下载 Tiny 模型以加速串流预览（当选择较大模型时）",
+                "改进：单元测试基础设施 — 57 个自动化测试覆盖核心逻辑（分词器、URL 验证、快捷键、中文检测）"
+            ]
+        }
+    },
+    {
         "version": "2.8.0",
         "changes": {
             "en": [

@@ -669,7 +669,7 @@ class AppState: ObservableObject {
             self.log("Whisper: inference complete, result: \(text.count) chars")
 
             // If auto-detected and result contains non-Chinese/English text, retry with "zh"
-            if language == "auto" && self.containsUnexpectedLanguage(text) {
+            if language == "auto" && Self.containsUnexpectedLanguage(text) {
                 self.log("Whisper: detected mixed Chinese + unexpected language, retrying with language=zh")
                 self.transcribe(samples: samples, language: "zh")
                 return
@@ -684,12 +684,12 @@ class AppState: ObservableObject {
     /// Returns true if text contains characters that are not Chinese, English, or common punctuation/numbers.
     /// Only triggers retry when text also contains some Chinese (partial misdetection).
     /// If text is purely another language (no Chinese at all), accepts it as-is.
-    private func containsUnexpectedLanguage(_ text: String) -> Bool {
+    static func containsUnexpectedLanguage(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
 
         // If no Chinese characters at all, it's likely a different language — don't retry with "zh"
-        guard textContainsChinese(trimmed) else { return false }
+        guard Self.textContainsChinese(trimmed) else { return false }
 
         for scalar in trimmed.unicodeScalars {
             // Allow: ASCII (English + numbers + punctuation), CJK Unified Ideographs,
@@ -714,7 +714,7 @@ class AppState: ObservableObject {
     }
 
     /// Returns true if the text contains any CJK Unified Ideograph characters.
-    private func textContainsChinese(_ text: String) -> Bool {
+    static func textContainsChinese(_ text: String) -> Bool {
         for scalar in text.unicodeScalars {
             let v = scalar.value
             if (0x4E00...0x9FFF).contains(v) || (0x3400...0x4DBF).contains(v) || (0xF900...0xFAFF).contains(v) {
@@ -787,7 +787,7 @@ class AppState: ObservableObject {
             }
             stageStartTime = Date()
             applyLLMAndConvert(text)
-        } else if usePunctuationRestore && isPunctuationModelLoaded && textContainsChinese(text) {
+        } else if usePunctuationRestore && isPunctuationModelLoaded && Self.textContainsChinese(text) {
             log("BERT punctuation restore: sending \(text.count) chars to CoreML model...")
             stageStartTime = Date()
             punctuationRestorer.restore(text) { [weak self] restored, error in
@@ -912,7 +912,7 @@ class AppState: ObservableObject {
 
     /// Try BERT punctuation as best-effort, then script-convert and finish.
     private func applyBERTFallbackAndConvert(_ text: String) {
-        if usePunctuationRestore && isPunctuationModelLoaded && textContainsChinese(text) {
+        if usePunctuationRestore && isPunctuationModelLoaded && Self.textContainsChinese(text) {
             log("BERT fallback: sending \(text.count) chars to CoreML model...")
             let bertStart = Date()
             punctuationRestorer.restore(text) { [weak self] restored, error in
@@ -977,7 +977,7 @@ class AppState: ObservableObject {
 
     /// On LLM failure, try BERT punctuation as fallback. If unavailable, use raw text.
     private func tryBERTFallback(_ text: String) {
-        if isPunctuationModelLoaded && textContainsChinese(text) {
+        if isPunctuationModelLoaded && Self.textContainsChinese(text) {
             log("BERT fallback: sending \(text.count) chars...")
             let bertStart = Date()
             punctuationRestorer.restore(text) { [weak self] restored, error in
@@ -1015,7 +1015,7 @@ class AppState: ObservableObject {
         transcriptionText = convertScript(rawTranscription)
     }
 
-    private func convertScript(_ text: String) -> String {
+    func convertScript(_ text: String) -> String {
         switch outputScript {
         case .traditional:
             return text.applyingTransform(StringTransform("Hans-Hant"), reverse: false) ?? text

@@ -15,8 +15,8 @@ targets:
       base:
         CODE_SIGN_ENTITLEMENTS: Voice2Text/Voice2Text.entitlements
         PRODUCT_BUNDLE_IDENTIFIER: com.voice2text.Voice2Text
-        MARKETING_VERSION: "2.8.0"
-        CURRENT_PROJECT_VERSION: "25"
+        MARKETING_VERSION: "2.8.1"
+        CURRENT_PROJECT_VERSION: "26"
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         ENABLE_HARDENED_RUNTIME: true
         SWIFT_OBJC_BRIDGING_HEADER: Voice2Text/Voice2Text-Bridging-Header.h
@@ -55,3 +55,19 @@ targets:
             sheincorp.cn:
               NSExceptionAllowsInsecureHTTPLoads: true
               NSIncludesSubdomains: true
+
+  Voice2TextTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Voice2TextTests
+    dependencies:
+      - target: Voice2Text
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Voice2Text.app/Contents/MacOS/Voice2Text"
+        HEADER_SEARCH_PATHS:
+          - "$(PROJECT_DIR)/Whisper/include"
+          - "$(PROJECT_DIR)/LlamaCpp/include"

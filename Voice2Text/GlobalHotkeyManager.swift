@@ -37,7 +37,7 @@ struct HotkeyCombo: Codable, Equatable {
         return parts.joined()
     }
 
-    private static func keyName(for keyCode: UInt16) -> String {
+    static func keyName(for keyCode: UInt16) -> String {
         let map: [UInt16: String] = [
             UInt16(kVK_ANSI_A): "A", UInt16(kVK_ANSI_B): "B", UInt16(kVK_ANSI_C): "C",
             UInt16(kVK_ANSI_D): "D", UInt16(kVK_ANSI_E): "E", UInt16(kVK_ANSI_F): "F",

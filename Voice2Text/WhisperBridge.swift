@@ -23,7 +23,7 @@ final class WhisperBridge {
     ///   - language: "zh" for Chinese, "en" for English, or "auto" for auto-detect
     ///   - completion: Called on main thread with transcribed text (empty string on failure)
     /// Allowed language codes for whisper inference.
-    private static let allowedLanguages: Set<String> = [
+    static let allowedLanguages: Set<String> = [
         "auto", "zh", "en", "ja", "ko", "de", "fr", "es", "pt", "ru", "it", "nl",
         "pl", "tr", "sv", "da", "fi", "no", "hu", "cs", "ro", "bg", "el", "hr",
         "sk", "sl", "lt", "lv", "et", "mt", "sq", "mk", "sr", "bs", "uk", "be",

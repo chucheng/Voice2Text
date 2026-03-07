@@ -312,6 +312,11 @@ LlamaCpp/
 docs/
 ├── Getting Started.html         # User guide included in DMG
 └── images/                      # Screenshots for the guide
+Voice2TextTests/
+├── AnthropicClientTests.swift   # URL validation, API check result tests
+├── HotkeyComboTests.swift       # Codable, modifier conversion, display string tests
+├── AppStateHelperTests.swift    # Chinese detection, script conversion tests
+└── WhisperBridgeTests.swift     # Language allowlist validation tests
 scripts/
 ├── convert_punctuation_model.py # Convert PyTorch BERT → CoreML .mlpackage
 ├── build_dmg.sh                 # Build Voice2Text.dmg for distribution
@@ -322,6 +327,11 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v2.8.1
+
+- New: Onboarding suggests downloading Tiny model for faster streaming previews when a larger model is selected
+- Improved: Unit test infrastructure — 57 automated tests covering core logic (tokenizer, URL validation, hotkey, Chinese detection)
 
 ### v2.8.0
 
