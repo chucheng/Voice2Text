@@ -470,4 +470,3 @@ Full license texts are available in [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES).
 | [Qwen 3.5 / 2.5 models](https://huggingface.co/Qwen) | Apache 2.0 | Downloaded at runtime (GGUF, opt-in) |
 | [zh-wiki-punctuation-restore](https://huggingface.co/p208p2002/zh-wiki-punctuation-restore) | Not specified | Downloaded at runtime (CoreML, Chinese only, opt-in) |
 | [XcodeGen](https://github.com/yonaskolb/XcodeGen) | MIT | Build tool only |
-| Apple Frameworks (SwiftUI, AVFoundation, Speech, Carbon, CoreML) | Apple SDK | OS-provided |
