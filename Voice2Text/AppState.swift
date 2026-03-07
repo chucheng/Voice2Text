@@ -1176,7 +1176,9 @@ class AppState: ObservableObject {
         vadSilenceStart = Date()
         vadCalibrationSamples = []
         vadDynamicThreshold = 0.05  // fallback default
-        vadGlobalPastedText = ""
+        // NOTE: Do NOT reset vadGlobalPastedText here — globalHotkeyDown() sets it
+        // before this async callback fires, and clearing it causes the placeholder
+        // to never be erased on hotkey release.
         vadLastTranscription = ""
         audioPreprocessor.filterState = 0.0
         transcriptionText = ""

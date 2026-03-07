@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.9.1** — Dynamic cursor placeholder (listening → transcribing → reformatting → paste); beam search, noise calibration, high-pass filter; 130 automated tests; What's New 5s auto-dismiss. Dual model streaming removed in favor of simple placeholder UX.
+**Version: 2.9.2** — Dynamic cursor placeholder (listening → transcribing → reformatting → paste); improved LLM revise prompt (sentence breaks, homophone correction, grammar fixes); beam search, noise calibration, high-pass filter; 130 automated tests; What's New 5s auto-dismiss.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)

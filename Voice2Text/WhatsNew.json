@@ -1,5 +1,18 @@
 [
     {
+        "version": "2.9.2",
+        "changes": {
+            "en": [
+                "Fixed: Global hotkey placeholder now correctly erased after transcription (race condition fix)",
+                "Improved: LLM revise prompt — better sentence breaks, homophone/typo correction, basic grammar fixes for all languages"
+            ],
+            "zh": [
+                "修复：全局快捷键占位符在转录后正确删除（竞态条件修复）",
+                "改进：LLM 润稿提示词 — 更好的断句、同音字/错字修正、基本语法修复，适用于所有语言"
+            ]
+        }
+    },
+    {
         "version": "2.9.1",
         "changes": {
             "en": [

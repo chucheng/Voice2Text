@@ -36,7 +36,7 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 - **Floating indicator** — compact pill shows recording/transcribing/done status
 - **Local LLM post-editing** — on-device Qwen 3.5 / 2.5 models add punctuation and polish transcription — no internet needed
 - **Cloud API option** — optional Anthropic Claude integration for users who prefer cloud-based post-editing
-- **Language-aware editing** — non-English: focus on adding punctuation; English: detailed grammar/spelling fixes; mixed: per-segment rules
+- **Language-aware editing** — adds punctuation, fixes homophones/typos, corrects basic grammar for all languages; mixed-language text handled per-segment
 - **Punctuation restoration** — built-in CoreML BERT model adds punctuation for Chinese text (fallback when no LLM active)
 - **Customizable shortcut** — change the global hotkey in Settings
 - **Editable transcription** — edit text inline after transcription
@@ -332,6 +332,11 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v2.9.2
+
+- Fixed: Global hotkey placeholder correctly erased after transcription (race condition fix)
+- Improved: LLM revise prompt — better sentence breaks, homophone/typo correction, basic grammar fixes for all languages
 
 ### v2.9.1
 
