@@ -1,5 +1,22 @@
 [
     {
+        "version": "2.9.0",
+        "changes": {
+            "en": [
+                "New: Static listening indicator — global hotkey now shows \"(Voice2Text is listening...)\" at cursor during recording",
+                "Removed: Dual model streaming and VAD partial inference — simpler, more reliable global hotkey experience",
+                "New: Floating panel shows \"Reformatting...\" during LLM post-processing",
+                "Improved: Simplified onboarding — no streaming model suggestion step"
+            ],
+            "zh": [
+                "新功能：静态聆听提示 — 全局快捷键录音时在光标处显示"(Voice2Text is listening...)"",
+                "移除：双模型串流和 VAD 部分推理 — 全局快捷键体验更简洁可靠",
+                "新功能：悬浮面板在 LLM 润稿时显示"润稿中…"",
+                "改进：简化引导流程 — 不再建议下载串流模型"
+            ]
+        }
+    },
+    {
         "version": "2.8.1",
         "changes": {
             "en": [

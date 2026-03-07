@@ -6,6 +6,7 @@ import AppKit
 enum FloatingPanelState {
     case recording
     case transcribing
+    case reformatting
     case done
 }
 
@@ -139,6 +140,9 @@ struct FloatingIndicatorView: View {
         case .transcribing:
             ProgressView()
                 .controlSize(.small)
+        case .reformatting:
+            ProgressView()
+                .controlSize(.small)
         case .done:
             Image(systemName: "checkmark.circle.fill")
                 .foregroundColor(.green)
@@ -157,6 +161,7 @@ struct FloatingIndicatorView: View {
         switch state.state {
         case .recording: return L.floatingRecording
         case .transcribing: return L.floatingTranscribing
+        case .reformatting: return L.floatingReformatting
         case .done: return L.floatingPasted
         }
     }

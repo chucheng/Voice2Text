@@ -26,7 +26,7 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 
 ## Features
 
-- **Global hotkey (⌘;)** — hold from any app to record, text appears at cursor in real-time with `...▍` indicator, release to auto-paste final LLM-revised result
+- **Global hotkey (⌘;)** — hold from any app to record, `(Voice2Text is listening...)` appears at cursor, release to auto-paste final LLM-revised result
 - **Dual STT engines** — whisper.cpp (offline) and Apple Speech Recognition (online, streaming)
 - **99 languages supported** — Whisper auto-detects language; optimized for Chinese + English
 - **In-app language switching** — English / 简体中文 UI, selectable during onboarding and in Settings
@@ -166,7 +166,7 @@ Mic → AVAudioEngine → AVAudioConverter (16kHz mono) ─┬─→ Whisper inf
 
 | Engine | Requires | Mode | Best For |
 |--------|----------|------|----------|
-| Whisper | Downloaded model | VAD-based streaming (30s sliding window, beam search, noise calibration) + final batch | Offline use, accuracy |
+| Whisper | Downloaded model | Batch inference with noise calibration, beam search, high-pass filter | Offline use, accuracy |
 | Apple Speech | Network connection | Streaming (real-time) | Quick dictation, live preview |
 
 Both engines currently support mixed Chinese + English speech.
@@ -314,8 +314,11 @@ docs/
 └── images/                      # Screenshots for the guide
 Voice2TextTests/
 ├── AnthropicClientTests.swift   # URL validation, API check result tests
-├── HotkeyComboTests.swift       # Codable, modifier conversion, display string tests
 ├── AppStateHelperTests.swift    # Chinese detection, script conversion tests
+├── AudioPreprocessorTests.swift # High-pass filter, RMS normalization tests
+├── HotkeyComboTests.swift       # Codable, modifier conversion, display string tests
+├── SecurityTests.swift          # API key redaction, URL validation security tests
+├── StringsTests.swift           # L enum completeness tests (both languages)
 └── WhisperBridgeTests.swift     # Language allowlist validation tests
 scripts/
 ├── convert_punctuation_model.py # Convert PyTorch BERT → CoreML .mlpackage
@@ -328,6 +331,14 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v2.9.0
+
+- New: Static listening indicator — global hotkey shows `(Voice2Text is listening...)` at cursor during recording for clear feedback
+- Removed: Dual model streaming and VAD partial inference — simpler, more reliable global hotkey experience
+- New: Floating panel shows "Reformatting..." during LLM post-processing
+- Improved: Simplified onboarding — no streaming model suggestion step
+- Improved: Cleaned up dead code (streaming bridge, VAD inference, incremental paste)
+
 ### v2.8.1
 
 - New: Onboarding suggests downloading Tiny model for faster streaming previews when a larger model is selected
@@ -336,36 +347,27 @@ project.yml                      # XcodeGen spec
 ### v2.8.0
 
 - New: Dual model streaming — uses smallest downloaded model (tiny/base) for fast VAD partials, user-selected model for accurate final transcription
-- Improved: Streaming inference is faster without sacrificing final accuracy — tiny model handles real-time partials while large model produces the final result
 
 ### v2.7.0
 
-- New: Whisper initial prompt — uses previous transcription as context for better accuracy
-- New: High-pass filter (80Hz) removes low-frequency noise (fans, AC, rumble) before Whisper inference
-- New: Beam search (beam_size=5) + temperature fallback for more accurate Whisper decoding
-- New: VAD noise calibration — auto-measures ambient noise at recording start, dynamically sets silence threshold
-- New: Sliding window — sends last 30s of audio during streaming (constant inference speed for long recordings)
+- New: Whisper initial prompt, high-pass filter (80Hz), beam search (beam_size=5), VAD noise calibration, sliding window (30s)
 - Improved: Audio preprocessing combines high-pass filter + RMS normalization using Accelerate/vDSP
 
 ### v2.6.1
 
-- Improved: Audio normalization — automatically adjusts volume to target RMS before Whisper inference, consistent accuracy regardless of microphone level
+- Improved: Audio normalization — automatically adjusts volume to target RMS before Whisper inference
 
 ### v2.6.0
 
-- New: Global hotkey live typing — text appears at cursor while recording with `...▍` indicator, replaced by final LLM-revised result on release
-- New: Diff-based incremental typing — only changed suffix is updated (backspace + type), minimizing keystrokes
-- Improved: VAD streaming sends full audio for better accuracy (text naturally grows at the end)
+- New: Global hotkey live typing — text appears at cursor while recording, replaced by final result on release
 
 ### v2.5.0
 
-- New: VAD-based streaming — detects sentence boundaries by silence, transcribes each chunk independently (text only grows, never jumps)
-- Improved: Faster final result after release — most audio already transcribed during recording
-- Improved: 5-second fallback timer for continuous speech without pauses
+- New: VAD-based streaming — detects sentence boundaries by silence, transcribes each chunk independently
 
 ### v2.4.0
 
-- New: Whisper streaming — partial transcription appears every 2 seconds while recording (rolling text UX)
+- New: Whisper streaming — partial transcription appears every 2 seconds while recording
 - Improved: What's New auto-dismiss reduced from 8 seconds to 5 seconds
 
 ### v2.3.0

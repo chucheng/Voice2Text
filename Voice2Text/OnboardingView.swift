@@ -10,7 +10,6 @@ struct OnboardingView: View {
         case welcome
         case modelSelection
         case downloading
-        case streamingSuggestion
         case permissions
     }
 
@@ -23,8 +22,6 @@ struct OnboardingView: View {
                 modelSelectionStep
             case .downloading:
                 downloadingStep
-            case .streamingSuggestion:
-                streamingSuggestionStep
             case .permissions:
                 permissionsStep
             }
@@ -301,101 +298,7 @@ struct OnboardingView: View {
         }
     }
 
-    /// Decide whether to show streaming model suggestion or go directly to permissions.
-    /// Show suggestion when: user picked a model larger than tiny AND tiny is not yet downloaded.
-    private var shouldSuggestStreamingModel: Bool {
-        selectedModel != .tiny && !appState.isModelDownloaded(.tiny)
-    }
-
-    private var nextStepAfterModelReady: OnboardingStep {
-        shouldSuggestStreamingModel ? .streamingSuggestion : .permissions
-    }
-
-    // MARK: - Streaming Model Suggestion
-
-    private var streamingSuggestionStep: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
-            Image(systemName: "bolt.circle.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.orange.gradient)
-
-            Text(L.streamingSuggestionTitle)
-                .font(.title2.bold())
-
-            Text(L.streamingSuggestionBody)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 340)
-
-            if appState.isDownloadingModel {
-                VStack(spacing: 8) {
-                    ProgressView(value: appState.downloadProgress)
-                        .frame(maxWidth: 260)
-                    Text("\(Int(appState.downloadProgress * 100))%")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-            } else if appState.isModelDownloaded(.tiny) {
-                Label(L.downloadComplete, systemImage: "checkmark.circle.fill")
-                    .foregroundColor(.green)
-                    .font(.callout.bold())
-                    .transition(.opacity)
-            }
-
-            Spacer()
-
-            VStack(spacing: 12) {
-                if !appState.isModelDownloaded(.tiny) && !appState.isDownloadingModel {
-                    Button(action: {
-                        appState.downloadModel(.tiny)
-                    }) {
-                        Text(L.downloadTinyModel)
-                            .font(.headline)
-                            .frame(maxWidth: 200)
-                    }
-                    .controlSize(.large)
-                    .buttonStyle(.borderedProminent)
-                }
-
-                if appState.isModelDownloaded(.tiny) {
-                    Button(L.continueButton) {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            step = .permissions
-                        }
-                    }
-                    .controlSize(.large)
-                    .buttonStyle(.borderedProminent)
-                } else {
-                    Button(L.skipForNow) {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            step = .permissions
-                        }
-                    }
-                    .controlSize(.large)
-                    .buttonStyle(.bordered)
-                    .disabled(appState.isDownloadingModel)
-                }
-            }
-
-            Spacer()
-                .frame(height: 40)
-        }
-        .padding()
-        .onChange(of: appState.isDownloadingModel) { _, isDownloading in
-            if !isDownloading && appState.isModelDownloaded(.tiny) {
-                // Auto-transition to permissions after tiny download completes
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        step = .permissions
-                    }
-                }
-            }
-        }
-    }
+    private var nextStepAfterModelReady: OnboardingStep { .permissions }
 
     private func pollAccessibility() {
         accessibilityPollTimer?.cancel()

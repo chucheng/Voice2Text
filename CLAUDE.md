@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.8.1** — Dual model streaming (tiny for VAD partials, user-selected for final); VAD with beam search, sliding window, noise calibration, high-pass filter; global hotkey live typing; unit test infrastructure (57 tests); What's New 5s auto-dismiss.
+**Version: 2.9.0** — Static listening indicator for global hotkey; beam search, noise calibration, high-pass filter; unit test infrastructure (88 tests); What's New 5s auto-dismiss. Dual model streaming removed in favor of simple placeholder UX.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -21,7 +21,7 @@ Full voice-to-text pipeline with two recording modes:
 - **Global hotkey (⌘;)**: Hold from any app → floating panel → release → transcribe → auto-paste at cursor
 
 STT engines:
-- **Whisper**: record → resample → noise calibration (300ms) → VAD detects silence → high-pass filter + RMS normalize → beam search inference (30s sliding window + initial_prompt context) → release → final full-audio inference → punctuation restore (Chinese only) → Post-Edit Revise (optional) → script conversion → display/paste
+- **Whisper**: record → resample → noise calibration (300ms) → release → high-pass filter + RMS normalize → beam search inference → punctuation restore (Chinese only) → Post-Edit Revise (optional) → script conversion → display/paste
 - **Apple Speech**: record → stream buffers → real-time recognition → script conversion → display/paste
 
 **Post-Edit Revise** (optional): after transcription, send text through Claude API to improve clarity and flow. Configured in Settings > AI Services tab. API token stored in macOS Keychain. Custom prompt support. When enabled, BERT punctuation is skipped (LLM handles it). On LLM failure, falls back to BERT if available, then to raw text.
@@ -88,8 +88,11 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `LlamaCpp/include/` | Header file (llama.h) |
 | `project.yml` | xcodegen spec with bridging header, library paths, SDK dependencies (incl. Carbon.framework), test target |
 | `Voice2TextTests/AnthropicClientTests.swift` | URL validation, API check result, init normalization tests |
-| `Voice2TextTests/HotkeyComboTests.swift` | Codable round-trip, modifier conversion, display string, keyName tests |
 | `Voice2TextTests/AppStateHelperTests.swift` | Chinese detection, unexpected language, script conversion tests |
+| `Voice2TextTests/AudioPreprocessorTests.swift` | High-pass filter, RMS normalization tests |
+| `Voice2TextTests/HotkeyComboTests.swift` | Codable round-trip, modifier conversion, display string, keyName tests |
+| `Voice2TextTests/SecurityTests.swift` | API key redaction, URL validation security tests |
+| `Voice2TextTests/StringsTests.swift` | L enum completeness tests (both languages, 88 tests) |
 | `Voice2TextTests/WhisperBridgeTests.swift` | Language allowlist validation tests |
 | `scripts/convert_punctuation_model.py` | Developer tool: convert PyTorch BERT → CoreML .mlpackage |
 | `scripts/build_llama.sh` | Build llama.cpp (tag b8200) for macOS arm64 with Metal + BLAS |
@@ -127,8 +130,9 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - API check state machine: Unchecked → Checking → Valid(latencyMs) / Invalid(message); field changes reset to Unchecked
 - Revise failure: falls back to BERT (if available + Chinese) then to raw text + transient orange banner (4s) + debug log entry; never permanently disables
 - Custom revise prompt: persisted in UserDefaults (key: `"customRevisePrompt"`). Empty = use default. Reset to Default button in UI
-- Whisper VAD streaming: 300ms noise calibration at start → dynamic silence threshold (noise floor × 2.5, clamped 0.03–0.15); silence detection (500ms) triggers full-audio inference; 30s sliding window caps inference time for long recordings; `initial_prompt` passes previous transcription for context; beam search (beam_size=5) + temperature fallback; high-pass filter (80Hz) + RMS normalization via Accelerate/vDSP; 5s fallback timer force-cuts continuous speech; `vadIsInferring` guard prevents concurrent partials
-- Dual model streaming: `streamingWhisperBridge` loads smallest downloaded model (tiny > base) smaller than user-selected model for fast VAD partials; main `whisperBridge` uses user-selected model for final transcription; `loadStreamingModelIfAvailable()` called after main model load or new model download; if no smaller model available, streaming falls back to main model
+- VAD noise calibration: 300ms calibration at start → dynamic silence threshold (noise floor × 2.5, clamped 0.03–0.15); used for audio level monitoring only (no streaming inference)
+- Whisper inference: beam search (beam_size=5) + temperature fallback; high-pass filter (80Hz) + RMS normalization via Accelerate/vDSP; single final inference after recording stops
+- Global hotkey: types static `(Voice2Text is listening...)` placeholder at cursor on key down; placeholder deleted and replaced with final transcription on key up; floating panel shows reformatting state during LLM post-processing
 - What's New: `lastSeenVersion` tracked via `@AppStorage`. `WhatsNew.json` loaded from bundle. WhatsNewView auto-dismisses after 5s countdown, tap to dismiss early
 - Keyboard shortcuts: Spacebar push-to-talk, Cmd+C copies full transcription (or selection if any)
 - Punctuation restore enabled by default when model is loaded; greyed out when model not downloaded; auto-skipped for non-Chinese text
@@ -144,10 +148,9 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - `GlobalHotkeyManager` (singleton): Carbon `RegisterEventHotKey` for system-wide key capture
 - `HotkeyCombo` (Codable): persisted to UserDefaults, default ⌘; (`kVK_ANSI_Semicolon` + `cmdKey`)
 - Carbon events dispatched to main thread via `DispatchQueue.main.async`
-- `kEventHotKeyPressed` → `AppState.globalHotkeyDown()` → start recording + show floating panel
+- `kEventHotKeyPressed` → `AppState.globalHotkeyDown()` → start recording + show floating panel + type `(Voice2Text is listening...)` at cursor
 - `kEventHotKeyReleased` → `AppState.globalHotkeyUp()` → stop recording + transcribe
-- During recording: VAD triggers incremental typing at cursor via CGEvent (diff-based: backspace changed suffix + type new suffix) with ▍ cursor indicator
-- After transcription: `performAutoPaste()` → backspace streaming text → clipboard + CGEvent ⌘V (if Accessibility granted)
+- After transcription: `performAutoPaste()` → backspace listening placeholder → clipboard + CGEvent ⌘V (if Accessibility granted)
 - `FloatingRecordingPanel`: NSPanel with `.nonactivatingPanel` + `.hudWindow` — does NOT steal focus from target app
 - `isGlobalHotkeyActive` flag distinguishes global hotkey flow from in-app recording (auto-paste only runs for global)
 - In-app recording (Spacebar/button) and global hotkey recording are mutually exclusive via `canToggle` + `isRecording` guards

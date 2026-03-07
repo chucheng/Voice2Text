@@ -83,20 +83,6 @@ enum L {
         lang == .english ? "Download complete!" : "下载完成！"
     }
 
-    // MARK: OnboardingView — Streaming Model Suggestion
-
-    static var streamingSuggestionTitle: String {
-        lang == .english ? "Speed Up Streaming?" : "加速串流转录？"
-    }
-    static var streamingSuggestionBody: String {
-        lang == .english
-            ? "Download the Tiny model (~75 MB) for faster real-time previews while recording. Your selected model will still be used for the final, accurate transcription."
-            : "下载 Tiny 模型（约 75 MB）以加速录音时的实时预览。最终转录仍使用您选择的模型以确保准确度。"
-    }
-    static var downloadTinyModel: String {
-        lang == .english ? "Download Tiny (~75 MB)" : "下载 Tiny（约 75 MB）"
-    }
-
     // MARK: OnboardingView — Permissions
 
     static var globalHotkey: String {
@@ -252,6 +238,9 @@ enum L {
     }
     static var floatingTranscribing: String {
         lang == .english ? "Transcribing..." : "转写中…"
+    }
+    static var floatingReformatting: String {
+        lang == .english ? "Reformatting..." : "润稿中…"
     }
     static var floatingPasted: String {
         lang == .english ? "Pasted!" : "已粘贴！"

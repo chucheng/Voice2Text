@@ -290,8 +290,6 @@ class AppState: ObservableObject {
 
     let audioRecorder = AudioRecorder()
     let whisperBridge = WhisperBridge()        // main model (user-selected, for final transcription)
-    let streamingWhisperBridge = WhisperBridge()  // streaming model (smallest available, for VAD partials)
-    private(set) var streamingModel: WhisperModel?  // which model is loaded for streaming (nil = use main)
     let llamaBridge = LlamaBridge()
     let appleSpeech = AppleSpeechRecognizer()
     private(set) var anthropicClient: AnthropicClient?
@@ -613,46 +611,20 @@ class AppState: ObservableObject {
         }
     }
 
-    // MARK: - Audio Preprocessing (High-Pass Filter + RMS Normalization)
+    // MARK: - Audio Preprocessing
 
-    /// Single-pole high-pass filter state (persists across calls for streaming)
-    private var hpFilterState: Float = 0.0
+    private var audioPreprocessor = AudioPreprocessor()
 
-    /// Preprocess audio: high-pass filter (80Hz) to remove low-freq noise, then RMS normalize to ~-20 dBFS.
+    /// Preprocess audio: high-pass filter (80Hz) + RMS normalize to ~-20 dBFS.
     private func preprocessAudio(_ samples: [Float]) -> [Float] {
-        guard !samples.isEmpty else { return samples }
-
-        // 1. High-pass filter (~80Hz cutoff at 16kHz sample rate)
-        // Single-pole IIR: y[n] = alpha * (y[n-1] + x[n] - x[n-1])
-        // alpha = 1 / (1 + 2π * fc / fs) ≈ 0.969 for 80Hz at 16kHz
-        let alpha: Float = 0.969
-        var filtered = [Float](repeating: 0, count: samples.count)
-        var prev_x: Float = samples[0]
-        var prev_y: Float = hpFilterState
-        for i in 0..<samples.count {
-            prev_y = alpha * (prev_y + samples[i] - prev_x)
-            prev_x = samples[i]
-            filtered[i] = prev_y
+        let result = audioPreprocessor.process(samples)
+        if devMode {
+            var sumSq: Float = 0
+            vDSP_measqv(samples, 1, &sumSq, vDSP_Length(samples.count))
+            let rms = sqrt(sumSq)
+            let scale = rms > 0.0001 ? AudioPreprocessor.targetRMS / rms : 0
+            log("Audio preprocess: RMS=\(String(format: "%.4f", rms)) → scale=\(String(format: "%.2f", scale))x")
         }
-        hpFilterState = prev_y
-
-        // 2. RMS normalization to target ~-20 dBFS
-        var sumSq: Float = 0
-        vDSP_measqv(filtered, 1, &sumSq, vDSP_Length(filtered.count))
-        let rms = sqrt(sumSq)
-        guard rms > 0.0001 else { return filtered }  // near-silence, don't amplify noise
-
-        let targetRMS: Float = 0.1
-        let scale = targetRMS / rms
-        if devMode { log("Audio preprocess: RMS=\(String(format: "%.4f", rms)) → scale=\(String(format: "%.2f", scale))x") }
-
-        var result = [Float](repeating: 0, count: filtered.count)
-        var s = scale
-        vDSP_vsmul(filtered, 1, &s, &result, 1, vDSP_Length(filtered.count))
-        // Clamp to [-1, 1]
-        var lo: Float = -1.0
-        var hi: Float = 1.0
-        vDSP_vclip(result, 1, &lo, &hi, &result, 1, vDSP_Length(result.count))
         return result
     }
 
@@ -770,6 +742,10 @@ class AppState: ObservableObject {
     private func postProcess(_ text: String) {
         isReformatting = true
         let effectiveProvider = isPostEditPaused ? PostEditProvider.none : postEditProvider
+        // Show "Reformatting..." on floating panel during post-processing
+        if isGlobalHotkeyActive && effectiveProvider != .none {
+            FloatingRecordingPanel.shared.show(state: .reformatting)
+        }
         log("Post-process: provider=\(effectiveProvider.rawValue)\(isPostEditPaused ? " (paused)" : ""), input=\(text.count) chars")
         if devMode {
             log("  → Raw input: \(text)")
@@ -1112,20 +1088,15 @@ class AppState: ObservableObject {
         }
     }
 
-    // MARK: - VAD Streaming (Silence-Triggered Full-Audio Inference)
+    // MARK: - VAD (Noise Calibration & Audio Level Monitoring)
 
     private var vadState: VADState = .idle
     private var vadSilenceStart: Date?
-    private var vadIsInferring = false
-    private var vadFallbackTimer: Timer?
-    private var vadLastSampleCount: Int = 0  // track if new audio since last inference
-    private var vadGlobalPastedText: String = ""  // text currently typed at cursor in target app
-    private let vadCursorSymbol = " ...▍"
+    private var vadGlobalPastedText: String = ""  // listening placeholder typed at cursor in target app
     private var vadLastTranscription: String = ""  // previous result for initial_prompt context
+    private let listeningPlaceholder = "(Voice2Text is listening...)"
 
     // Noise calibration
-    private var vadCalibrated = false
-    private var vadNoiseFloor: Float = 0.0
     private var vadCalibrationSamples: [Float] = []
     private var vadDynamicThreshold: Float = 0.05  // will be updated after calibration
 
@@ -1137,10 +1108,7 @@ class AppState: ObservableObject {
     }
 
     private let vadSilenceDuration: TimeInterval = 0.5
-    private let vadMaxChunkDuration: TimeInterval = 5.0
-    private let vadMinSamples: Int = 16000  // need at least 1s for useful output
     private let vadCalibrationDuration: TimeInterval = 0.3  // 300ms noise measurement
-    private let vadSlidingWindowSamples: Int = 30 * 16000  // 30 seconds at 16kHz
 
     private func vadProcessAudioLevel(_ level: Float) {
         guard isRecording, sttEngine == .whisper else { return }
@@ -1153,10 +1121,8 @@ class AppState: ObservableObject {
             // After calibration period, compute noise floor and set threshold
             if let start = vadSilenceStart, Date().timeIntervalSince(start) >= vadCalibrationDuration {
                 let avgNoise = vadCalibrationSamples.reduce(0, +) / Float(vadCalibrationSamples.count)
-                vadNoiseFloor = avgNoise
                 // Threshold = noise floor × 2.5 (must be at least 0.03, at most 0.15)
                 vadDynamicThreshold = min(max(avgNoise * 2.5, 0.03), 0.15)
-                vadCalibrated = true
                 vadCalibrationSamples = []
                 vadState = .speaking
                 vadSilenceStart = nil
@@ -1173,66 +1139,10 @@ class AppState: ObservableObject {
                 vadSilenceStart = nil
             } else if let start = vadSilenceStart,
                       Date().timeIntervalSince(start) >= vadSilenceDuration {
+                // Silence detected — just return to speaking state (no inference during recording)
                 vadState = .speaking
                 vadSilenceStart = nil
-                vadTriggerInference()
             }
-        }
-    }
-
-    private func vadTriggerInference() {
-        let allSamples = audioRecorder.accumulatedSamples
-        guard allSamples.count >= vadMinSamples else { return }
-        guard allSamples.count > vadLastSampleCount else { return }  // no new audio
-        guard !vadIsInferring else { return }
-
-        vadIsInferring = true
-        vadLastSampleCount = allSamples.count
-
-        vadFallbackTimer?.invalidate()
-        vadFallbackTimer = nil
-
-        // Sliding window: send last 30s max, use previous transcription as context
-        let windowSamples: [Float]
-        let prompt: String?
-        if allSamples.count > vadSlidingWindowSamples {
-            windowSamples = Array(allSamples.suffix(vadSlidingWindowSamples))
-            prompt = vadLastTranscription.isEmpty ? nil : vadLastTranscription
-            log("VAD: sliding window (\(windowSamples.count) of \(allSamples.count) samples, \(String(format: "%.1f", Double(windowSamples.count) / 16000))s, prompt=\(prompt?.count ?? 0) chars)")
-        } else {
-            windowSamples = allSamples
-            prompt = vadLastTranscription.isEmpty ? nil : vadLastTranscription
-            log("VAD: full audio (\(windowSamples.count) samples, \(String(format: "%.1f", Double(windowSamples.count) / 16000))s, prompt=\(prompt?.count ?? 0) chars)")
-        }
-
-        let preprocessed = preprocessAudio(windowSamples)
-        // Use streaming model (tiny/base) if available, otherwise fall back to main model
-        let bridge = streamingModel != nil ? streamingWhisperBridge : whisperBridge
-        bridge.transcribe(samples: preprocessed, language: "auto", initialPrompt: prompt) { [weak self] text in
-            guard let self else { return }
-            self.vadIsInferring = false
-            guard self.isRecording else { return }
-
-            self.vadLastTranscription = text
-            let display = self.convertScript(text)
-            self.transcriptionText = display
-            self.log("VAD: partial result (\(text.count) chars)")
-
-            // Incremental typing for global hotkey
-            if self.isGlobalHotkeyActive && GlobalHotkeyManager.isAccessibilityGranted {
-                self.vadIncrementalPaste(newText: display)
-            }
-
-            self.startVADFallbackTimer()
-        }
-    }
-
-    private func startVADFallbackTimer() {
-        vadFallbackTimer?.invalidate()
-        vadFallbackTimer = Timer.scheduledTimer(withTimeInterval: vadMaxChunkDuration, repeats: false) { [weak self] _ in
-            guard let self, self.isRecording else { return }
-            self.log("VAD: fallback — 5s continuous speech, triggering inference")
-            self.vadTriggerInference()
         }
     }
 
@@ -1241,45 +1151,16 @@ class AppState: ObservableObject {
         vadState = .calibrating
         vadSilenceStart = Date()
         vadCalibrationSamples = []
-        vadCalibrated = false
         vadDynamicThreshold = 0.05  // fallback default
-        vadLastSampleCount = 0
-        vadIsInferring = false
         vadGlobalPastedText = ""
         vadLastTranscription = ""
-        hpFilterState = 0.0
+        audioPreprocessor.filterState = 0.0
         transcriptionText = ""
-        startVADFallbackTimer()
     }
 
     private func vadStopRecording() {
-        vadFallbackTimer?.invalidate()
-        vadFallbackTimer = nil
         vadState = .idle
         vadSilenceStart = nil
-    }
-
-    /// Incrementally type text at cursor in target app during global hotkey recording.
-    /// Computes diff with previously typed text, backspaces the changed suffix, types the new suffix.
-    /// Appends a cursor symbol (▍) at the end to indicate "still processing".
-    private func vadIncrementalPaste(newText: String) {
-        let newWithCursor = newText + vadCursorSymbol
-        let old = vadGlobalPastedText
-
-        // Find common prefix length
-        let commonLen = zip(old, newWithCursor).prefix(while: { $0 == $1 }).count
-        let deleteCount = old.count - commonLen
-        let addText = String(newWithCursor.dropFirst(commonLen))
-
-        if deleteCount > 0 {
-            GlobalHotkeyManager.pressBackspace(count: deleteCount)
-        }
-        if !addText.isEmpty {
-            GlobalHotkeyManager.typeText(addText)
-        }
-
-        vadGlobalPastedText = newWithCursor
-        log("VAD global: incremental paste (del \(deleteCount), add \(addText.count), total \(newWithCursor.count) chars)")
     }
 
     private var reviseFailedTimer: DispatchWorkItem?
@@ -1458,54 +1339,9 @@ class AppState: ObservableObject {
                 self.loadedModelName = success ? model.displayName : ""
                 if success {
                     self.log("Whisper: model \(model.rawValue) loaded successfully")
-                    self.loadStreamingModelIfAvailable()
                 } else {
                     self.log("Whisper: model \(model.rawValue) failed to load — deleting corrupt file")
                     try? FileManager.default.removeItem(at: path)
-                }
-            }
-        }
-    }
-
-    /// Load the smallest available Whisper model for streaming (if smaller than selected model).
-    /// Only uses models the user has already downloaded — never auto-downloads.
-    private func loadStreamingModelIfAvailable() {
-        // Streaming model candidates: tiny, base (small enough for fast streaming)
-        let candidates: [WhisperModel] = [.tiny, .base]
-        let selectedIndex = WhisperModel.allCases.firstIndex(of: selectedModel) ?? 0
-
-        // Find smallest downloaded model that's smaller than the selected model
-        var bestCandidate: WhisperModel?
-        for candidate in candidates {
-            guard let candidateIndex = WhisperModel.allCases.firstIndex(of: candidate),
-                  candidateIndex < selectedIndex,
-                  isModelDownloaded(candidate) else { continue }
-            bestCandidate = candidate
-            break  // tiny is preferred over base
-        }
-
-        guard let streaming = bestCandidate else {
-            // No smaller model available — streaming will use main model
-            streamingModel = nil
-            log("Streaming model: none available (will use main model for VAD)")
-            return
-        }
-
-        // Already loaded?
-        if streamingModel == streaming { return }
-
-        let path = modelPath(for: streaming)
-        log("Streaming model: loading \(streaming.rawValue) for VAD partials...")
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self else { return }
-            let success = self.streamingWhisperBridge.loadModel(path: path.path)
-            DispatchQueue.main.async {
-                if success {
-                    self.streamingModel = streaming
-                    self.log("Streaming model: \(streaming.rawValue) loaded (main=\(self.selectedModel.rawValue) for final)")
-                } else {
-                    self.streamingModel = nil
-                    self.log("Streaming model: \(streaming.rawValue) failed to load")
                 }
             }
         }
@@ -1553,9 +1389,6 @@ class AppState: ObservableObject {
                     try FileManager.default.moveItem(at: tmpURL, to: destPath)
                     if self.selectedModel == model {
                         self.loadModelIfAvailable()
-                    } else {
-                        // Might be a tiny/base model useful for streaming
-                        self.loadStreamingModelIfAvailable()
                     }
                 } catch {
                     print("Failed to save model: \(error.localizedDescription)")
@@ -1758,6 +1591,11 @@ class AppState: ObservableObject {
         isGlobalHotkeyActive = true
         FloatingRecordingPanel.shared.show(state: .recording)
         toggleRecording()
+        // Type static listening placeholder so user knows Voice2Text is active
+        if GlobalHotkeyManager.isAccessibilityGranted {
+            GlobalHotkeyManager.typeText(listeningPlaceholder)
+            vadGlobalPastedText = listeningPlaceholder
+        }
         log("Global hotkey: key down → started recording (will auto-paste on release)")
     }
 
@@ -1772,13 +1610,13 @@ class AppState: ObservableObject {
         guard isGlobalHotkeyActive else { return }
         isGlobalHotkeyActive = false
 
-        // Clear streaming text typed during recording
-        let streamingText = vadGlobalPastedText
+        // Clear listening placeholder typed during recording
+        let placeholderText = vadGlobalPastedText
         vadGlobalPastedText = ""
 
         guard !text.isEmpty else {
-            if !streamingText.isEmpty {
-                GlobalHotkeyManager.pressBackspace(count: streamingText.count)
+            if !placeholderText.isEmpty {
+                GlobalHotkeyManager.pressBackspace(count: placeholderText.count)
             }
             FloatingRecordingPanel.shared.hide()
             return
@@ -1789,13 +1627,13 @@ class AppState: ObservableObject {
         log("Global hotkey: result copied to clipboard (\(text.count) chars)")
 
         if GlobalHotkeyManager.isAccessibilityGranted {
-            if !streamingText.isEmpty {
-                // Delete streaming text, then paste final result
-                GlobalHotkeyManager.pressBackspace(count: streamingText.count)
-                log("Global hotkey: cleared \(streamingText.count) streaming chars")
+            if !placeholderText.isEmpty {
+                // Delete listening placeholder, then paste final result
+                GlobalHotkeyManager.pressBackspace(count: placeholderText.count)
+                log("Global hotkey: cleared listening placeholder (\(placeholderText.count) chars)")
             }
             // Small delay to ensure backspaces are processed before paste
-            let delay = streamingText.isEmpty ? 0.05 : 0.1
+            let delay = placeholderText.isEmpty ? 0.05 : 0.1
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                 GlobalHotkeyManager.pasteFromClipboard()
                 FloatingRecordingPanel.shared.showDoneAndHide()
