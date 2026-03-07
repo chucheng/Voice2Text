@@ -4,6 +4,9 @@ final class WhisperBridge {
     private var ctx: OpaquePointer?
     private let inferenceQueue = DispatchQueue(label: "com.voice2text.whisper", qos: .userInitiated)
 
+    /// Called on main thread with progress 0–100 during inference.
+    var progressCallback: ((Int) -> Void)?
+
     /// Load a whisper model from file path. Call from background thread for large models.
     func loadModel(path: String) -> Bool {
         if ctx != nil {
@@ -12,7 +15,7 @@ final class WhisperBridge {
         }
         var params = whisper_context_default_params()
         params.use_gpu = true
-        params.flash_attn = false
+        params.flash_attn = true
         ctx = whisper_init_from_file_with_params(path, params)
         return ctx != nil
     }
@@ -44,7 +47,9 @@ final class WhisperBridge {
         // Security: validate language against allowlist before passing to C layer
         let safeLanguage = Self.allowedLanguages.contains(language) ? language : "auto"
 
-        inferenceQueue.async {
+        inferenceQueue.async { [weak self] in
+            guard let self else { return }
+
             var params = whisper_full_default_params(WHISPER_SAMPLING_BEAM_SEARCH)
             params.print_realtime = false
             params.print_progress = false
@@ -53,7 +58,8 @@ final class WhisperBridge {
             params.translate = false
             params.single_segment = false
             params.no_timestamps = true
-            params.n_threads = max(1, Int32(ProcessInfo.processInfo.activeProcessorCount - 1))
+            // Metal GPU does most of the work; limit CPU threads to avoid contention
+            params.n_threads = min(4, max(1, Int32(ProcessInfo.processInfo.activeProcessorCount - 1)))
 
             // Beam search for better accuracy
             params.beam_search.beam_size = 5
@@ -69,6 +75,18 @@ final class WhisperBridge {
             if let ptr = promptCString {
                 params.initial_prompt = UnsafePointer(ptr)
             }
+
+            // Progress callback — reports 0–100% to main thread
+            let bridgePtr = Unmanaged.passUnretained(self).toOpaque()
+            params.progress_callback = { (_: OpaquePointer?, _: OpaquePointer?, progress: Int32, userData: UnsafeMutableRawPointer?) in
+                guard let userData else { return }
+                let bridge = Unmanaged<WhisperBridge>.fromOpaque(userData).takeUnretainedValue()
+                let pct = Int(progress)
+                DispatchQueue.main.async {
+                    bridge.progressCallback?(pct)
+                }
+            }
+            params.progress_callback_user_data = bridgePtr
 
             let result = safeLanguage.withCString { langPtr in
                 params.language = langPtr

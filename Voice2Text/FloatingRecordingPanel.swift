@@ -22,12 +22,21 @@ class FloatingRecordingPanel {
 
     private init() {}
 
+    func updateTranscribeProgress(_ progress: Int) {
+        DispatchQueue.main.async { [self] in
+            indicatorState.transcribeProgress = progress
+        }
+    }
+
     func show(state: FloatingPanelState) {
         DispatchQueue.main.async { [self] in
             hideTimer?.cancel()
             hideTimer = nil
             indicatorState.state = state
             indicatorState.audioLevel = 0
+            if state == .transcribing {
+                indicatorState.transcribeProgress = 0
+            }
 
             if panel == nil {
                 createPanel()
@@ -106,6 +115,7 @@ class FloatingRecordingPanel {
 class FloatingIndicatorState: ObservableObject {
     @Published var state: FloatingPanelState = .recording
     @Published var audioLevel: Float = 0
+    @Published var transcribeProgress: Int = 0  // 0–100
 }
 
 // MARK: - SwiftUI View
@@ -160,7 +170,9 @@ struct FloatingIndicatorView: View {
     private var labelText: String {
         switch state.state {
         case .recording: return L.floatingRecording
-        case .transcribing: return L.floatingTranscribing
+        case .transcribing:
+            let pct = state.transcribeProgress
+            return pct > 0 ? "\(L.floatingTranscribing) \(pct)%" : L.floatingTranscribing
         case .reformatting: return L.floatingReformatting
         case .done: return L.floatingPasted
         }

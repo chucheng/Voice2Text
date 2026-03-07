@@ -333,6 +333,12 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v2.9.3
+
+- Improved: Flash Attention enabled — faster Whisper inference on Metal GPU
+- Improved: Optimized CPU thread count for better Metal GPU utilization
+- New: Floating panel shows Whisper transcription progress percentage
+
 ### v2.9.2
 
 - Fixed: Global hotkey placeholder correctly erased after transcription (race condition fix)

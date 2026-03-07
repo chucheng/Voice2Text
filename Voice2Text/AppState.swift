@@ -334,6 +334,12 @@ class AppState: ObservableObject {
             }
         }
 
+        // Wire Whisper progress callback for floating panel
+        whisperBridge.progressCallback = { [weak self] pct in
+            guard self?.isGlobalHotkeyActive == true else { return }
+            FloatingRecordingPanel.shared.updateTranscribeProgress(pct)
+        }
+
         // Monitor network for Apple Speech
         networkMonitor.pathUpdateHandler = { [weak self] path in
             DispatchQueue.main.async {

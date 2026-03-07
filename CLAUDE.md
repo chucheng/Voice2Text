@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.9.2** — Dynamic cursor placeholder (listening → transcribing → reformatting → paste); improved LLM revise prompt (sentence breaks, homophone correction, grammar fixes); beam search, noise calibration, high-pass filter; 130 automated tests; What's New 5s auto-dismiss.
+**Version: 2.9.3** — Flash Attention + optimized threads for faster Whisper; transcription progress in floating panel; dynamic cursor placeholder; improved LLM revise prompt; 130 automated tests.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -133,7 +133,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - Revise failure: falls back to BERT (if available + Chinese) then to raw text + transient orange banner (4s) + debug log entry; never permanently disables
 - Custom revise prompt: persisted in UserDefaults (key: `"customRevisePrompt"`). Empty = use default. Reset to Default button in UI
 - VAD noise calibration: 300ms calibration at start → dynamic silence threshold (noise floor × 2.5, clamped 0.03–0.15); used for audio level monitoring only (no streaming inference)
-- Whisper inference: beam search (beam_size=5) + temperature fallback; high-pass filter (80Hz) + RMS normalization via Accelerate/vDSP; single final inference after recording stops
+- Whisper inference: Flash Attention enabled; beam search (beam_size=5) + temperature fallback; high-pass filter (80Hz) + RMS normalization via Accelerate/vDSP; CPU threads capped at 4 (Metal GPU does heavy lifting); progress callback reports 0–100% to floating panel; single final inference after recording stops
 - Global hotkey: types static `(Voice2Text is listening...)` placeholder at cursor on key down; placeholder deleted and replaced with final transcription on key up; floating panel shows reformatting state during LLM post-processing
 - What's New: `lastSeenVersion` tracked via `@AppStorage`. `WhatsNew.json` loaded from bundle. WhatsNewView auto-dismisses after 5s countdown, tap to dismiss early
 - Keyboard shortcuts: Spacebar push-to-talk, Cmd+C copies full transcription (or selection if any)
