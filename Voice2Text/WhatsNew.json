@@ -1,5 +1,18 @@
 [
     {
+        "version": "2.9.1",
+        "changes": {
+            "en": [
+                "New: Dynamic cursor placeholder transitions through pipeline stages (listening → transcribing → reformatting → paste)",
+                "Improved: 130 automated tests — added WhatsNew validation, WordPiece tokenizer, and revise prompt coverage"
+            ],
+            "zh": [
+                "新功能：光标占位符随流水线阶段动态切换（聆听中 → 转录中 → 润稿中 → 粘贴）",
+                "改进：130 个自动化测试 — 新增 WhatsNew 验证、WordPiece 分词器和润稿提示词覆盖"
+            ]
+        }
+    },
+    {
         "version": "2.9.0",
         "changes": {
             "en": [

@@ -84,4 +84,42 @@ final class AnthropicClientTests: XCTestCase {
         XCTAssertFalse(APICheckResult.checking.isValid)
         XCTAssertFalse(APICheckResult.invalid(message: "fail").isValid)
     }
+
+    // MARK: - revisePrompt content
+
+    func testRevisePromptNonEmpty() {
+        XCTAssertFalse(AnthropicClient.revisePrompt.isEmpty)
+    }
+
+    func testRevisePromptContainsPunctuationInstruction() {
+        let prompt = AnthropicClient.revisePrompt
+        XCTAssertTrue(prompt.contains("punctuation"),
+                      "Revise prompt should mention punctuation")
+    }
+
+    func testRevisePromptContainsCriticalInstruction() {
+        let prompt = AnthropicClient.revisePrompt
+        XCTAssertTrue(prompt.contains("CRITICAL"),
+                      "Revise prompt should contain CRITICAL instruction")
+    }
+
+    func testRevisePromptMentionsTranscript() {
+        let prompt = AnthropicClient.revisePrompt
+        XCTAssertTrue(prompt.lowercased().contains("transcript"),
+                      "Revise prompt should mention transcript")
+    }
+
+    func testRevisePromptCoversMultipleLanguages() {
+        let prompt = AnthropicClient.revisePrompt
+        XCTAssertTrue(prompt.contains("ENGLISH"), "Should cover English")
+        XCTAssertTrue(prompt.contains("NON-ENGLISH") || prompt.contains("Chinese"),
+                      "Should cover non-English languages")
+        XCTAssertTrue(prompt.contains("MIXED"), "Should cover mixed-language text")
+    }
+
+    func testDefaultModel() {
+        XCTAssertFalse(AnthropicClient.defaultModel.isEmpty)
+        XCTAssertTrue(AnthropicClient.defaultModel.contains("claude"),
+                      "Default model should be a Claude model")
+    }
 }

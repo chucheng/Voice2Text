@@ -313,13 +313,15 @@ docs/
 ├── Getting Started.html         # User guide included in DMG
 └── images/                      # Screenshots for the guide
 Voice2TextTests/
-├── AnthropicClientTests.swift   # URL validation, API check result tests
-├── AppStateHelperTests.swift    # Chinese detection, script conversion tests
-├── AudioPreprocessorTests.swift # High-pass filter, RMS normalization tests
-├── HotkeyComboTests.swift       # Codable, modifier conversion, display string tests
-├── SecurityTests.swift          # API key redaction, URL validation security tests
-├── StringsTests.swift           # L enum completeness tests (both languages)
-└── WhisperBridgeTests.swift     # Language allowlist validation tests
+├── AnthropicClientTests.swift      # URL validation, API check, revise prompt tests
+├── AppStateHelperTests.swift       # Chinese detection, script conversion tests
+├── AudioPreprocessorTests.swift    # High-pass filter, RMS normalization tests
+├── HotkeyComboTests.swift          # Codable, modifier conversion, display string tests
+├── SecurityTests.swift             # API key redaction, URL validation security tests
+├── StringsTests.swift              # L enum completeness tests (both languages)
+├── WhatsNewTests.swift             # JSON validation, version format, bilingual completeness
+├── WhisperBridgeTests.swift        # Language allowlist validation tests
+└── WordPieceTokenizerTests.swift   # Tokenization, offsets, padding, truncation tests
 scripts/
 ├── convert_punctuation_model.py # Convert PyTorch BERT → CoreML .mlpackage
 ├── build_dmg.sh                 # Build Voice2Text.dmg for distribution
@@ -331,13 +333,17 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v2.9.1
+
+- New: Dynamic cursor placeholder transitions through pipeline stages (listening → transcribing → reformatting → paste)
+- Improved: 130 automated tests — WhatsNew validation, WordPiece tokenizer, revise prompt coverage
+
 ### v2.9.0
 
 - New: Static listening indicator — global hotkey shows `(Voice2Text is listening...)` at cursor during recording for clear feedback
 - Removed: Dual model streaming and VAD partial inference — simpler, more reliable global hotkey experience
 - New: Floating panel shows "Reformatting..." during LLM post-processing
 - Improved: Simplified onboarding — no streaming model suggestion step
-- Improved: Cleaned up dead code (streaming bridge, VAD inference, incremental paste)
 
 ### v2.8.1
 

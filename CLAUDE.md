@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.9.0** — Static listening indicator for global hotkey; beam search, noise calibration, high-pass filter; unit test infrastructure (88 tests); What's New 5s auto-dismiss. Dual model streaming removed in favor of simple placeholder UX.
+**Version: 2.9.1** — Dynamic cursor placeholder (listening → transcribing → reformatting → paste); beam search, noise calibration, high-pass filter; 130 automated tests; What's New 5s auto-dismiss. Dual model streaming removed in favor of simple placeholder UX.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -87,13 +87,15 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `LlamaCpp/lib/` | Pre-built static library (libllama.a) for llama.cpp |
 | `LlamaCpp/include/` | Header file (llama.h) |
 | `project.yml` | xcodegen spec with bridging header, library paths, SDK dependencies (incl. Carbon.framework), test target |
-| `Voice2TextTests/AnthropicClientTests.swift` | URL validation, API check result, init normalization tests |
+| `Voice2TextTests/AnthropicClientTests.swift` | URL validation, API check result, revise prompt tests |
 | `Voice2TextTests/AppStateHelperTests.swift` | Chinese detection, unexpected language, script conversion tests |
 | `Voice2TextTests/AudioPreprocessorTests.swift` | High-pass filter, RMS normalization tests |
 | `Voice2TextTests/HotkeyComboTests.swift` | Codable round-trip, modifier conversion, display string, keyName tests |
 | `Voice2TextTests/SecurityTests.swift` | API key redaction, URL validation security tests |
-| `Voice2TextTests/StringsTests.swift` | L enum completeness tests (both languages, 88 tests) |
+| `Voice2TextTests/StringsTests.swift` | L enum completeness tests (both languages) |
+| `Voice2TextTests/WhatsNewTests.swift` | JSON validation, version format, bilingual completeness tests |
 | `Voice2TextTests/WhisperBridgeTests.swift` | Language allowlist validation tests |
+| `Voice2TextTests/WordPieceTokenizerTests.swift` | Tokenization, offsets, padding, truncation, Unicode tests |
 | `scripts/convert_punctuation_model.py` | Developer tool: convert PyTorch BERT → CoreML .mlpackage |
 | `scripts/build_llama.sh` | Build llama.cpp (tag b8200) for macOS arm64 with Metal + BLAS |
 | `scripts/build_whisper.sh` | Rebuild whisper.cpp (v1.8.3) against llama.cpp's ggml for ABI compatibility |
