@@ -1,5 +1,16 @@
 [
     {
+        "version": "2.9.6",
+        "changes": {
+            "en": [
+                "Fixed: AI revision still ran when paused via badge tap (Cloud API and Apple Speech paths ignored pause state)"
+            ],
+            "zh": [
+                "修复：通过点击徽章暂停 AI 润稿后，润稿仍会执行（Cloud API 和 Apple Speech 路径忽略了暂停状态）"
+            ]
+        }
+    },
+    {
         "version": "2.9.5",
         "changes": {
             "en": [

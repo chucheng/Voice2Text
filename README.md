@@ -332,6 +332,10 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v2.9.6
+
+- Fixed: AI revision still ran when paused via badge tap (Cloud API and Apple Speech paths ignored pause state)
+
 ### v2.9.5
 
 - Improved: Cloud API default base URL set to `https://api.anthropic.com`

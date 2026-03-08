@@ -587,8 +587,8 @@ class AppState: ObservableObject {
         audioLevel = 0
         log("Apple Speech: recognition stopped, processing final result...")
 
-        // If any post-edit provider is active, wait for isFinal before post-processing
-        if postEditProvider != .none {
+        // If any post-edit provider is active (and not paused), wait for isFinal before post-processing
+        if postEditProvider != .none && !isPostEditPaused {
             pendingAppleSpeechPostProcess = true
             isReformatting = true
             if isGlobalHotkeyActive {
@@ -927,7 +927,7 @@ class AppState: ObservableObject {
     /// Apply Cloud API Post-Edit Revise (if enabled) then script conversion.
     /// On LLM failure, falls back to BERT punctuation model if loaded + Chinese text.
     private func applyLLMAndConvert(_ text: String) {
-        if postEditProvider == .cloudAPI, let client = anthropicClient {
+        if postEditProvider == .cloudAPI && !isPostEditPaused, let client = anthropicClient {
             let prompt = (customRevisePrompt == AnthropicClient.revisePrompt) ? nil : customRevisePrompt
             let tokenSuffix = String(client.authToken.suffix(4))
             log("Post-Edit Revise: sending \(text.count) chars to \(client.baseURL)/v1/messages (model: \(client.model), token: ••••\(tokenSuffix))")
