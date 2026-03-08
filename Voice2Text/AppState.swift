@@ -168,13 +168,14 @@ class AppState: ObservableObject {
         didSet { UserDefaults.standard.set(uiLanguage.rawValue, forKey: "uiLanguage") }
     }
     // MARK: - Dangerous Zone (Anthropic API)
-    @Published var dangerousZoneBaseURL: String = UserDefaults.standard.string(forKey: "dzBaseURL") ?? "" {
+    @Published var dangerousZoneBaseURL: String = UserDefaults.standard.string(forKey: "dzBaseURL") ?? "https://api.anthropic.com" {
         didSet { UserDefaults.standard.set(dangerousZoneBaseURL, forKey: "dzBaseURL") }
     }
     @Published var dangerousZoneModel: String = UserDefaults.standard.string(forKey: "dzModel") ?? AnthropicClient.defaultModel {
         didSet { UserDefaults.standard.set(dangerousZoneModel, forKey: "dzModel") }
     }
     @Published var dangerousZoneTokenIsSet = false
+    @Published var dangerousZoneTokenHint = ""
     @Published var apiCheckState: APICheckResult = .unchecked
     @Published var reviseFailed = false
     @Published var reviseFailedWithFallback = false
@@ -928,7 +929,8 @@ class AppState: ObservableObject {
     private func applyLLMAndConvert(_ text: String) {
         if postEditProvider == .cloudAPI, let client = anthropicClient {
             let prompt = (customRevisePrompt == AnthropicClient.revisePrompt) ? nil : customRevisePrompt
-            log("Post-Edit Revise: sending \(text.count) chars...")
+            let tokenSuffix = String(client.authToken.suffix(4))
+            log("Post-Edit Revise: sending \(text.count) chars to \(client.baseURL)/v1/messages (model: \(client.model), token: ••••\(tokenSuffix))")
             log("  → Input: \(text)")
             let apiStart = Date()
             client.reviseText(text, prompt: prompt) { [weak self] result, error in
@@ -1013,10 +1015,12 @@ class AppState: ObservableObject {
             KeychainHelper.deleteToken()
             cachedToken = nil
             dangerousZoneTokenIsSet = false
+            dangerousZoneTokenHint = ""
         } else {
             let saved = KeychainHelper.saveToken(token)
             cachedToken = saved ? token : nil
             dangerousZoneTokenIsSet = saved
+            dangerousZoneTokenHint = saved ? String(token.suffix(4)) : ""
         }
         rebuildAnthropicClient()
         resetAPICheckState()
@@ -1026,6 +1030,7 @@ class AppState: ObservableObject {
         KeychainHelper.deleteToken()
         cachedToken = nil
         dangerousZoneTokenIsSet = false
+        dangerousZoneTokenHint = ""
         rebuildAnthropicClient()
         resetAPICheckState()
     }
@@ -1053,6 +1058,7 @@ class AppState: ObservableObject {
         guard cachedToken == nil else { return }
         cachedToken = KeychainHelper.loadToken()
         dangerousZoneTokenIsSet = cachedToken != nil
+        dangerousZoneTokenHint = cachedToken.map { String($0.suffix(4)) } ?? ""
     }
 
     /// Called when switching to Cloud API or on launch with Cloud API selected.
@@ -1079,7 +1085,8 @@ class AppState: ObservableObject {
             return
         }
         apiCheckState = .checking
-        log("API credential check: testing connection to \(client.baseURL) (model: \(client.model))...")
+        let tokenSuffix = String(client.authToken.suffix(4))
+        log("API credential check: testing connection to \(client.baseURL)/v1/messages (model: \(client.model), token: ••••\(tokenSuffix))")
         client.checkAPI { [weak self] result in
             guard let self else { return }
             self.apiCheckState = result

@@ -468,6 +468,10 @@ enum L {
     static var tokenIsSet: String {
         lang == .english ? "API Key saved in Keychain" : "API Key 已保存在钥匙串"
     }
+    static func tokenIsSetHint(_ hint: String) -> String {
+        if hint.isEmpty { return tokenIsSet }
+        return lang == .english ? "API Key saved (••••\(hint))" : "API Key 已保存（••••\(hint)）"
+    }
     static var checkAPI: String {
         lang == .english ? "Check API" : "检查 API"
     }

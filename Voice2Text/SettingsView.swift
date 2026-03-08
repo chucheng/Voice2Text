@@ -474,7 +474,7 @@ private struct AIServicesTab: View {
                     // Model
                     VStack(alignment: .leading, spacing: 2) {
                         Text(L.modelLabel).font(.caption).foregroundColor(.secondary)
-                        TextField("", text: $modelDraft)
+                        TextField(L.modelPlaceholder, text: $modelDraft)
                             .textFieldStyle(.roundedBorder)
                     }
 
@@ -558,7 +558,7 @@ private struct AIServicesTab: View {
                                 .font(.caption)
                                 .foregroundColor(.green)
                         } else if appState.dangerousZoneTokenIsSet {
-                            Label(L.tokenIsSet, systemImage: "key.fill")
+                            Label(L.tokenIsSetHint(appState.dangerousZoneTokenHint), systemImage: "key.fill")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         } else {

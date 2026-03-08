@@ -1,5 +1,24 @@
 [
     {
+        "version": "2.9.5",
+        "changes": {
+            "en": [
+                "Improved: Cloud API default base URL set to https://api.anthropic.com",
+                "Improved: Default model updated to claude-sonnet-4-6",
+                "New: API Key hint — shows last 4 characters after saving (••••XXXX)",
+                "Improved: Full error messages from API (no more truncation)",
+                "Improved: Debug log shows full endpoint URL, model, and token hint"
+            ],
+            "zh": [
+                "改进：云端 API 默认 Base URL 设为 https://api.anthropic.com",
+                "改进：默认模型更新为 claude-sonnet-4-6",
+                "新功能：API Key 提示 — 保存后显示末四位字符（••••XXXX）",
+                "改进：API 错误信息完整显示（不再截断）",
+                "改进：调试日志显示完整端点 URL、模型名称和 token 提示"
+            ]
+        }
+    },
+    {
         "version": "2.9.4",
         "changes": {
             "en": [

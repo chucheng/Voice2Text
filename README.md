@@ -332,6 +332,14 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v2.9.5
+
+- Improved: Cloud API default base URL set to `https://api.anthropic.com`
+- Improved: Default model updated to `claude-sonnet-4-6`
+- New: API Key hint — shows last 4 characters after saving (••••XXXX)
+- Improved: Full error messages from API (no more truncation)
+- Improved: Debug log shows full endpoint URL, model, and token hint
+
 ### v2.9.4
 
 - New: Whisper Large v3 model (~3.1 GB) — best accuracy, same model as OpenAI API
