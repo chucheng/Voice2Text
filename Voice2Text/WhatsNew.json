@@ -1,5 +1,18 @@
 [
     {
+        "version": "2.10.0",
+        "changes": {
+            "en": [
+                "New: Focus Guard — detects if you switch apps during transcription and defers auto-paste to prevent typing into the wrong window",
+                "New: Floating panel shows \"Copied to clipboard\" when focus is lost; switch back within 3 seconds to resume auto-paste"
+            ],
+            "zh": [
+                "新功能：焦点守卫 — 检测转录期间是否切换了应用，延迟自动粘贴以防输入到错误窗口",
+                "新功能：焦点丢失时悬浮面板显示「已复制到剪贴板」；3 秒内切回可恢复自动粘贴"
+            ]
+        }
+    },
+    {
         "version": "2.9.6",
         "changes": {
             "en": [

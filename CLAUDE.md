@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.9.6** — Fix AI revision ignoring pause state: default base URL, updated default model, API Key last-4 hint, full error messages, enhanced debug logging; Whisper Large v3; Flash Attention; 130 automated tests.
+**Version: 2.10.0** — Focus Guard prevents auto-paste to wrong window when user switches apps during transcription; 3-second deferred paste with clipboard fallback; Fix AI revision ignoring pause state; Whisper Large v3; Flash Attention; 130 automated tests.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -162,6 +162,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 - AnthropicClient: rejects non-localhost plaintext HTTP base URLs via `isValidBaseURL()`; localhost HTTP allowed for dev setups
 - API token stored in macOS Keychain with `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`; never in UserDefaults, logs, or error messages
 - WhisperBridge: language parameter validated against allowlist before passing to C layer
+- Focus Guard: on global hotkey down, captures frontmost app PID and observes `NSWorkspace.didActivateApplicationNotification`. If user switches away during transcription, `performAutoPaste` copies to clipboard only + shows `.copiedToClipboard` on floating panel + starts 3s deferred timer. If user returns within 3s, `finishDeferredPaste()` executes ⌘V paste. Otherwise clipboard-only fallback.
 - Clipboard auto-clear: after global hotkey auto-paste, clipboard is cleared after 30s (only if still contains our text)
 - Debug logs redacted: only char counts logged, no transcription content
 - Hardened Runtime enabled; entitlements minimal (sandbox + audio-input + network-client)

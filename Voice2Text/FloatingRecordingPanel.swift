@@ -8,6 +8,7 @@ enum FloatingPanelState {
     case transcribing
     case reformatting
     case done
+    case copiedToClipboard
 }
 
 // MARK: - FloatingRecordingPanel
@@ -157,6 +158,10 @@ struct FloatingIndicatorView: View {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundColor(.green)
                 .font(.system(size: 16))
+        case .copiedToClipboard:
+            Image(systemName: "doc.on.clipboard")
+                .foregroundColor(.orange)
+                .font(.system(size: 16))
         }
     }
 
@@ -175,6 +180,7 @@ struct FloatingIndicatorView: View {
             return pct > 0 ? "\(L.floatingTranscribing) \(pct)%" : L.floatingTranscribing
         case .reformatting: return L.floatingReformatting
         case .done: return L.floatingPasted
+        case .copiedToClipboard: return L.floatingCopiedToClipboard
         }
     }
 }

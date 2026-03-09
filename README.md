@@ -33,7 +33,8 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 - **Simplified/Traditional Chinese** output toggle
 - **Multiple whisper models** — tiny, base, small, medium, large-v3-turbo (downloaded on-demand)
 - **Push-to-talk** — hold Spacebar to record in-app, release to transcribe
-- **Floating indicator** — compact pill shows recording/transcribing/done status
+- **Focus Guard** — detects app switching during transcription, defers paste to prevent typing into wrong window; switch back within 3s to resume
+- **Floating indicator** — compact pill shows recording/transcribing/done/copied status
 - **Local LLM post-editing** — on-device Qwen 3.5 / 2.5 models add punctuation and polish transcription — no internet needed
 - **Cloud API option** — optional Anthropic Claude integration for users who prefer cloud-based post-editing
 - **Language-aware editing** — adds punctuation, fixes homophones/typos, corrects basic grammar for all languages; mixed-language text handled per-segment
@@ -331,6 +332,11 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v2.10.0
+
+- New: Focus Guard — detects if you switch apps during transcription and defers auto-paste to prevent typing into the wrong window
+- New: Floating panel shows "Copied to clipboard" when focus is lost; switch back within 3 seconds to resume auto-paste
 
 ### v2.9.6
 

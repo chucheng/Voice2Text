@@ -500,6 +500,7 @@ class AppState: ObservableObject {
             transcriptionText = ""
             if isGlobalHotkeyActive {
                 updateCursorPlaceholder("")  // delete placeholder
+                stopFocusGuard()
                 isGlobalHotkeyActive = false
                 FloatingRecordingPanel.shared.hide()
             }
@@ -1108,6 +1109,14 @@ class AppState: ObservableObject {
     private var vadGlobalPastedText: String = ""  // status placeholder typed at cursor in target app
     private var vadLastTranscription: String = ""  // previous result for initial_prompt context
 
+    // Focus guard: detect if user switched away during transcription
+    private var focusGuardOriginalPID: pid_t = 0
+    private var focusGuardLost = false
+    private var focusGuardObserver: NSObjectProtocol?
+    private var focusGuardDeferTimer: DispatchWorkItem?
+    private var focusGuardDeferredText: String = ""
+    private var focusGuardDeferredPlaceholder: String = ""
+
     // Status placeholders shown at cursor during global hotkey pipeline
     private let listeningPlaceholder = "(Voice2Text is listening...)"
     private let transcribingPlaceholder = "(Voice2Text is transcribing...)"
@@ -1117,6 +1126,11 @@ class AppState: ObservableObject {
     /// Backspaces the old text and types the new text.
     private func updateCursorPlaceholder(_ newText: String) {
         guard isGlobalHotkeyActive, GlobalHotkeyManager.isAccessibilityGranted else { return }
+        // Skip CGEvent calls if user switched away — target app is wrong
+        if focusGuardLost {
+            vadGlobalPastedText = newText
+            return
+        }
         let old = vadGlobalPastedText
         if !old.isEmpty {
             GlobalHotkeyManager.pressBackspace(count: old.count)
@@ -1622,6 +1636,7 @@ class AppState: ObservableObject {
     func globalHotkeyDown() {
         guard globalHotkeyEnabled, canToggle, !isRecording else { return }
         isGlobalHotkeyActive = true
+        startFocusGuard()
         FloatingRecordingPanel.shared.show(state: .recording)
         toggleRecording()
         // Type static listening placeholder so user knows Voice2Text is active
@@ -1641,7 +1656,47 @@ class AppState: ObservableObject {
 
     func performAutoPaste(_ text: String) {
         guard isGlobalHotkeyActive else { return }
+
+        if focusGuardLost {
+            // User switched away during transcription — don't paste to wrong window
+            isGlobalHotkeyActive = false
+            vadGlobalPastedText = ""
+
+            guard !text.isEmpty else {
+                stopFocusGuard()
+                FloatingRecordingPanel.shared.hide()
+                return
+            }
+
+            // Copy to clipboard and show indicator
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+            log("Focus guard: user switched away, copied to clipboard only (\(text.count) chars)")
+
+            // Save for deferred paste if user switches back
+            focusGuardDeferredText = text
+            focusGuardDeferredPlaceholder = vadGlobalPastedText
+            FloatingRecordingPanel.shared.show(state: .copiedToClipboard)
+
+            // Start 3s timer — if user doesn't return, just dismiss
+            let timer = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                self.log("Focus guard: 3s expired, user did not return — clipboard-only")
+                self.stopFocusGuard()
+                FloatingRecordingPanel.shared.showDoneAndHide()
+                self.scheduleClipboardClear()
+            }
+            focusGuardDeferTimer = timer
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: timer)
+            return
+        }
+
+        finishAutoPaste(text)
+    }
+
+    private func finishAutoPaste(_ text: String) {
         isGlobalHotkeyActive = false
+        stopFocusGuard()
 
         // Clear listening placeholder typed during recording
         let placeholderText = vadGlobalPastedText
@@ -1693,6 +1748,80 @@ class AppState: ObservableObject {
         }
         clipboardClearTimer = item
         DispatchQueue.main.asyncAfter(deadline: .now() + 30, execute: item)
+    }
+
+    // MARK: - Focus Guard (prevent paste to wrong window)
+
+    private func startFocusGuard() {
+        stopFocusGuard()
+        focusGuardLost = false
+        focusGuardOriginalPID = NSWorkspace.shared.frontmostApplication?.processIdentifier ?? 0
+        log("Focus guard: started, tracking PID \(focusGuardOriginalPID)")
+
+        focusGuardObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
+            let newPID = app.processIdentifier
+
+            if newPID != self.focusGuardOriginalPID {
+                if !self.focusGuardLost {
+                    self.focusGuardLost = true
+                    self.log("Focus guard: user switched away (PID \(self.focusGuardOriginalPID) → \(newPID))")
+                }
+            } else if self.focusGuardLost, self.focusGuardDeferTimer != nil {
+                // User returned within the 3s window — finish deferred paste
+                self.log("Focus guard: user returned within defer window, resuming paste")
+                self.finishDeferredPaste()
+            }
+        }
+    }
+
+    func stopFocusGuard() {
+        if let observer = focusGuardObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            focusGuardObserver = nil
+        }
+        focusGuardDeferTimer?.cancel()
+        focusGuardDeferTimer = nil
+        focusGuardLost = false
+        focusGuardOriginalPID = 0
+        focusGuardDeferredText = ""
+        focusGuardDeferredPlaceholder = ""
+    }
+
+    private func finishDeferredPaste() {
+        let text = focusGuardDeferredText
+        focusGuardDeferTimer?.cancel()
+        focusGuardDeferTimer = nil
+        focusGuardLost = false
+
+        guard !text.isEmpty else {
+            stopFocusGuard()
+            FloatingRecordingPanel.shared.hide()
+            return
+        }
+
+        // Restore state so finishAutoPaste can work correctly
+        isGlobalHotkeyActive = true
+        // The placeholder was already lost when focus changed, so clear it
+        vadGlobalPastedText = ""
+        stopFocusGuard()
+
+        // Paste directly — user is back in the right window
+        if GlobalHotkeyManager.isAccessibilityGranted {
+            GlobalHotkeyManager.pasteFromClipboard()
+            FloatingRecordingPanel.shared.showDoneAndHide()
+            log("Focus guard: deferred paste completed via ⌘V")
+            isGlobalHotkeyActive = false
+            scheduleClipboardClear()
+        } else {
+            FloatingRecordingPanel.shared.showDoneAndHide()
+            isGlobalHotkeyActive = false
+        }
     }
 
     func refreshAccessibilityStatus() {

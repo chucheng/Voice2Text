@@ -247,6 +247,9 @@ enum L {
     static var floatingPasted: String {
         lang == .english ? "Pasted!" : "已粘贴！"
     }
+    static var floatingCopiedToClipboard: String {
+        lang == .english ? "Copied to clipboard" : "已复制到剪贴板"
+    }
 
     // MARK: TranscriptionView
 

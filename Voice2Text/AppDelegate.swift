@@ -14,6 +14,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             appState.isRecording = false
         }
 
+        // Clean up focus guard observer and timers
+        appState.stopFocusGuard()
+
         // Hide floating panel
         FloatingRecordingPanel.shared.hide()
 
