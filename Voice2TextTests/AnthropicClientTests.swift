@@ -110,11 +110,11 @@ final class AnthropicClientTests: XCTestCase {
     }
 
     func testRevisePromptCoversMultipleLanguages() {
-        let prompt = AnthropicClient.revisePrompt
-        XCTAssertTrue(prompt.contains("ENGLISH"), "Should cover English")
-        XCTAssertTrue(prompt.contains("NON-ENGLISH") || prompt.contains("Chinese"),
-                      "Should cover non-English languages")
-        XCTAssertTrue(prompt.contains("MIXED"), "Should cover mixed-language text")
+        let prompt = AnthropicClient.revisePrompt.lowercased()
+        XCTAssertTrue(prompt.contains("english"), "Should cover English")
+        XCTAssertTrue(prompt.contains("chinese"),
+                      "Should cover Chinese")
+        XCTAssertTrue(prompt.contains("mixed"), "Should cover mixed-language text")
     }
 
     func testDefaultModel() {

@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.10.0** — Focus Guard prevents auto-paste to wrong window when user switches apps during transcription; 3-second deferred paste with clipboard fallback; Fix AI revision ignoring pause state; Whisper Large v3; Flash Attention; 130 automated tests.
+**Version: 2.10.1** — Revise prompt rewritten with punctuation priority + few-shot examples; Cloud API uses system message (consistent with local LLM); Focus Guard; 130 automated tests.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)

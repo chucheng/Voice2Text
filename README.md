@@ -333,6 +333,11 @@ project.yml                      # XcodeGen spec
 
 ## Release Notes
 
+### v2.10.1
+
+- Improved: Revise prompt rewritten — punctuation prioritized with few-shot examples, more stable for both Cloud API and local Qwen LLM
+- Improved: Cloud API now uses system message for prompt (consistent with local LLM structure)
+
 ### v2.10.0
 
 - New: Focus Guard — detects if you switch apps during transcription and defers auto-paste to prevent typing into the wrong window

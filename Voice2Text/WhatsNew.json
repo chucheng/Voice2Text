@@ -1,5 +1,18 @@
 [
     {
+        "version": "2.10.1",
+        "changes": {
+            "en": [
+                "Improved: Revise prompt rewritten — punctuation prioritized with few-shot examples, more stable for both Cloud API and local Qwen LLM",
+                "Improved: Cloud API now uses system message for prompt (consistent with local LLM structure)"
+            ],
+            "zh": [
+                "改进：重写润稿提示词 — 标点符号优先级提升，增加范例，Cloud API 和本地 Qwen LLM 表现更稳定",
+                "改进：Cloud API 改用 system message 传递提示词（与本地 LLM 结构一致）"
+            ]
+        }
+    },
+    {
         "version": "2.10.0",
         "changes": {
             "en": [
