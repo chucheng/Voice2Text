@@ -17,6 +17,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Clean up focus guard observer and timers
         appState.stopFocusGuard()
 
+        // Stop audio device monitoring
+        appState.audioRecorder.stopDeviceMonitoring()
+
         // Hide floating panel
         FloatingRecordingPanel.shared.hide()
 

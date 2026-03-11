@@ -558,6 +558,27 @@ enum L {
         lang == .english ? "~100 MB download (CoreML BERT model)" : "约 100 MB 下载（CoreML BERT 模型）"
     }
 
+    // MARK: Audio Input
+
+    static var audioInputSection: String {
+        lang == .english ? "Audio Input" : "音频输入"
+    }
+    static var inputDeviceLabel: String {
+        lang == .english ? "Input Device" : "输入设备"
+    }
+    static var systemDefault: String {
+        lang == .english ? "System Default" : "系统默认"
+    }
+    static func currentlyUsing(_ name: String) -> String {
+        lang == .english ? "Currently using: \(name)" : "当前使用: \(name)"
+    }
+    static func inputDeviceMenu(_ name: String) -> String {
+        lang == .english ? "Input: \(name)" : "输入: \(name)"
+    }
+    static func deviceDisconnected(_ name: String) -> String {
+        lang == .english ? "\(name) disconnected" : "\(name) 已断开"
+    }
+
     // MARK: What's New
 
     static func whatsNewTitle(_ version: String) -> String {

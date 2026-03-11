@@ -3,7 +3,7 @@
 ## Overview
 macOS Menu Bar + Dock voice-to-text app built with SwiftUI + AVAudioEngine + whisper.cpp.
 Shows in both the menu bar (MenuBarExtra) and the Dock.
-**Version: 2.10.1** — Revise prompt rewritten with punctuation priority + few-shot examples; Cloud API uses system message (consistent with local LLM); Focus Guard; 130 automated tests.
+**Version: 2.11.0** — Audio Input Device Selection (CoreAudio enumeration, switching, real-time plug/unplug monitoring); Focus Guard; 129 automated tests.
 
 ## Tech Stack
 - **UI**: SwiftUI MenuBarExtra (macOS 13+)
@@ -64,7 +64,7 @@ Upgrade installs auto-detect existing models (no re-download needed).
 | `Voice2Text/WaveformView.swift` | Canvas-based animated audio waveform |
 | `Voice2Text/TranscriptionView.swift` | Editable transcription text area |
 | `Voice2Text/CopyButton.swift` | Copy-to-clipboard button with animation |
-| `Voice2Text/AudioRecorder.swift` | AVAudioEngine + AVAudioConverter (16kHz mono Float32), dual-purpose tap for whisper + Apple Speech |
+| `Voice2Text/AudioRecorder.swift` | AVAudioEngine + AVAudioConverter (16kHz mono Float32), dual-purpose tap for whisper + Apple Speech, CoreAudio device enumeration/selection/monitoring |
 | `Voice2Text/WhisperBridge.swift` | Swift wrapper around whisper.cpp C API: load model, run inference, explicit freeModel() for clean shutdown |
 | `Voice2Text/LlamaBridge.swift` | Swift wrapper around llama.cpp C API: load GGUF model, chat prompt template, sampler chain, generate text, freeModel for clean shutdown |
 | `Voice2Text/AppleSpeechRecognizer.swift` | Apple SFSpeechRecognizer wrapper: streaming recognition with partial results |
@@ -178,6 +178,13 @@ Upgrade installs auto-detect existing models (no re-download needed).
 3. **Model checksum** — add SHA-256 verification for downloaded whisper models
 
 ## Workflow Rules
+- **Defensive coding**: always assume the user may misbehave (rapid clicks, unexpected input) and the system may have corner cases (device unplugged mid-operation, nil values, race conditions). Specifically:
+  - Guard all UI actions with full state checks (not just `isRecording`, but also `isTranscribing`, `isStarting`, etc.)
+  - Use `DispatchWorkItem` for cancellable timers instead of bare `asyncAfter` (prevents stale timer overwriting fresh state)
+  - Never force-unwrap optional system resources (e.g., `audioUnit`, device handles) — always use `guard let` with graceful fallback
+  - Wrap transient UI state changes (warnings, banners) in `withAnimation` so transitions actually animate
+  - When hardware state changes during an active operation (e.g., device unplugged while recording), clean up ALL related state flags, not just the primary one
+  - For CoreAudio C APIs: use `UnsafeMutableRawPointer` helpers to avoid CFString pointer warnings; handle all `OSStatus` return codes
 - **Clarify before implementing**: when user input is ambiguous or unclear, do NOT guess — ask for clarification first and offer concrete options for the user to choose from.
 - **Bug review before commit**: before any `git commit` + `git push`, perform a thorough bug review of all changed files (compilation, threading, SwiftUI lifecycle, API usage, edge cases). Only commit after confirming no issues.
 - **When user says "bye"**: must perform these actions before ending:

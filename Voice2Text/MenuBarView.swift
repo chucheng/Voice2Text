@@ -32,6 +32,36 @@ struct MenuBarView: View {
 
         Divider()
 
+        // Input device selection
+        Menu(L.inputDeviceMenu(appState.currentInputDeviceName)) {
+            Button {
+                appState.selectInputDevice(.systemDefault)
+            } label: {
+                HStack {
+                    Text(L.systemDefault)
+                    if appState.selectedInputDeviceUID == "__system_default__" {
+                        Text("✓")
+                    }
+                }
+            }
+            Divider()
+            ForEach(appState.availableInputDevices.filter { $0.uid != "__system_default__" }) { device in
+                Button {
+                    appState.selectInputDevice(device)
+                } label: {
+                    HStack {
+                        Text(device.name)
+                        if appState.selectedInputDeviceUID == device.uid {
+                            Text("✓")
+                        }
+                    }
+                }
+            }
+        }
+        .disabled(appState.isRecording || appState.isTranscribing || appState.isStarting)
+
+        Divider()
+
         // Model selection
         Menu(L.modelMenu(appState.selectedModel.displayName)) {
             ForEach(WhisperModel.allCases) { model in

@@ -33,6 +33,7 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 - **Simplified/Traditional Chinese** output toggle
 - **Multiple whisper models** — tiny, base, small, medium, large-v3-turbo (downloaded on-demand)
 - **Push-to-talk** — hold Spacebar to record in-app, release to transcribe
+- **Audio input device selection** — see and switch microphone in Settings, menu bar, and main window; real-time plug/unplug detection with automatic fallback
 - **Focus Guard** — detects app switching during transcription, defers paste to prevent typing into wrong window; switch back within 3s to resume
 - **Floating indicator** — compact pill shows recording/transcribing/done/copied status
 - **Local LLM post-editing** — on-device Qwen 3.5 / 2.5 models add punctuation and polish transcription — no internet needed
@@ -332,6 +333,14 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v2.11.0
+
+- New: Audio Input Device Selection — see and switch microphone in Settings, menu bar, and main window
+- New: Real-time device monitoring — plug/unplug detection with automatic fallback to System Default
+- New: Mic indicator capsule in top bar shows which device is active
+- New: Orange warning banner when selected device disconnects
+- Device preference persisted across launches via UserDefaults
 
 ### v2.10.1
 

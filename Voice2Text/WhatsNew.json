@@ -1,5 +1,22 @@
 [
     {
+        "version": "2.11.0",
+        "changes": {
+            "en": [
+                "New: Audio Input Device Selection — see and switch microphone in Settings, menu bar, and main window",
+                "New: Real-time device monitoring — plug/unplug detection with automatic fallback to System Default",
+                "New: Mic indicator capsule in top bar shows which device is active",
+                "New: Orange warning banner when selected device disconnects"
+            ],
+            "zh": [
+                "新功能：音频输入设备选择 — 在设置、菜单栏和主窗口中查看并切换麦克风",
+                "新功能：实时设备监控 — 插拔检测，自动回退到系统默认设备",
+                "新功能：顶栏麦克风指示器显示当前使用的设备",
+                "新功能：选中设备断开时显示橙色警告横幅"
+            ]
+        }
+    },
+    {
         "version": "2.10.1",
         "changes": {
             "en": [

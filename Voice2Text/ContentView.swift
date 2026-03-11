@@ -100,6 +100,19 @@ struct ContentView: View {
             }
         }
         .overlay(alignment: .top) {
+            if let warning = appState.deviceDisconnectedWarning {
+                Text(warning)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(.orange))
+                    .padding(.top, 4)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .overlay(alignment: .top) {
             if appState.showWhatsNew, !appState.whatsNewEntries.isEmpty {
                 WhatsNewView(
                     entries: appState.whatsNewEntries,
@@ -165,6 +178,20 @@ struct ContentView: View {
             .onTapGesture {
                 appState.sttEngine = appState.sttEngine == .whisper ? .apple : .whisper
             }
+
+            // Microphone device indicator
+            HStack(spacing: 4) {
+                Image(systemName: "mic")
+                    .font(.caption2)
+                Text(appState.currentInputDeviceName)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(.quaternary))
+            .help(L.inputDeviceLabel)
 
             // Service status capsules (BERT hidden when any LLM provider active)
             if appState.usePunctuationRestore && appState.postEditProvider == .none {

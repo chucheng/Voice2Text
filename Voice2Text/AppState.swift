@@ -258,6 +258,7 @@ class AppState: ObservableObject {
     }
     @Published var currentInputDeviceName: String = ""
     @Published var deviceDisconnectedWarning: String? = nil  // transient warning, auto-clear after 4s
+    private var deviceWarningDismissWork: DispatchWorkItem?
 
     @Published var devMode: Bool = UserDefaults.standard.bool(forKey: "devMode") {
         didSet { UserDefaults.standard.set(devMode, forKey: "devMode") }
@@ -377,14 +378,26 @@ class AppState: ObservableObject {
             if self.selectedInputDeviceUID != "__system_default__" &&
                !devices.contains(where: { $0.uid == self.selectedInputDeviceUID }) {
                 let lostName = self.currentInputDeviceName
+                // If recording was active on the unplugged device, stop gracefully
+                if self.isRecording {
+                    self.audioRecorder.stopRecording()
+                    self.appleSpeech.stopRecognition()
+                    self.isRecording = false
+                    self.isTranscribing = false
+                    self.isStarting = false
+                    self.log("Recording stopped: device \(lostName) was unplugged")
+                }
                 self.selectedInputDeviceUID = "__system_default__"
                 self.refreshCurrentDeviceName()
                 self.log("Input device disconnected: \(lostName), switched to System Default")
-                // Show transient warning
-                self.deviceDisconnectedWarning = L.deviceDisconnected(lostName)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
-                    self?.deviceDisconnectedWarning = nil
+                // Show transient warning (cancel previous timer if any)
+                self.deviceWarningDismissWork?.cancel()
+                withAnimation { self.deviceDisconnectedWarning = L.deviceDisconnected(lostName) }
+                let work = DispatchWorkItem { [weak self] in
+                    withAnimation { self?.deviceDisconnectedWarning = nil }
                 }
+                self.deviceWarningDismissWork = work
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: work)
             } else {
                 self.refreshCurrentDeviceName()
             }
@@ -433,8 +446,8 @@ class AppState: ObservableObject {
 
     /// Switch to a different input device. Blocked while recording.
     func selectInputDevice(_ device: AudioInputDevice) {
-        if isRecording {
-            log("Cannot switch device while recording")
+        if isRecording || isTranscribing || isStarting {
+            log("Cannot switch device while recording/transcribing")
             return
         }
         selectedInputDeviceUID = device.uid

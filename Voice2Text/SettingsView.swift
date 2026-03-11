@@ -50,6 +50,35 @@ private struct GeneralTab: View {
                 .pickerStyle(.segmented)
             }
 
+            Section(L.audioInputSection) {
+                Picker(L.inputDeviceLabel, selection: Binding(
+                    get: { appState.selectedInputDeviceUID },
+                    set: { uid in
+                        if let device = appState.availableInputDevices.first(where: { $0.uid == uid }) {
+                            appState.selectInputDevice(device)
+                        }
+                    }
+                )) {
+                    Text(L.systemDefault).tag(AudioInputDevice.systemDefault.uid)
+                    ForEach(appState.availableInputDevices.filter { $0.uid != "__system_default__" }) { device in
+                        Text(device.name).tag(device.uid)
+                    }
+                }
+                .disabled(appState.isRecording || appState.isTranscribing || appState.isStarting)
+
+                // Show resolved device name when on System Default
+                if appState.selectedInputDeviceUID == "__system_default__" {
+                    HStack(spacing: 4) {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                        Text(L.currentlyUsing(appState.currentInputDeviceName))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+
             Section(L.sttEngineSection) {
                 Picker(L.engineLabel, selection: $appState.sttEngine) {
                     ForEach(STTEngine.allCases) { engine in
