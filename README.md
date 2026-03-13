@@ -30,7 +30,7 @@ That's it. No window switching, no copy-paste. Transcription powered by [whisper
 - **Dual STT engines** — whisper.cpp (offline) and Apple Speech Recognition (online, streaming)
 - **99 languages supported** — Whisper auto-detects language; optimized for Chinese + English
 - **In-app language switching** — English / 简体中文 UI, selectable during onboarding and in Settings
-- **Simplified/Traditional Chinese** output toggle
+- **Simplified/Traditional Chinese** output toggle (⌘T shortcut + clickable indicator)
 - **Multiple whisper models** — tiny, base, small, medium, large-v3-turbo (downloaded on-demand)
 - **Push-to-talk** — hold Spacebar to record in-app, release to transcribe
 - **Audio input device selection** — see and switch microphone in Settings, menu bar, and main window; real-time plug/unplug detection with automatic fallback
@@ -333,6 +333,16 @@ project.yml                      # XcodeGen spec
 ```
 
 ## Release Notes
+
+### v2.12.0
+
+- New: ⌘T shortcut to toggle Traditional/Simplified Chinese output — works in app menu and menu bar
+- New: Clickable script indicator (繁/简) in bottom toolbar
+- Improved: Premium UI polish — glass material badges with `.ultraThinMaterial`, subtle borders on engine badge and transcription area
+- Improved: Status dots enlarged (7pt) for better visibility; mic badge truncates gracefully
+- Improved: Record button uses refined 2-stop linear gradient and tuned shadow
+- Improved: Transcription area processing state uses pulsing opacity animation
+- Improved: Character count repositioned as overlay (no longer pushes content)
 
 ### v2.11.0
 

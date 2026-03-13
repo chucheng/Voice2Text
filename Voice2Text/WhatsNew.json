@@ -1,5 +1,22 @@
 [
     {
+        "version": "2.12.0",
+        "changes": {
+            "en": [
+                "New: ⌘T shortcut to toggle Traditional/Simplified Chinese output — also available as a clickable indicator in bottom toolbar",
+                "Improved: Premium UI polish — glass material badges, subtle borders, refined gradients and shadows",
+                "Improved: Transcription area border and pulsing animation during processing",
+                "Improved: Mic device badge truncates gracefully with max width"
+            ],
+            "zh": [
+                "新功能：⌘T 快捷键切换繁简中文输出 — 底部工具栏也新增可点击的繁简指示按钮",
+                "改进：高级 UI 打磨 — 玻璃材质徽章、细边框、精致渐变和阴影",
+                "改进：转写区域新增边框，处理中脉冲动画效果",
+                "改进：麦克风设备徽章优雅截断，设置最大宽度"
+            ]
+        }
+    },
+    {
         "version": "2.11.0",
         "changes": {
             "en": [

@@ -27,6 +27,14 @@ struct Voice2TextApp: App {
             }
         }
         .defaultSize(width: 440, height: 520)
+        .commands {
+            CommandGroup(after: .textEditing) {
+                Button(L.toggleScript) {
+                    AppState.shared.toggleOutputScript()
+                }
+                .keyboardShortcut("t")
+            }
+        }
 
         Window(L.debugLogTitle, id: "debug-log") {
             DebugLogView()

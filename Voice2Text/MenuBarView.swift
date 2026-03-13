@@ -30,6 +30,11 @@ struct MenuBarView: View {
             appState.updateDisplayScript()
         }
 
+        Button(L.toggleScript) {
+            appState.toggleOutputScript()
+        }
+        .keyboardShortcut("t")
+
         Divider()
 
         // Input device selection

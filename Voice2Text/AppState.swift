@@ -1087,6 +1087,12 @@ class AppState: ObservableObject {
         }
     }
 
+    func toggleOutputScript() {
+        outputScript = outputScript == .traditional ? .simplified : .traditional
+        updateDisplayScript()
+        log("Script toggled to \(outputScript.rawValue)")
+    }
+
     func updateDisplayScript() {
         guard !rawTranscription.isEmpty else { return }
         transcriptionText = convertScript(rawTranscription)

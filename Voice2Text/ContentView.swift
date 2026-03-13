@@ -64,7 +64,7 @@ struct ContentView: View {
             // Bottom toolbar
             bottomToolbar
                 .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+                .padding(.vertical, 12)
         }
         .overlay(alignment: .bottom) {
             if appState.lowAudioWarning {
@@ -163,7 +163,7 @@ struct ContentView: View {
 
     @ViewBuilder
     private var topBar: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             // Engine badge — tap to toggle Whisper ↔ Apple Speech
             HStack(spacing: 4) {
                 Image(systemName: appState.sttEngine == .whisper ? "cpu" : "applelogo")
@@ -174,7 +174,8 @@ struct ContentView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Capsule().fill(.quaternary))
+            .background(Capsule().fill(.ultraThinMaterial))
+            .overlay(Capsule().strokeBorder(.quaternary))
             .onTapGesture {
                 appState.sttEngine = appState.sttEngine == .whisper ? .apple : .whisper
             }
@@ -187,10 +188,12 @@ struct ContentView: View {
                     .font(.caption)
                     .fontWeight(.medium)
                     .lineLimit(1)
+                    .truncationMode(.tail)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Capsule().fill(.quaternary))
+            .frame(maxWidth: 160)
+            .background(Capsule().fill(.ultraThinMaterial))
             .help(L.inputDeviceLabel)
 
             // Service status capsules (BERT hidden when any LLM provider active)
@@ -198,14 +201,14 @@ struct ContentView: View {
                 HStack(spacing: 4) {
                     Circle()
                         .fill(appState.isPunctuationModelLoaded ? .green : .red)
-                        .frame(width: 6, height: 6)
+                        .frame(width: 7, height: 7)
                     Text(L.autoPunctuation)
                         .font(.caption)
                         .fontWeight(.medium)
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Capsule().fill(.quaternary))
+                .background(Capsule().fill(.ultraThinMaterial))
             }
 
             if appState.postEditProvider == .localLLM {
@@ -213,13 +216,13 @@ struct ContentView: View {
                     if appState.isLoadingLocalLLMModel {
                         ProgressView()
                             .controlSize(.mini)
-                            .frame(width: 6, height: 6)
+                            .frame(width: 7, height: 7)
                     } else {
                         Circle()
                             .fill(appState.isPostEditPaused ? .gray :
                                   appState.isLocalLLMModelLoaded ? .green :
                                   appState.isLocalLLMModelDownloaded(appState.selectedLocalLLMModel) ? .orange : .red)
-                            .frame(width: 6, height: 6)
+                            .frame(width: 7, height: 7)
                     }
                     Text(L.localLLMBadge)
                         .font(.caption)
@@ -227,20 +230,17 @@ struct ContentView: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Capsule().fill(.quaternary))
+                .background(Capsule().fill(.ultraThinMaterial))
                 .opacity(appState.isPostEditPaused ? 0.6 : 1.0)
                 .onTapGesture {
                     if appState.isPostEditPaused {
-                        // Resume
                         appState.isPostEditPaused = false
                         appState.log("Local LLM: resumed from badge tap")
                     } else if appState.isLocalLLMModelLoaded {
-                        // Pause (green → grey)
                         appState.isPostEditPaused = true
                         appState.log("Local LLM: paused from badge tap")
                     } else if !appState.isLoadingLocalLLMModel &&
                               appState.isLocalLLMModelDownloaded(appState.selectedLocalLLMModel) {
-                        // Orange → load model
                         appState.log("Local LLM: manual load from badge tap")
                         appState.loadLocalLLMModel()
                     }
@@ -252,12 +252,12 @@ struct ContentView: View {
                     if appState.apiCheckState == .checking {
                         ProgressView()
                             .controlSize(.mini)
-                            .frame(width: 6, height: 6)
+                            .frame(width: 7, height: 7)
                     } else {
                         Circle()
                             .fill(appState.isPostEditPaused ? .gray :
                                   appState.apiCheckState.isValid ? .green : .red)
-                            .frame(width: 6, height: 6)
+                            .frame(width: 7, height: 7)
                     }
                     Text(L.aiRevise)
                         .font(.caption)
@@ -265,19 +265,16 @@ struct ContentView: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Capsule().fill(.quaternary))
+                .background(Capsule().fill(.ultraThinMaterial))
                 .opacity(appState.isPostEditPaused ? 0.6 : 1.0)
                 .onTapGesture {
                     if appState.isPostEditPaused {
-                        // Resume
                         appState.isPostEditPaused = false
                         appState.log("Cloud API: resumed from badge tap")
                     } else if appState.apiCheckState.isValid {
-                        // Pause (green → grey)
                         appState.isPostEditPaused = true
                         appState.log("Cloud API: paused from badge tap")
                     } else if appState.apiCheckState != .checking {
-                        // Red → retry API check
                         appState.ensureCloudAPIReady()
                     }
                 }
@@ -314,6 +311,30 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
             .help(L.settingsTooltip)
+
+            // Script indicator
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    appState.toggleOutputScript()
+                }
+            }) {
+                Text(appState.outputScript == .traditional ? "繁" : "简")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .frame(width: 22, height: 22)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(.ultraThinMaterial)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 5)
+                            .strokeBorder(.quaternary)
+                    )
+                    .contentTransition(.numericText())
+            }
+            .buttonStyle(.plain)
+            .help(L.scriptIndicatorHelp)
+            .padding(.leading, 6)
 
             Spacer()
 

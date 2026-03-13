@@ -579,6 +579,15 @@ enum L {
         lang == .english ? "\(name) disconnected" : "\(name) 已断开"
     }
 
+    // MARK: Script Toggle
+
+    static var toggleScript: String {
+        lang == .english ? "Toggle Script" : "切换繁简"
+    }
+    static var scriptIndicatorHelp: String {
+        lang == .english ? "Toggle Traditional/Simplified (⌘T)" : "切换繁简 (⌘T)"
+    }
+
     // MARK: What's New
 
     static func whatsNewTitle(_ version: String) -> String {

@@ -58,9 +58,15 @@ struct RecordButton: View {
 
                 // Main circle
                 Circle()
-                    .fill(buttonColor.gradient)
+                    .fill(
+                        LinearGradient(
+                            colors: [buttonColor, buttonColor.opacity(0.8)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
                     .frame(width: size, height: size)
-                    .shadow(color: buttonColor.opacity(0.4), radius: isAnimating ? 12 : 6)
+                    .shadow(color: buttonColor.opacity(0.35), radius: isAnimating ? 8 : 6)
 
                 // Icon
                 Image(systemName: iconName)
